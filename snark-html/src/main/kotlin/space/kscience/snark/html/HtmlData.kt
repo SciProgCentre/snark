@@ -16,7 +16,7 @@ import space.kscience.snark.SnarkContext
 //typealias HtmlFragment = context(PageBuilder, TagConsumer<*>) () -> Unit
 
 public fun interface HtmlFragment {
-    public fun TagConsumer<*>.renderFragment(page: Page)
+    public fun TagConsumer<*>.renderFragment(page: WebPage)
     //TODO move pageBuilder to a context receiver after KT-52967 is fixed
 }
 
@@ -26,7 +26,7 @@ public typealias HtmlData = Data<HtmlFragment>
 //    Data(HtmlFragment(content), meta)
 
 
-context(Page) public fun FlowContent.htmlData(data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
+context(WebPage) public fun FlowContent.htmlData(data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
     with(data.await()) { consumer.renderFragment(page) }
 }
 

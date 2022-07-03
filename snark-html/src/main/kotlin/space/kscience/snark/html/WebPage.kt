@@ -17,9 +17,9 @@ context(SnarkContext) public fun Name.toWebPath(): String = tokens.joinToString(
     }
 }
 
-public interface Page : ContextAware, SnarkContext {
+public interface WebPage : ContextAware, SnarkContext {
 
-    public val snark: SnarkPlugin
+    public val snark: SnarkHtmlPlugin
 
     override val context: Context get() = snark.context
 
@@ -32,11 +32,11 @@ public interface Page : ContextAware, SnarkContext {
     public fun resolvePageRef(pageName: Name): String
 }
 
-context(Page) public val page: Page get() = this@Page
+context(WebPage) public val page: WebPage get() = this@WebPage
 
-public fun Page.resolvePageRef(pageName: String): String = resolvePageRef(pageName.parseAsName())
+public fun WebPage.resolvePageRef(pageName: String): String = resolvePageRef(pageName.parseAsName())
 
-public val Page.homeRef: String get() = resolvePageRef(SiteBuilder.INDEX_PAGE_TOKEN.asName())
+public val WebPage.homeRef: String get() = resolvePageRef(SiteBuilder.INDEX_PAGE_TOKEN.asName())
 
 /**
  * Resolve a Html builder by its full name

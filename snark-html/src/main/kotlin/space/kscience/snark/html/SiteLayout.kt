@@ -30,27 +30,30 @@ internal fun SiteBuilder.assetsFrom(rootMeta: Meta) {
         path?.let { resourcePath ->
             //If remote path provided, use a single resource
             remotePath?.let {
-                assetResourceFile(it, resourcePath)
+                resourceFile(it, resourcePath)
                 return@forEach
             }
 
             //otherwise use package resources
-            assetResourceDirectory(resourcePath)
+            resourceDirectory(resourcePath)
         }
     }
 
     rootMeta.getIndexed("file".asName()).forEach { (_, meta) ->
         val remotePath by meta.string { error("File remote path is not provided") }
         val path by meta.string { error("File path is not provided") }
-        assetFile(remotePath, Path.of(path))
+        file(Path.of(path), remotePath)
     }
 
     rootMeta.getIndexed("directory".asName()).forEach { (_, meta) ->
         val path by meta.string { error("Directory path is not provided") }
-        assetDirectory("", Path.of(path))
+        file(Path.of(path), "")
     }
 }
 
+/**
+ * Render (or don't) given data piece
+ */
 public typealias DataRenderer = SiteBuilder.(name: Name, data: Data<Any>) -> Unit
 
 /**
@@ -114,7 +117,9 @@ public fun SiteBuilder.pages(
     pages(dataPath.parseAsName(), remotePath, dataRenderer = dataRenderer)
 }
 
-
+/**
+ * An abstraction to render singular data or a data tree.
+ */
 @Type(SiteLayout.TYPE)
 public fun interface SiteLayout {
 
@@ -142,7 +147,9 @@ public fun interface SiteLayout {
     }
 }
 
-
+/**
+ * The default [SiteLayout]. It renders all [HtmlData] pages as t with simple headers via [SiteLayout.defaultDataRenderer]
+ */
 public object DefaultSiteLayout : SiteLayout {
     context(SiteBuilder) override fun render(item: DataTreeItem<*>) {
         pages(item)

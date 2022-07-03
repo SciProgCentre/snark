@@ -4,15 +4,12 @@ import kotlinx.html.HTML
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.data.DataTreeItem
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.NameToken
 import space.kscience.dataforge.names.parseAsName
 import space.kscience.snark.SnarkContext
 import java.nio.file.Path
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
 
 
 /**
@@ -20,27 +17,46 @@ import kotlin.reflect.typeOf
  */
 public interface SiteBuilder : ContextAware, SnarkContext {
 
+    /**
+     * Data used for site construction. The type of the data is not limited
+     */
     public val data: DataTree<*>
 
-    public val snark: SnarkPlugin
+    /**
+     * Snark plugin and context used for layout resolution, preprocessors, etc
+     */
+    public val snark: SnarkHtmlPlugin
 
     override val context: Context get() = snark.context
 
+    /**
+     * Site configuration
+     */
     public val siteMeta: Meta
 
-    public fun assetFile(remotePath: String, file: Path)
+    /**
+     * Add a static file or directory to this site/route at [remotePath]
+     */
+    public fun file(file: Path, remotePath: String = file.fileName.toString())
 
-    public fun assetDirectory(remotePath: String, directory: Path)
+    /**
+     * Add a static file (single) from resources
+     */
+    public fun resourceFile(remotePath: String, resourcesPath: String)
 
-    public fun assetResourceFile(remotePath: String, resourcesPath: String)
+    /**
+     * Add a resource directory to route
+     */
+    public fun resourceDirectory(resourcesPath: String)
 
-    public fun assetResourceDirectory(resourcesPath: String)
-
-    public fun page(route: Name = Name.EMPTY, content: context(Page, HTML) () -> Unit)
+    /**
+     * Create a single page at given [route]. If route is empty, create an index page at current route.
+     */
+    public fun page(route: Name = Name.EMPTY, content: context(WebPage, HTML) () -> Unit)
 
     /**
      * Create a route with optional data tree override. For example one could use a subtree of the initial tree.
-     * By default, the same data tree is used for route
+     * By default, the same data tree is used for route.
      */
     public fun route(
         routeName: Name,
@@ -91,10 +107,3 @@ public inline fun SiteBuilder.route(
 //        withData(mountedData).block()
 //    }
 //}
-
-//TODO move to DF
-public fun DataTree.Companion.empty(meta: Meta = Meta.EMPTY): DataTree<Any> = object : DataTree<Any> {
-    override val items: Map<NameToken, DataTreeItem<Any>> get() = emptyMap()
-    override val dataType: KType get() = typeOf<Any>()
-    override val meta: Meta get() = meta
-}

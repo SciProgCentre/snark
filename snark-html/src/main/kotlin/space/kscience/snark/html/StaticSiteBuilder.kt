@@ -8,6 +8,7 @@ import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.withDefault
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
+import space.kscience.snark.SnarkEnvironment
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.contracts.InvocationKind
@@ -15,12 +16,15 @@ import kotlin.contracts.contract
 import kotlin.io.path.*
 
 
+/**
+ * An implementation of [SiteBuilder] to render site as a static directory [outputPath]
+ */
 internal class StaticSiteBuilder(
-    override val snark: SnarkPlugin,
+    override val snark: SnarkHtmlPlugin,
     override val data: DataTree<*>,
     override val siteMeta: Meta,
     private val baseUrl: String,
-    private val path: Path,
+    private val outputPath: Path,
 ) : SiteBuilder {
     private fun Path.copyRecursively(target: Path) {
         Files.walk(this).forEach { source: Path ->
@@ -32,27 +36,28 @@ internal class StaticSiteBuilder(
         }
     }
 
-    override fun assetFile(remotePath: String, file: Path) {
-        val targetPath = path.resolve(remotePath)
-        targetPath.parent.createDirectories()
-        file.copyTo(targetPath, true)
+    override fun file(file: Path, remotePath: String) {
+        val targetPath = outputPath.resolve(remotePath)
+        if(file.isDirectory()){
+            targetPath.parent.createDirectories()
+            file.copyRecursively(targetPath)
+        } else if(remotePath.isBlank()) {
+            error("Can't mount file to an empty route")
+        } else {
+            targetPath.parent.createDirectories()
+            file.copyTo(targetPath, true)
+        }
     }
 
-    override fun assetDirectory(remotePath: String, directory: Path) {
-        val targetPath = path.resolve(remotePath)
-        targetPath.parent.createDirectories()
-        directory.copyRecursively(targetPath)
-    }
-
-    override fun assetResourceFile(remotePath: String, resourcesPath: String) {
-        val targetPath = path.resolve(remotePath)
+    override fun resourceFile(remotePath: String, resourcesPath: String) {
+        val targetPath = outputPath.resolve(remotePath)
         targetPath.parent.createDirectories()
         javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyTo(targetPath, true)
     }
 
-    override fun assetResourceDirectory(resourcesPath: String) {
-        path.parent.createDirectories()
-        javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyRecursively(path)
+    override fun resourceDirectory(resourcesPath: String) {
+        outputPath.parent.createDirectories()
+        javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyRecursively(outputPath)
     }
 
     private fun resolveRef(baseUrl: String, ref: String) = if (baseUrl.isEmpty()) {
@@ -63,10 +68,10 @@ internal class StaticSiteBuilder(
         "${baseUrl.removeSuffix("/")}/$ref"
     }
 
-    inner class StaticPage : Page {
+    inner class StaticWebPage : WebPage {
         override val data: DataTree<*> get() = this@StaticSiteBuilder.data
         override val pageMeta: Meta get() = this@StaticSiteBuilder.siteMeta
-        override val snark: SnarkPlugin get() = this@StaticSiteBuilder.snark
+        override val snark: SnarkHtmlPlugin get() = this@StaticSiteBuilder.snark
 
 
         override fun resolveRef(ref: String): String = resolveRef(baseUrl, ref)
@@ -77,17 +82,17 @@ internal class StaticSiteBuilder(
     }
 
 
-    override fun page(route: Name, content: context(Page, HTML) () -> Unit) {
+    override fun page(route: Name, content: context(WebPage, HTML) () -> Unit) {
         val htmlBuilder = createHTML()
 
         htmlBuilder.html {
-            content(StaticPage(), this)
+            content(StaticWebPage(), this)
         }
 
         val newPath = if (route.isEmpty()) {
-            path.resolve("index.html")
+            outputPath.resolve("index.html")
         } else {
-            path.resolve(route.toWebPath() + ".html")
+            outputPath.resolve(route.toWebPath() + ".html")
         }
 
         newPath.parent.createDirectories()
@@ -108,18 +113,23 @@ internal class StaticSiteBuilder(
         } else {
             baseUrl
         },
-        path = path.resolve(routeName.toWebPath())
+        outputPath = outputPath.resolve(routeName.toWebPath())
     )
 }
 
-public fun SnarkPlugin.renderStatic(
+/**
+ * Create a static site using given [data] in provided [outputPath].
+ * Use [siteUrl] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
+ *
+ */
+public fun SnarkEnvironment.static(
     outputPath: Path,
-    data: DataTree<*> = DataTree.empty(),
     siteUrl: String = outputPath.absolutePathString().replace("\\", "/"),
     block: SiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    StaticSiteBuilder(this, data, meta, siteUrl, outputPath).block()
+    val plugin = buildHtmlPlugin()
+    StaticSiteBuilder(plugin, data, meta, siteUrl, outputPath).block()
 }

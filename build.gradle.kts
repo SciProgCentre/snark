@@ -9,10 +9,10 @@ allprojects {
     if(name!="snark-gradle-plugin") {
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
-                freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+                freeCompilerArgs = freeCompilerArgs  + "-Xcontext-receivers"
             }
         }
     }
 }
 
-val dataforgeVersion by extra("0.6.0-dev-9")
+val dataforgeVersion by extra("0.6.0-dev-10")

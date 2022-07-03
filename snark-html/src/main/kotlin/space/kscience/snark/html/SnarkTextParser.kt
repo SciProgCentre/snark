@@ -23,9 +23,9 @@ public abstract class SnarkTextParser<R> : SnarkParser<R> {
     override fun parse(context: Context, meta: Meta, bytes: ByteArray): R =
         parseText(bytes.decodeToString(), meta)
 
-    public fun transformText(text: String, meta: Meta, page: Page): String =
-        meta[TextTransformation.TEXT_TRANSFORMATION_KEY]?.let {
-            with(page) { page.snark.textTransformation(it).transform(text) }
+    public fun transformText(text: String, meta: Meta, page: WebPage): String =
+        meta[TextProcessor.TEXT_TRANSFORMATION_KEY]?.let {
+            with(page) { page.snark.textProcessor(it).process(text) }
         } ?: text
 }
 

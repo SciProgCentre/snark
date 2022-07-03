@@ -4,9 +4,12 @@ import io.ktor.utils.io.core.Input
 import io.ktor.utils.io.core.readBytes
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.io.IOReader
+import space.kscience.dataforge.io.asBinary
+import space.kscience.dataforge.io.readWith
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.misc.Type
 import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 /**
  * A parser of binary content including priority flag and file extensions
@@ -32,3 +35,21 @@ public interface SnarkParser<out R> {
         public const val DEFAULT_PRIORITY: Int = 10
     }
 }
+
+@PublishedApi
+internal class SnarkParserWrapper<R : Any>(
+    val reader: IOReader<R>,
+    override val type: KType,
+    override val fileExtensions: Set<String>,
+) : SnarkParser<R> {
+    override fun parse(context: Context, meta: Meta, bytes: ByteArray): R = bytes.asBinary().readWith(reader)
+}
+
+/**
+ * Create a generic parser from reader
+ */
+@Suppress("FunctionName")
+public inline fun <reified R : Any> SnarkParser(
+    reader: IOReader<R>,
+    vararg fileExtensions: String,
+): SnarkParser<R> = SnarkParserWrapper(reader, typeOf<R>(), fileExtensions.toSet())
