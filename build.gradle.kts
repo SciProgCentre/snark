@@ -16,3 +16,9 @@ allprojects {
 }
 
 val dataforgeVersion by extra("0.6.0-dev-10")
+
+ksciencePublish{
+    github("snark")
+    space("https://maven.pkg.jetbrains.space/mipt-npm/p/sci/maven")
+//    sonatype()
+}
