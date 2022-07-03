@@ -1,5 +1,6 @@
 plugins {
     id("ru.mipt.npm.gradle.jvm")
+    `maven-publish`
 }
 
 val dataforgeVersion: String by rootProject.extra
