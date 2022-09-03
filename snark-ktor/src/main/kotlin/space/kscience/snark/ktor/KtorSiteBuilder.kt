@@ -7,8 +7,6 @@ import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
 import io.ktor.server.http.content.*
 import io.ktor.server.plugins.origin
-import io.ktor.server.request.host
-import io.ktor.server.request.port
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.createRouteFromPath
 import io.ktor.server.routing.get
@@ -87,9 +85,10 @@ public class KtorSiteBuilder(
                 //substitute host for url for backwards calls
                 val url = URLBuilder(baseUrl).apply {
                     protocol = URLProtocol.createOrDefault(request.origin.scheme)
-                    host = request.host()
-                    port = request.port()
+                    host = request.origin.host
+                    port = request.origin.port
                 }
+
                 val pageBuilder = KtorWebPage(url.buildString())
                 content(pageBuilder, this)
             }
@@ -124,21 +123,23 @@ public class KtorSiteBuilder(
 }
 
 context(Route, SnarkEnvironment) private fun siteInRoute(
+    baseUrl: String = "",
     block: KtorSiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    block(KtorSiteBuilder(buildHtmlPlugin(), data, meta, "", this@Route))
+    block(KtorSiteBuilder(buildHtmlPlugin(), data, meta, baseUrl, this@Route))
 }
 
 context(Application) public fun SnarkEnvironment.site(
+    baseUrl: String = "",
     block: KtorSiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
     routing {
-        siteInRoute(block)
+        siteInRoute(baseUrl, block)
     }
 }
