@@ -2,8 +2,7 @@ package space.kscience.snark.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.kotlin.dsl.configure
-import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.gradle.kotlin.dsl.withType
 import java.io.File
 import java.time.LocalDateTime
 
@@ -41,12 +40,17 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
             tasks.getByName("processResources").dependsOn(writeBuildDate)
 
-            configure<KotlinJvmProjectExtension> {
-                sourceSets.apply {
-                    getByName("main") {
-                        resources.srcDir(project.rootDir.resolve("data"))
-                    }
+            extensions.configure<org.gradle.api.tasks.SourceSetContainer>("sourceSets") {
+                getByName("main") {
+                    logger.info("Adding ${snarkExtension.dataDirectory} to resources")
+                    resources.srcDir(snarkExtension.dataDirectory)
                 }
+            }
+        }
+
+        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+            kotlinOptions {
+                freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
             }
         }
     }

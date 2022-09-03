@@ -1,5 +1,5 @@
 plugins{
-    id("ru.mipt.npm.gradle.jvm")
+    id("space.kscience.gradle.jvm")
     `kotlin-dsl`
     `java-gradle-plugin`
     `maven-publish`

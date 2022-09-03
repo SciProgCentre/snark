@@ -13,7 +13,10 @@ import io.ktor.server.routing.Route
 import io.ktor.server.routing.createRouteFromPath
 import io.ktor.server.routing.get
 import io.ktor.server.routing.routing
+import kotlinx.css.CssBuilder
+import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.HTML
+import kotlinx.html.style
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.withDefault
@@ -27,8 +30,11 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.io.path.isDirectory
 
-@PublishedApi
-internal class KtorSiteBuilder(
+public fun CommonAttributeGroupFacade.css(block: CssBuilder.() -> Unit) {
+    style = CssBuilder().block().toString()
+}
+
+public class KtorSiteBuilder(
     override val snark: SnarkHtmlPlugin,
     override val data: DataTree<*>,
     override val siteMeta: Meta,
@@ -58,7 +64,7 @@ internal class KtorSiteBuilder(
     }
 
 
-    inner class KtorWebPage(
+    private inner class KtorWebPage(
         val pageBaseUrl: String,
         override val pageMeta: Meta = this@KtorSiteBuilder.siteMeta,
     ) : WebPage {
@@ -117,8 +123,8 @@ internal class KtorSiteBuilder(
     }
 }
 
-context(Route, SnarkEnvironment) public fun siteInRoute(
-    block: SiteBuilder.() -> Unit,
+context(Route, SnarkEnvironment) private fun siteInRoute(
+    block: KtorSiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
@@ -127,7 +133,7 @@ context(Route, SnarkEnvironment) public fun siteInRoute(
 }
 
 context(Application) public fun SnarkEnvironment.site(
-    block: SiteBuilder.() -> Unit,
+    block: KtorSiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)

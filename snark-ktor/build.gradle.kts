@@ -1,10 +1,10 @@
 plugins {
-    id("ru.mipt.npm.gradle.jvm")
+    id("space.kscience.gradle.jvm")
     `maven-publish`
 }
 
 val dataforgeVersion: String by rootProject.extra
-val ktorVersion = ru.mipt.npm.gradle.KScienceVersions.ktorVersion
+val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
 dependencies {
     api(projects.snarkHtml)

@@ -1,10 +1,10 @@
 plugins {
-    id("ru.mipt.npm.gradle.jvm")
+    id("space.kscience.gradle.jvm")
     `maven-publish`
 }
 
 val dataforgeVersion: String by rootProject.extra
-val ktorVersion = ru.mipt.npm.gradle.KScienceVersions.ktorVersion
+val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
 dependencies {
     api(projects.snarkCore)
@@ -19,7 +19,7 @@ dependencies {
 }
 
 readme {
-    maturity = ru.mipt.npm.gradle.Maturity.EXPERIMENTAL
+    maturity = space.kscience.gradle.Maturity.EXPERIMENTAL
     feature("data") { "Data-based processing. Instead of traditional layout-based" }
     feature("layouts") { "Use custom layouts to represent a data tree" }
     feature("parsers") { "Add custom file formats and parsers using DataForge dependency injection" }
