@@ -48,16 +48,14 @@ internal object SnarkMarkdownParser : SnarkTextParser<HtmlFragment>() {
     private val markdownFlavor = CommonMarkFlavourDescriptor()
     private val markdownParser = MarkdownParser(markdownFlavor)
 
-    override fun parseText(text: String, meta: Meta): HtmlFragment {
-        val parsedTree = markdownParser.buildMarkdownTreeFromString(text)
-        val htmlString = HtmlGenerator(text, parsedTree, markdownFlavor).generateHtml()
+    override fun parseText(text: String, meta: Meta): HtmlFragment = HtmlFragment { page ->
+        val transformedText = SnarkHtmlParser.transformText(text, meta, page)
+        val parsedTree = markdownParser.buildMarkdownTreeFromString(transformedText)
+        val htmlString = HtmlGenerator(transformedText, parsedTree, markdownFlavor).generateHtml()
 
-        return HtmlFragment { page ->
-
-            div {
-                unsafe {
-                    +SnarkHtmlParser.transformText(htmlString, meta, page)
-                }
+        div {
+            unsafe {
+                +htmlString
             }
         }
     }

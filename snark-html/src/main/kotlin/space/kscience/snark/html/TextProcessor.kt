@@ -29,7 +29,7 @@ public fun interface TextProcessor {
  */
 public object BasicTextProcessor : TextProcessor {
 
-    private val regex = """\$\{([\w.]*)(?>\("([\w.]*)"\))?}""".toRegex()
+    private val regex = """\$\{([\w.]*)(?>\("(.*)"\))?}""".toRegex()
 
     context(WebPage) override fun process(text: String): String = text.replace(regex) { match ->
         when (match.groups[1]!!.value) {

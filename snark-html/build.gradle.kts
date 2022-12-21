@@ -9,13 +9,13 @@ val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 dependencies {
     api(projects.snarkCore)
 
-    api("org.jetbrains.kotlinx:kotlinx-html:0.7.5")
+    api("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
     api("org.jetbrains.kotlin-wrappers:kotlin-css")
 
     api("io.ktor:ktor-utils:$ktorVersion")
 
     api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
-    api("org.jetbrains:markdown:0.3.1")
+    api("org.jetbrains:markdown:0.3.5")
 }
 
 readme {
