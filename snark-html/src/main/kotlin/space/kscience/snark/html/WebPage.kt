@@ -9,7 +9,8 @@ import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkContext
 
-context(SnarkContext) public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
+context(SnarkContext)
+public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
     if (it.hasIndex()) {
         "${it.body}[${it.index}]"
     } else {
@@ -17,6 +18,9 @@ context(SnarkContext) public fun Name.toWebPath(): String = tokens.joinToString(
     }
 }
 
+/**
+ *  A context for building a single page
+ */
 public interface WebPage : ContextAware, SnarkContext {
 
     public val snark: SnarkHtmlPlugin
@@ -25,14 +29,28 @@ public interface WebPage : ContextAware, SnarkContext {
 
     public val data: DataTree<*>
 
+    /**
+     * A metadata for a page. It should include site metadata
+     */
     public val pageMeta: Meta
 
+    /**
+     * Resolve absolute url for given [ref]
+     *
+     */
     public fun resolveRef(ref: String): String
 
-    public fun resolvePageRef(pageName: Name): String
+    /**
+     * Resolve absolute url for a page with given [pageName].
+     *
+     * @param relative if true, add [SiteBuilder] route to the absolute page name
+     */
+    public fun resolvePageRef(pageName: Name, relative: Boolean = false): String
 }
 
-context(WebPage) public val page: WebPage get() = this@WebPage
+context(WebPage)
+public val page: WebPage
+    get() = this@WebPage
 
 public fun WebPage.resolvePageRef(pageName: String): String = resolvePageRef(pageName.parseAsName())
 
@@ -41,7 +59,8 @@ public val WebPage.homeRef: String get() = resolvePageRef(SiteBuilder.INDEX_PAGE
 /**
  * Resolve a Html builder by its full name
  */
-context(SnarkContext) public fun DataTree<*>.resolveHtml(name: Name): HtmlData? {
+context(SnarkContext)
+public fun DataTree<*>.resolveHtml(name: Name): HtmlData? {
     val resolved = (getByType<HtmlFragment>(name) ?: getByType<HtmlFragment>(name + SiteBuilder.INDEX_PAGE_TOKEN))
 
     return resolved?.takeIf {
@@ -52,7 +71,8 @@ context(SnarkContext) public fun DataTree<*>.resolveHtml(name: Name): HtmlData? 
 /**
  * Find all Html blocks using given name/meta filter
  */
-context(SnarkContext) public fun DataTree<*>.resolveAllHtml(predicate: (name: Name, meta: Meta) -> Boolean): Map<Name, HtmlData> =
+context(SnarkContext)
+public fun DataTree<*>.resolveAllHtml(predicate: (name: Name, meta: Meta) -> Boolean): Map<Name, HtmlData> =
     filterByType<HtmlFragment> { name, meta ->
         predicate(name, meta)
                 && meta["published"].string != "false"
@@ -60,7 +80,8 @@ context(SnarkContext) public fun DataTree<*>.resolveAllHtml(predicate: (name: Na
     }.asSequence().associate { it.name to it.data }
 
 
-context(SnarkContext) public fun DataTree<*>.findByContentType(
+context(SnarkContext)
+public fun DataTree<*>.findByContentType(
     contentType: String,
     baseName: Name = Name.EMPTY,
 ): Map<Name, Data<HtmlFragment>> = resolveAllHtml { name, meta ->

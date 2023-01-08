@@ -26,13 +26,23 @@ public typealias HtmlData = Data<HtmlFragment>
 //    Data(HtmlFragment(content), meta)
 
 
-context(WebPage) public fun FlowContent.htmlData(data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
+context(WebPage)
+public fun FlowContent.htmlData(data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
     with(data.await()) { consumer.renderFragment(page) }
 }
 
-context(SnarkContext) public val Data<*>.id: String get() = meta["id"]?.string ?: "block[${hashCode()}]"
-context(SnarkContext) public val Data<*>.language: String? get() = meta["language"].string?.lowercase()
+context(SnarkContext)
+public val Data<*>.id: String
+    get() = meta["id"]?.string ?: "block[${hashCode()}]"
 
-context(SnarkContext) public val Data<*>.order: Int? get() = meta["order"]?.int
+context(SnarkContext)
+public val Data<*>.language: String?
+    get() = meta["language"].string?.lowercase()
 
-context(SnarkContext) public val Data<*>.published: Boolean get() = meta["published"].string != "false"
+context(SnarkContext)
+public val Data<*>.order: Int?
+    get() = meta["order"]?.int
+
+context(SnarkContext)
+public val Data<*>.published: Boolean
+    get() = meta["published"].string != "false"

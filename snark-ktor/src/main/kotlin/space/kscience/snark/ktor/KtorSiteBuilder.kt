@@ -16,11 +16,12 @@ import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.HTML
 import kotlinx.html.style
 import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.meta.Laminate
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.withDefault
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.cutLast
 import space.kscience.dataforge.names.endsWith
+import space.kscience.dataforge.names.plus
 import space.kscience.snark.SnarkEnvironment
 import space.kscience.snark.html.*
 import java.nio.file.Path
@@ -37,6 +38,7 @@ public class KtorSiteBuilder(
     override val data: DataTree<*>,
     override val siteMeta: Meta,
     private val baseUrl: String,
+    override val route: Name,
     private val ktorRoute: Route,
 ) : SiteBuilder {
 
@@ -64,21 +66,27 @@ public class KtorSiteBuilder(
 
     private inner class KtorWebPage(
         val pageBaseUrl: String,
-        override val pageMeta: Meta = this@KtorSiteBuilder.siteMeta,
+        override val pageMeta: Meta,
     ) : WebPage {
         override val snark: SnarkHtmlPlugin get() = this@KtorSiteBuilder.snark
         override val data: DataTree<*> get() = this@KtorSiteBuilder.data
 
         override fun resolveRef(ref: String): String = resolveRef(pageBaseUrl, ref)
 
-        override fun resolvePageRef(pageName: Name): String = if (pageName.endsWith(SiteBuilder.INDEX_PAGE_TOKEN)) {
-            resolveRef(pageName.cutLast().toWebPath())
-        } else {
-            resolveRef(pageName.toWebPath())
+        override fun resolvePageRef(
+            pageName: Name,
+            relative: Boolean,
+        ): String {
+            val fullPageName = if(relative) route + pageName else pageName
+            return if (fullPageName.endsWith(SiteBuilder.INDEX_PAGE_TOKEN)) {
+                resolveRef(fullPageName.cutLast().toWebPath())
+            } else {
+                resolveRef(fullPageName.toWebPath())
+            }
         }
     }
 
-    override fun page(route: Name, content: context(WebPage, HTML)() -> Unit) {
+    override fun page(route: Name, pageMeta: Meta, content: context(WebPage, HTML)() -> Unit) {
         ktorRoute.get(route.toWebPath()) {
             call.respondHtml {
                 val request = call.request
@@ -89,7 +97,7 @@ public class KtorSiteBuilder(
                     port = request.origin.port
                 }
 
-                val pageBuilder = KtorWebPage(url.buildString())
+                val pageBuilder = KtorWebPage(url.buildString(), Laminate(pageMeta, siteMeta))
                 content(pageBuilder, this)
             }
         }
@@ -98,17 +106,26 @@ public class KtorSiteBuilder(
     override fun route(
         routeName: Name,
         dataOverride: DataTree<*>?,
-        metaOverride: Meta?,
-        setAsRoot: Boolean,
+        routeMeta: Meta,
     ): SiteBuilder = KtorSiteBuilder(
         snark = snark,
         data = dataOverride ?: data,
-        siteMeta = metaOverride?.withDefault(siteMeta) ?: siteMeta,
-        baseUrl = if (setAsRoot) {
-            resolveRef(baseUrl, routeName.toWebPath())
-        } else {
-            baseUrl
-        },
+        siteMeta = Laminate(routeMeta, siteMeta),
+        baseUrl = baseUrl,
+        route = this.route + routeName,
+        ktorRoute = ktorRoute.createRouteFromPath(routeName.toWebPath())
+    )
+
+    override fun site(
+        routeName: Name,
+        dataOverride: DataTree<*>?,
+        routeMeta: Meta,
+    ): SiteBuilder = KtorSiteBuilder(
+        snark = snark,
+        data = dataOverride ?: data,
+        siteMeta = Laminate(routeMeta, siteMeta),
+        baseUrl = resolveRef(baseUrl, routeName.toWebPath()),
+        route = Name.EMPTY,
         ktorRoute = ktorRoute.createRouteFromPath(routeName.toWebPath())
     )
 
@@ -122,17 +139,19 @@ public class KtorSiteBuilder(
     }
 }
 
-context(Route, SnarkEnvironment) private fun siteInRoute(
+context(Route, SnarkEnvironment)
+private fun siteInRoute(
     baseUrl: String = "",
     block: KtorSiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    block(KtorSiteBuilder(buildHtmlPlugin(), data, meta, baseUrl, this@Route))
+    block(KtorSiteBuilder(buildHtmlPlugin(), data, meta, baseUrl, route = Name.EMPTY, this@Route))
 }
 
-context(Application) public fun SnarkEnvironment.site(
+context(Application)
+public fun SnarkEnvironment.site(
     baseUrl: String = "",
     block: KtorSiteBuilder.() -> Unit,
 ) {

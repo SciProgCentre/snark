@@ -4,10 +4,11 @@ import kotlinx.html.HTML
 import kotlinx.html.html
 import kotlinx.html.stream.createHTML
 import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.meta.Laminate
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.withDefault
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
+import space.kscience.dataforge.names.plus
 import space.kscience.snark.SnarkEnvironment
 import java.nio.file.Files
 import java.nio.file.Path
@@ -24,6 +25,7 @@ internal class StaticSiteBuilder(
     override val data: DataTree<*>,
     override val siteMeta: Meta,
     private val baseUrl: String,
+    override val route: Name,
     private val outputPath: Path,
 ) : SiteBuilder {
     private fun Path.copyRecursively(target: Path) {
@@ -38,10 +40,10 @@ internal class StaticSiteBuilder(
 
     override fun file(file: Path, remotePath: String) {
         val targetPath = outputPath.resolve(remotePath)
-        if(file.isDirectory()){
+        if (file.isDirectory()) {
             targetPath.parent.createDirectories()
             file.copyRecursively(targetPath)
-        } else if(remotePath.isBlank()) {
+        } else if (remotePath.isBlank()) {
             error("Can't mount file to an empty route")
         } else {
             targetPath.parent.createDirectories()
@@ -68,25 +70,25 @@ internal class StaticSiteBuilder(
         "${baseUrl.removeSuffix("/")}/$ref"
     }
 
-    inner class StaticWebPage : WebPage {
+    inner class StaticWebPage(override val pageMeta: Meta) : WebPage {
         override val data: DataTree<*> get() = this@StaticSiteBuilder.data
-        override val pageMeta: Meta get() = this@StaticSiteBuilder.siteMeta
+
         override val snark: SnarkHtmlPlugin get() = this@StaticSiteBuilder.snark
 
 
         override fun resolveRef(ref: String): String = resolveRef(baseUrl, ref)
 
-        override fun resolvePageRef(pageName: Name): String = resolveRef(
-            pageName.toWebPath() + ".html"
+        override fun resolvePageRef(pageName: Name, relative: Boolean): String = resolveRef(
+            (if (relative) route + pageName else pageName).toWebPath() + ".html"
         )
     }
 
 
-    override fun page(route: Name, content: context(WebPage, HTML) () -> Unit) {
+    override fun page(route: Name, pageMeta: Meta, content: context(WebPage, HTML) () -> Unit) {
         val htmlBuilder = createHTML()
 
         htmlBuilder.html {
-            content(StaticWebPage(), this)
+            content(StaticWebPage(pageMeta), this)
         }
 
         val newPath = if (route.isEmpty()) {
@@ -102,23 +104,32 @@ internal class StaticSiteBuilder(
     override fun route(
         routeName: Name,
         dataOverride: DataTree<*>?,
-        metaOverride: Meta?,
-        setAsRoot: Boolean,
+        routeMeta: Meta,
     ): SiteBuilder = StaticSiteBuilder(
         snark = snark,
         data = dataOverride ?: data,
-        siteMeta = metaOverride?.withDefault(siteMeta) ?: siteMeta,
-        baseUrl = if (setAsRoot) {
-            resolveRef(baseUrl, routeName.toWebPath())
-        } else {
-            baseUrl
-        },
+        siteMeta = Laminate(routeMeta, siteMeta),
+        baseUrl = baseUrl,
+        route = route + routeName,
+        outputPath = outputPath.resolve(routeName.toWebPath())
+    )
+
+    override fun site(
+        routeName: Name,
+        dataOverride: DataTree<*>?,
+        routeMeta: Meta,
+    ): SiteBuilder = StaticSiteBuilder(
+        snark = snark,
+        data = dataOverride ?: data,
+        siteMeta = Laminate(routeMeta, siteMeta),
+        baseUrl = resolveRef(baseUrl, routeName.toWebPath()),
+        route = Name.EMPTY,
         outputPath = outputPath.resolve(routeName.toWebPath())
     )
 }
 
 /**
- * Create a static site using given [data] in provided [outputPath].
+ * Create a static site using given [SnarkEnvironment] in provided [outputPath].
  * Use [siteUrl] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
  *
  */
@@ -131,5 +142,5 @@ public fun SnarkEnvironment.static(
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
     val plugin = buildHtmlPlugin()
-    StaticSiteBuilder(plugin, data, meta, siteUrl, outputPath).block()
+    StaticSiteBuilder(plugin, data, meta, siteUrl, Name.EMPTY, outputPath).block()
 }

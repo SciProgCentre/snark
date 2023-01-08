@@ -11,7 +11,8 @@ import space.kscience.dataforge.names.parseAsName
  */
 @Type(TextProcessor.TYPE)
 public fun interface TextProcessor {
-    context(WebPage) public fun process(text: String): String
+    context(WebPage)
+    public fun process(text: String): String
 
     public companion object {
         public const val TYPE: String = "snark.textTransformation"
@@ -31,23 +32,27 @@ public object BasicTextProcessor : TextProcessor {
 
     private val regex = """\$\{([\w.]*)(?>\("(.*)"\))?}""".toRegex()
 
-    context(WebPage) override fun process(text: String): String = text.replace(regex) { match ->
+    context(WebPage)
+    override fun process(text: String): String = text.replace(regex) { match ->
         when (match.groups[1]!!.value) {
             "homeRef" -> homeRef
             "resolveRef" -> {
                 val refString = match.groups[2]?.value ?: error("resolveRef requires a string (quoted) argument")
                 resolveRef(refString)
             }
+
             "resolvePageRef" -> {
                 val refString = match.groups[2]?.value
                     ?: error("resolvePageRef requires a string (quoted) argument")
-                resolvePageRef(refString)
+                localisedPageRef(refString.parseAsName())
             }
+
             "pageMeta.get" -> {
                 val nameString = match.groups[2]?.value
                     ?: error("resolvePageRef requires a string (quoted) argument")
                 pageMeta[nameString.parseAsName()].string ?: "@null"
             }
+
             else -> match.value
         }
     }
