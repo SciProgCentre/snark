@@ -56,6 +56,8 @@ public fun WebPage.resolvePageRef(pageName: String): String = resolvePageRef(pag
 
 public val WebPage.homeRef: String get() = resolvePageRef(SiteBuilder.INDEX_PAGE_TOKEN.asName())
 
+public val WebPage.name: Name? get() = pageMeta["name"].string?.parseAsName()
+
 /**
  * Resolve a Html builder by its full name
  */

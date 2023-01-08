@@ -6,6 +6,7 @@ import kotlinx.html.stream.createHTML
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.meta.Laminate
 import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.toMutableMeta
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
 import space.kscience.dataforge.names.plus
@@ -87,8 +88,12 @@ internal class StaticSiteBuilder(
     override fun page(route: Name, pageMeta: Meta, content: context(WebPage, HTML) () -> Unit) {
         val htmlBuilder = createHTML()
 
+        val modifiedPageMeta = pageMeta.toMutableMeta().apply {
+            "name" put route.toString()
+        }
+
         htmlBuilder.html {
-            content(StaticWebPage(pageMeta), this)
+            content(StaticWebPage(Laminate(modifiedPageMeta, siteMeta)), this)
         }
 
         val newPath = if (route.isEmpty()) {

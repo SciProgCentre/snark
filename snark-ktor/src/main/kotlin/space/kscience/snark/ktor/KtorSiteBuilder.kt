@@ -18,6 +18,7 @@ import kotlinx.html.style
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.meta.Laminate
 import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.toMutableMeta
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.cutLast
 import space.kscience.dataforge.names.endsWith
@@ -97,7 +98,12 @@ public class KtorSiteBuilder(
                     port = request.origin.port
                 }
 
-                val pageBuilder = KtorWebPage(url.buildString(), Laminate(pageMeta, siteMeta))
+                val modifiedPageMeta = pageMeta.toMutableMeta().apply {
+                    "name" put route.toString()
+                    "url" put url.buildString()
+                }
+
+                val pageBuilder = KtorWebPage(url.buildString(), Laminate(modifiedPageMeta, siteMeta))
                 content(pageBuilder, this)
             }
         }

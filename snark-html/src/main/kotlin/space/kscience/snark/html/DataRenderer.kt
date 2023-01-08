@@ -7,7 +7,9 @@ import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.getItem
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.appendLeft
+import space.kscience.dataforge.names.asName
+import space.kscience.dataforge.names.plus
+import space.kscience.dataforge.names.removeHeadOrNull
 import kotlin.reflect.typeOf
 
 /**
@@ -51,9 +53,15 @@ public interface DataRenderer {
          */
         context(SiteBuilder)
         public fun buildLanguageMeta(name: Name): Meta = Meta {
+            val currentLanguagePrefix = languages[language]?.get("prefix")?.string ?: language
+            val fullName = (route.removeHeadOrNull(currentLanguagePrefix.asName()) ?: route) + name
             languages.forEach { (key, meta) ->
-                val languagePrefix = meta["prefix"].string ?: key
-                val nameWithLanguage: Name = if (languagePrefix.isBlank()) name else name.appendLeft(languagePrefix)
+                val languagePrefix: String = meta["prefix"].string ?: key
+                val nameWithLanguage: Name = if (languagePrefix.isBlank()) {
+                    fullName
+                } else {
+                    languagePrefix.asName() + fullName
+                }
                 if (data.getItem(name) != null) {
                     key put meta.asMutableMeta().apply {
                         "target" put nameWithLanguage.toString()

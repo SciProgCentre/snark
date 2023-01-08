@@ -1,5 +1,6 @@
 package space.kscience.snark.html
 
+import space.kscience.dataforge.data.getItem
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
@@ -12,6 +13,9 @@ public val SiteBuilder.languages: Map<String, Meta>
 
 public val SiteBuilder.language: String
     get() = siteMeta["site.language"].string ?: "en"
+
+public val SiteBuilder.languagePrefix: Name
+    get() = languages[language]?.let { it["prefix"].string ?: language }?.parseAsName() ?: Name.EMPTY
 
 public fun SiteBuilder.withLanguages(languageMap: Map<String, Meta>, block: SiteBuilder.(language: String) -> Unit) {
     languageMap.forEach { (languageKey, languageMeta) ->
@@ -56,4 +60,29 @@ public val WebPage.languages: Map<String, Meta>
 public fun WebPage.localisedPageRef(pageName: Name, relative: Boolean = false): String {
     val prefix = languages[language]?.get("prefix")?.string?.parseAsName() ?: Name.EMPTY
     return resolvePageRef(prefix + pageName, relative)
+}
+
+
+/**
+ * Render all pages in a node with given name. Use localization prefix if appropriate data is available.
+ */
+public fun SiteBuilder.localizedPages(
+    dataPath: Name,
+    remotePath: Name = dataPath,
+    dataRenderer: DataRenderer = DataRenderer.DEFAULT,
+) {
+    val item = data.getItem(languagePrefix + dataPath)
+        ?: data.getItem(dataPath)
+        ?: error("No data found by name $dataPath")
+    route(remotePath) {
+        pages(item, dataRenderer)
+    }
+}
+
+public fun SiteBuilder.localizedPages(
+    dataPath: String,
+    remotePath: Name = dataPath.parseAsName(),
+    dataRenderer: DataRenderer = DataRenderer.DEFAULT,
+) {
+    localizedPages(dataPath.parseAsName(), remotePath, dataRenderer = dataRenderer)
 }
