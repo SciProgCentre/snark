@@ -89,6 +89,7 @@ public interface SiteBuilder : ContextAware, SnarkContext {
 
 
     public companion object {
+        public val SITE_META_KEY: Name = "site".asName()
         public val INDEX_PAGE_TOKEN: NameToken = NameToken("index")
         public val UP_PAGE_TOKEN: NameToken = NameToken("..")
     }
