@@ -70,6 +70,9 @@ public fun DataTree<*>.resolveHtml(name: Name): HtmlData? {
     }
 }
 
+context(SnarkContext)
+public fun DataTree<*>.resolveHtml(name: String): HtmlData? = resolveHtml(name.parseAsName())
+
 /**
  * Find all Html blocks using given name/meta filter
  */
