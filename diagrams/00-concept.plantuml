@@ -1,0 +1,37 @@
+@startuml
+
+node ViewFrontend
+node Builder
+node ViewBackend
+node EditorFrontend
+node EditorBackend
+node MetaBackend
+queue TaskQueue
+actor Client
+actor Editor
+database Cache
+database DataStore
+database MetaStore
+
+Client --> ViewFrontend : view
+Client <-- ViewFrontend : html doc
+
+ViewFrontend --> Cache : get
+ViewFrontend <-- Cache
+
+TaskQueue --> Builder : "new task"
+Builder <-- DataStore : "pull data"
+Builder <-- MetaStore : "pull meta"
+ViewFrontend --> ViewBackend : "render request"
+ViewBackend --> TaskQueue : "new task"
+Builder --> ViewBackend : "task complete"
+
+Editor --> EditorFrontend : save
+EditorFrontend --> EditorBackend : save file
+EditorBackend --> DataStore : save file
+EditorBackend --> MetaBackend : save meta
+MetaBackend --> MetaStore : save meta
+MetaBackend --> Cache : invalidate
+EditorBackend -> Cache : invalidate
+
+@enduml
