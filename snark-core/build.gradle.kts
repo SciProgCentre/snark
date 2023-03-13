@@ -5,12 +5,11 @@ plugins{
 
 val dataforgeVersion: String by rootProject.extra
 
-kotlin{
-    sourceSets{
-        commonMain{
-            dependencies{
-                api("space.kscience:dataforge-workspace:$dataforgeVersion")
-            }
-        }
+kscience{
+    jvm()
+    js()
+    dependencies{
+        api("space.kscience:dataforge-workspace:$dataforgeVersion")
     }
+    useContextReceivers()
 }

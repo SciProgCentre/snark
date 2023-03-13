@@ -97,12 +97,12 @@ public fun SnarkEnvironment.buildHtmlPlugin(): SnarkHtmlPlugin {
             plugin(it)
         }
     }
-    return context.fetch(SnarkHtmlPlugin)
+    return context.request(SnarkHtmlPlugin)
 }
 
 @OptIn(DFExperimental::class)
 public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDataDirectory(path) { dataPath, meta ->
-    val fileExtension = meta[FileData.META_FILE_EXTENSION_KEY].string ?: dataPath.extension
+    val fileExtension = meta[FileData.FILE_EXTENSION_KEY].string ?: dataPath.extension
     val parser: SnarkParser<Any> = parsers.values.filter { parser ->
         fileExtension in parser.fileExtensions
     }.maxByOrNull {
@@ -112,5 +112,5 @@ public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDat
         SnarkHtmlPlugin.byteArraySnarkParser
     }
 
-    parser.reader(context, meta)
+    parser.asReader(context, meta)
 }

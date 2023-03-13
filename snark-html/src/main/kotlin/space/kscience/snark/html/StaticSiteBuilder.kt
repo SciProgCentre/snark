@@ -29,6 +29,11 @@ internal class StaticSiteBuilder(
     override val route: Name,
     private val outputPath: Path,
 ) : SiteBuilder {
+
+    override fun file(dataName: Name, routeName: Name) {
+        TODO("Not yet implemented")
+    }
+
     private fun Path.copyRecursively(target: Path) {
         Files.walk(this).forEach { source: Path ->
             val destination: Path = target.resolve(source.relativeTo(this))
@@ -38,30 +43,30 @@ internal class StaticSiteBuilder(
             }
         }
     }
-
-    override fun file(file: Path, remotePath: String) {
-        val targetPath = outputPath.resolve(remotePath)
-        if (file.isDirectory()) {
-            targetPath.parent.createDirectories()
-            file.copyRecursively(targetPath)
-        } else if (remotePath.isBlank()) {
-            error("Can't mount file to an empty route")
-        } else {
-            targetPath.parent.createDirectories()
-            file.copyTo(targetPath, true)
-        }
-    }
-
-    override fun resourceFile(remotePath: String, resourcesPath: String) {
-        val targetPath = outputPath.resolve(remotePath)
-        targetPath.parent.createDirectories()
-        javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyTo(targetPath, true)
-    }
-
-    override fun resourceDirectory(resourcesPath: String) {
-        outputPath.parent.createDirectories()
-        javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyRecursively(outputPath)
-    }
+//
+//    override fun file(file: Path, webPath: String) {
+//        val targetPath = outputPath.resolve(webPath)
+//        if (file.isDirectory()) {
+//            targetPath.parent.createDirectories()
+//            file.copyRecursively(targetPath)
+//        } else if (webPath.isBlank()) {
+//            error("Can't mount file to an empty route")
+//        } else {
+//            targetPath.parent.createDirectories()
+//            file.copyTo(targetPath, true)
+//        }
+//    }
+//
+//    override fun resourceFile(resourcesPath: String, webPath: String) {
+//        val targetPath = outputPath.resolve(webPath)
+//        targetPath.parent.createDirectories()
+//        javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyTo(targetPath, true)
+//    }
+//
+//    override fun resourceDirectory(resourcesPath: String) {
+//        outputPath.parent.createDirectories()
+//        javaClass.getResource(resourcesPath)?.let { Path.of(it.toURI()) }?.copyRecursively(outputPath)
+//    }
 
     private fun resolveRef(baseUrl: String, ref: String) = if (baseUrl.isEmpty()) {
         ref
@@ -127,7 +132,7 @@ internal class StaticSiteBuilder(
         snark = snark,
         data = dataOverride ?: data,
         siteMeta = Laminate(routeMeta, siteMeta),
-        baseUrl = resolveRef(baseUrl, routeName.toWebPath()),
+        baseUrl = if(baseUrl == "") "" else resolveRef(baseUrl, routeName.toWebPath()),
         route = Name.EMPTY,
         outputPath = outputPath.resolve(routeName.toWebPath())
     )

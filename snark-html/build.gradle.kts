@@ -6,6 +6,10 @@ plugins {
 val dataforgeVersion: String by rootProject.extra
 val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
+kscience{
+    useContextReceivers()
+}
+
 dependencies {
     api(projects.snarkCore)
 
@@ -15,7 +19,7 @@ dependencies {
     api("io.ktor:ktor-utils:$ktorVersion")
 
     api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
-    api("org.jetbrains:markdown:0.3.5")
+    api("org.jetbrains:markdown:0.4.0")
 }
 
 readme {

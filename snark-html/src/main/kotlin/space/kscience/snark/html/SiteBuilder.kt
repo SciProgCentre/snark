@@ -16,7 +16,6 @@ import space.kscience.dataforge.names.asName
 import space.kscience.dataforge.names.parseAsName
 import space.kscience.snark.SnarkContext
 import space.kscience.snark.html.SiteLayout.Companion.LAYOUT_KEY
-import java.nio.file.Path
 
 
 /**
@@ -47,19 +46,24 @@ public interface SiteBuilder : ContextAware, SnarkContext {
     public val siteMeta: Meta
 
     /**
-     * Add a static file or directory to this site/route at [remotePath]
+     * Serve a static data as a file from [data] with given [dataName] at given [routeName].
      */
-    public fun file(file: Path, remotePath: String = file.fileName.toString())
-
-    /**
-     * Add a static file (single) from resources
-     */
-    public fun resourceFile(remotePath: String, resourcesPath: String)
-
-    /**
-     * Add a resource directory to route
-     */
-    public fun resourceDirectory(resourcesPath: String)
+    public fun file(dataName: Name, routeName: Name = dataName)
+//
+//    /**
+//     * Add a static file or directory to this site/route at [webPath]
+//     */
+//    public fun file(file: Path, webPath: String = file.fileName.toString())
+//
+//    /**
+//     * Add a static file (single) from resources
+//     */
+//    public fun resourceFile(resourcesPath: String, webPath: String = resourcesPath)
+//
+//    /**
+//     * Add a resource directory to route
+//     */
+//    public fun resourceDirectory(resourcesPath: String)
 
     /**
      * Create a single page at given [route]. If route is empty, create an index page at current route.
@@ -153,32 +157,11 @@ public inline fun SiteBuilder.site(
 
 
 internal fun SiteBuilder.assetsFrom(rootMeta: Meta) {
-    rootMeta.getIndexed("resource".asName()).forEach { (_, meta) ->
-
-        val path by meta.string()
-        val remotePath by meta.string()
-
-        path?.let { resourcePath ->
-            //If remote path provided, use a single resource
-            remotePath?.let {
-                resourceFile(it, resourcePath)
-                return@forEach
-            }
-
-            //otherwise use package resources
-            resourceDirectory(resourcePath)
-        }
-    }
-
     rootMeta.getIndexed("file".asName()).forEach { (_, meta) ->
-        val remotePath by meta.string { error("File remote path is not provided") }
-        val path by meta.string { error("File path is not provided") }
-        file(Path.of(path), remotePath)
-    }
-
-    rootMeta.getIndexed("directory".asName()).forEach { (_, meta) ->
-        val path by meta.string { error("Directory path is not provided") }
-        file(Path.of(path), "")
+        val webName: String? by meta.string()
+        val name by meta.string { error("File path is not provided") }
+        val fileName = name.parseAsName()
+        file(fileName, webName?.parseAsName() ?: fileName)
     }
 }
 

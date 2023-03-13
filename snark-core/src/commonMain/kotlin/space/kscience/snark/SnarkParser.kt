@@ -22,9 +22,10 @@ public interface SnarkParser<out R> {
 
     public val priority: Int get() = DEFAULT_PRIORITY
 
+    //TODO use Binary instead of ByteArray
     public fun parse(context: Context, meta: Meta, bytes: ByteArray): R
 
-    public fun reader(context: Context, meta: Meta): IOReader<R> = object : IOReader<R> {
+    public fun asReader(context: Context, meta: Meta): IOReader<R> = object : IOReader<R> {
         override val type: KType get() = this@SnarkParser.type
 
         override fun readObject(input: Input): R = parse(context, meta, input.readBytes())

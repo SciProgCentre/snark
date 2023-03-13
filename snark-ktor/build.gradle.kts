@@ -6,6 +6,10 @@ plugins {
 val dataforgeVersion: String by rootProject.extra
 val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
+kscience{
+    useContextReceivers()
+}
+
 dependencies {
     api(projects.snarkHtml)
 

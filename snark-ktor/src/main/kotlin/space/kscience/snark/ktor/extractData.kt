@@ -46,7 +46,7 @@ private const val BUILD_DATE_FILE = "/buildDate"
  */
 fun Application.prepareSnarkDataCacheDirectory(dataPath: Path) {
 
-// Clear data directory if it is outdated
+    // Clear data directory if it is outdated
     val deployDate = dataPath.resolve(DEPLOY_DATE_FILE).takeIf { it.exists() }
         ?.readText()?.let { LocalDateTime.parse(it) }
     val buildDate = javaClass.getResource(BUILD_DATE_FILE)?.readText()?.let { LocalDateTime.parse(it) }
