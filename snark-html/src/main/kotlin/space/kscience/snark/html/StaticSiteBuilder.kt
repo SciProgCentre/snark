@@ -1,20 +1,28 @@
 package space.kscience.snark.html
 
+import io.ktor.utils.io.streams.asInput
+import io.ktor.utils.io.streams.asOutput
+import kotlinx.coroutines.runBlocking
 import kotlinx.html.HTML
 import kotlinx.html.html
 import kotlinx.html.stream.createHTML
 import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.meta.Laminate
-import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.toMutableMeta
+import space.kscience.dataforge.data.DataTreeItem
+import space.kscience.dataforge.data.await
+import space.kscience.dataforge.data.getItem
+import space.kscience.dataforge.io.Binary
+import space.kscience.dataforge.io.toByteArray
+import space.kscience.dataforge.io.writeBinary
+import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
 import space.kscience.dataforge.names.plus
-import java.nio.file.Files
+import space.kscience.dataforge.workspace.FileData
 import java.nio.file.Path
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.io.path.*
+import kotlin.reflect.typeOf
 
 
 /**
@@ -29,19 +37,55 @@ internal class StaticSiteBuilder(
     private val outputPath: Path,
 ) : SiteBuilder {
 
-    override fun static(dataName: Name, routeName: Name) {
-        TODO("Not yet implemented")
-    }
 
-    private fun Path.copyRecursively(target: Path) {
-        Files.walk(this).forEach { source: Path ->
-            val destination: Path = target.resolve(source.relativeTo(this))
-            if (!destination.isDirectory()) {
-                //avoid re-creating directories
-                source.copyTo(destination, true)
+//    private fun Path.copyRecursively(target: Path) {
+//        Files.walk(this).forEach { source: Path ->
+//            val destination: Path = target.resolve(source.relativeTo(this))
+//            if (!destination.isDirectory()) {
+//                //avoid re-creating directories
+//                source.copyTo(destination, true)
+//            }
+//        }
+//    }
+
+    @OptIn(ExperimentalPathApi::class)
+    private suspend fun files(item: DataTreeItem<Any>, routeName: Name) {
+        //try using direct file rendering
+        item.meta[FileData.FILE_PATH_KEY]?.string?.let {
+            val file = Path.of(it)
+            val targetPath = outputPath.resolve(routeName.toWebPath())
+            targetPath.parent.createDirectories()
+            file.copyToRecursively(targetPath, followLinks = false)
+            //success, don't do anything else
+            return@files
+        }
+
+        when (item) {
+            is DataTreeItem.Leaf -> {
+                val datum = item.data
+                if (datum.type != typeOf<Binary>()) error("Can't directly serve file of type ${item.data.type}")
+                val targetPath = outputPath.resolve(routeName.toWebPath())
+                val binary = datum.await() as Binary
+                targetPath.outputStream().asOutput().use{
+                    it.writeBinary(binary)
+                }
+            }
+
+            is DataTreeItem.Node -> {
+                item.tree.items.forEach { (token, childItem) ->
+                    files(childItem, routeName + token)
+                }
             }
         }
     }
+
+    override fun static(dataName: Name, routeName: Name) {
+        val item: DataTreeItem<Any> = data.getItem(dataName) ?: error("Data with name $dataName is not resolved")
+        runBlocking {
+            files(item, routeName)
+        }
+    }
+
 //
 //    override fun file(file: Path, webPath: String) {
 //        val targetPath = outputPath.resolve(webPath)

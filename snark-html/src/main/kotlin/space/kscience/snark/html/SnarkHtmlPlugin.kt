@@ -3,6 +3,7 @@ package space.kscience.snark.html
 import io.ktor.utils.io.core.readBytes
 import space.kscience.dataforge.context.*
 import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.node
 import space.kscience.dataforge.io.IOPlugin
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.JsonMetaFormat
@@ -20,6 +21,7 @@ import space.kscience.dataforge.workspace.readDataDirectory
 import space.kscience.snark.SnarkParser
 import java.nio.file.Path
 import kotlin.io.path.extension
+import kotlin.io.path.toPath
 
 /**
  * A plugin used for rendering a [DataTree] as HTML
@@ -106,13 +108,17 @@ public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDat
     parser.asReader(context, meta)
 }
 
-public fun SnarkHtmlPlugin.readResourceDirectory(
-    resource: String = "",
-    classLoader: ClassLoader = SnarkHtmlPlugin::class.java.classLoader,
-): DataTree<Any> = readDirectory(
-    Path.of(
-        classLoader.getResource(resource)?.toURI() ?: error(
-            "Resource with name $resource is not resolved"
-        )
-    )
-)
+public fun SnarkHtmlPlugin.readResources(
+    vararg resources: String,
+    classLoader: ClassLoader = Thread.currentThread().contextClassLoader,
+): DataTree<Any> {
+//    require(resource.isNotBlank()) {"Can't mount root resource tree as data root"}
+    return DataTree {
+        resources.forEach { resource ->
+            val path = classLoader.getResource(resource)?.toURI()?.toPath() ?: error(
+                "Resource with name $resource is not resolved"
+            )
+            node(resource, readDirectory(path))
+        }
+    }
+}

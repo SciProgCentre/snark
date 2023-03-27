@@ -2,6 +2,7 @@ package space.kscience.snark.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.file.FileTree
 import org.gradle.kotlin.dsl.withType
 import java.io.File
 import java.time.LocalDateTime
