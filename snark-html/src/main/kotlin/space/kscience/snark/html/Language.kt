@@ -3,6 +3,7 @@ package space.kscience.snark.html
 import space.kscience.dataforge.data.getItem
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.*
+import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGES_KEY
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
 
@@ -46,7 +47,7 @@ public class Language : Scheme() {
         context(SiteBuilder)
         public fun forName(name: Name): Meta = Meta {
             val currentLanguagePrefix = languages[language]?.get(Language::prefix.name)?.string ?: language
-            val fullName = (route.removeHeadOrNull(currentLanguagePrefix.asName()) ?: route) + name
+            val fullName = (route.removeFirstOrNull(currentLanguagePrefix.asName()) ?: route) + name
             languages.forEach { (key, meta) ->
                 val languagePrefix: String = meta[Language::prefix.name].string ?: key
                 val nameWithLanguage: Name = if (languagePrefix.isBlank()) {
@@ -90,6 +91,7 @@ public fun SiteBuilder.withLanguages(languageMap: Map<String, Meta>, block: Site
     }
 }
 
+@SnarkBuilder
 public fun SiteBuilder.withLanguages(
     vararg language: Pair<String, String>,
     block: SiteBuilder.(language: String) -> Unit,

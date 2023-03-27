@@ -12,7 +12,7 @@ allprojects {
     }
 }
 
-val dataforgeVersion by extra("0.6.1-dev-4")
+val dataforgeVersion by extra("0.6.1-dev-6")
 
 ksciencePublish {
     github("SciProgCentre", "snark")

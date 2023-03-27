@@ -10,7 +10,6 @@ import space.kscience.dataforge.meta.toMutableMeta
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
 import space.kscience.dataforge.names.plus
-import space.kscience.snark.SnarkEnvironment
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.contracts.InvocationKind
@@ -30,7 +29,7 @@ internal class StaticSiteBuilder(
     private val outputPath: Path,
 ) : SiteBuilder {
 
-    override fun file(dataName: Name, routeName: Name) {
+    override fun static(dataName: Name, routeName: Name) {
         TODO("Not yet implemented")
     }
 
@@ -82,15 +81,16 @@ internal class StaticSiteBuilder(
         override val snark: SnarkHtmlPlugin get() = this@StaticSiteBuilder.snark
 
 
-        override fun resolveRef(ref: String): String = resolveRef(baseUrl, ref)
+        override fun resolveRef(ref: String): String =
+            this@StaticSiteBuilder.resolveRef(this@StaticSiteBuilder.baseUrl, ref)
 
         override fun resolvePageRef(pageName: Name, relative: Boolean): String = resolveRef(
-            (if (relative) route + pageName else pageName).toWebPath() + ".html"
+            (if (relative) this@StaticSiteBuilder.route + pageName else pageName).toWebPath() + ".html"
         )
     }
 
 
-    override fun page(route: Name, pageMeta: Meta, content: context(WebPage, HTML) () -> Unit) {
+    override fun page(route: Name, pageMeta: Meta, content: context(HTML) WebPage.() -> Unit) {
         val htmlBuilder = createHTML()
 
         val modifiedPageMeta = pageMeta.toMutableMeta().apply {
@@ -98,7 +98,7 @@ internal class StaticSiteBuilder(
         }
 
         htmlBuilder.html {
-            content(StaticWebPage(Laminate(modifiedPageMeta, siteMeta)), this)
+            content(this, StaticWebPage(Laminate(modifiedPageMeta, siteMeta)))
         }
 
         val newPath = if (route.isEmpty()) {
@@ -132,7 +132,7 @@ internal class StaticSiteBuilder(
         snark = snark,
         data = dataOverride ?: data,
         siteMeta = Laminate(routeMeta, siteMeta),
-        baseUrl = if(baseUrl == "") "" else resolveRef(baseUrl, routeName.toWebPath()),
+        baseUrl = if (baseUrl == "") "" else resolveRef(baseUrl, routeName.toWebPath()),
         route = Name.EMPTY,
         outputPath = outputPath.resolve(routeName.toWebPath())
     )
@@ -143,14 +143,15 @@ internal class StaticSiteBuilder(
  * Use [siteUrl] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
  *
  */
-public fun SnarkEnvironment.static(
+public fun SnarkHtmlPlugin.static(
+    data: DataTree<*>,
     outputPath: Path,
     siteUrl: String = outputPath.absolutePathString().replace("\\", "/"),
+    siteMeta: Meta = data.meta,
     block: SiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    val plugin = buildHtmlPlugin()
-    StaticSiteBuilder(plugin, data, meta, siteUrl, Name.EMPTY, outputPath).block()
+    StaticSiteBuilder(this, data, siteMeta, siteUrl, Name.EMPTY, outputPath).block()
 }

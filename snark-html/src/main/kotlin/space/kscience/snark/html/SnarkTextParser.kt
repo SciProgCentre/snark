@@ -1,19 +1,14 @@
 package space.kscience.snark.html
 
-import io.ktor.util.asStream
-import io.ktor.utils.io.core.Input
 import kotlinx.html.div
 import kotlinx.html.unsafe
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
 import space.kscience.dataforge.context.Context
-import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.snark.SnarkParser
-import java.awt.image.BufferedImage
-import javax.imageio.ImageIO
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -61,8 +56,3 @@ internal object SnarkMarkdownParser : SnarkTextParser<HtmlFragment>() {
     }
 }
 
-internal object ImageIOReader : IOReader<BufferedImage> {
-    override val type: KType get() = typeOf<BufferedImage>()
-
-    override fun readObject(input: Input): BufferedImage = ImageIO.read(input.asStream())
-}

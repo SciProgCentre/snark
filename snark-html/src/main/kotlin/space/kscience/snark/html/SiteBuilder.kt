@@ -5,6 +5,7 @@ import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.DataTreeItem
+import space.kscience.dataforge.data.branch
 import space.kscience.dataforge.data.getItem
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
@@ -14,6 +15,7 @@ import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.NameToken
 import space.kscience.dataforge.names.asName
 import space.kscience.dataforge.names.parseAsName
+import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 import space.kscience.snark.html.SiteLayout.Companion.LAYOUT_KEY
 
@@ -21,6 +23,7 @@ import space.kscience.snark.html.SiteLayout.Companion.LAYOUT_KEY
 /**
  * An abstraction, which is used to render sites to the different rendering engines
  */
+@SnarkBuilder
 public interface SiteBuilder : ContextAware, SnarkContext {
 
     /**
@@ -48,29 +51,16 @@ public interface SiteBuilder : ContextAware, SnarkContext {
     /**
      * Serve a static data as a file from [data] with given [dataName] at given [routeName].
      */
-    public fun file(dataName: Name, routeName: Name = dataName)
-//
-//    /**
-//     * Add a static file or directory to this site/route at [webPath]
-//     */
-//    public fun file(file: Path, webPath: String = file.fileName.toString())
-//
-//    /**
-//     * Add a static file (single) from resources
-//     */
-//    public fun resourceFile(resourcesPath: String, webPath: String = resourcesPath)
-//
-//    /**
-//     * Add a resource directory to route
-//     */
-//    public fun resourceDirectory(resourcesPath: String)
+    public fun static(dataName: Name, routeName: Name = dataName)
+
 
     /**
      * Create a single page at given [route]. If route is empty, create an index page at current route.
      *
      * @param pageMeta additional page meta. [WebPage] will use both it and [siteMeta]
      */
-    public fun page(route: Name = Name.EMPTY, pageMeta: Meta = Meta.EMPTY, content: context(WebPage, HTML) () -> Unit)
+    @SnarkBuilder
+    public fun page(route: Name = Name.EMPTY, pageMeta: Meta = Meta.EMPTY, content: context(HTML, WebPage) () -> Unit)
 
     /**
      * Create a route with optional data tree override. For example one could use a subtree of the initial tree.
@@ -100,9 +90,10 @@ public interface SiteBuilder : ContextAware, SnarkContext {
 }
 
 context(SiteBuilder)
-public val siteBuilder: SiteBuilder
+public val site: SiteBuilder
     get() = this@SiteBuilder
 
+@SnarkBuilder
 public inline fun SiteBuilder.route(
     route: Name,
     dataOverride: DataTree<*>? = null,
@@ -112,6 +103,7 @@ public inline fun SiteBuilder.route(
     route(route, dataOverride, routeMeta).apply(block)
 }
 
+@SnarkBuilder
 public inline fun SiteBuilder.route(
     route: String,
     dataOverride: DataTree<*>? = null,
@@ -121,6 +113,7 @@ public inline fun SiteBuilder.route(
     route(route.parseAsName(), dataOverride, routeMeta).apply(block)
 }
 
+@SnarkBuilder
 public inline fun SiteBuilder.site(
     route: Name,
     dataOverride: DataTree<*>? = null,
@@ -130,6 +123,7 @@ public inline fun SiteBuilder.site(
     site(route, dataOverride, routeMeta).apply(block)
 }
 
+@SnarkBuilder
 public inline fun SiteBuilder.site(
     route: String,
     dataOverride: DataTree<*>? = null,
@@ -139,6 +133,26 @@ public inline fun SiteBuilder.site(
     site(route.parseAsName(), dataOverride, routeMeta).apply(block)
 }
 
+public inline fun SiteBuilder.withData(
+    data: DataTree<*>,
+    block: SiteBuilder.() -> Unit
+){
+    route(Name.EMPTY, data).apply(block)
+}
+
+public inline fun SiteBuilder.withDataBranch(
+    name: Name,
+    block: SiteBuilder.() -> Unit
+){
+    route(Name.EMPTY, data.branch(name)).apply(block)
+}
+
+public inline fun SiteBuilder.withDataBranch(
+    name: String,
+    block: SiteBuilder.() -> Unit
+){
+    route(Name.EMPTY, data.branch(name)).apply(block)
+}
 
 ///**
 // * Create a stand-alone site at a given node
@@ -154,14 +168,19 @@ public inline fun SiteBuilder.site(
 //    }
 //}
 
+public fun SiteBuilder.static(dataName: String): Unit = static(dataName.parseAsName())
 
+public fun SiteBuilder.static(dataName: String, routeName: String): Unit = static(
+    dataName.parseAsName(),
+    routeName.parseAsName()
+)
 
 internal fun SiteBuilder.assetsFrom(rootMeta: Meta) {
     rootMeta.getIndexed("file".asName()).forEach { (_, meta) ->
         val webName: String? by meta.string()
         val name by meta.string { error("File path is not provided") }
         val fileName = name.parseAsName()
-        file(fileName, webName?.parseAsName() ?: fileName)
+        static(fileName, webName?.parseAsName() ?: fileName)
     }
 }
 

@@ -20,6 +20,8 @@ import kotlinx.css.CssBuilder
 import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.HTML
 import kotlinx.html.style
+import space.kscience.dataforge.context.error
+import space.kscience.dataforge.context.logger
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.DataTreeItem
 import space.kscience.dataforge.data.await
@@ -32,8 +34,10 @@ import space.kscience.dataforge.names.cutLast
 import space.kscience.dataforge.names.endsWith
 import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.FileData
-import space.kscience.snark.SnarkEnvironment
-import space.kscience.snark.html.*
+import space.kscience.snark.html.SiteBuilder
+import space.kscience.snark.html.SnarkHtmlPlugin
+import space.kscience.snark.html.WebPage
+import space.kscience.snark.html.toWebPath
 import java.nio.file.Path
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -52,34 +56,35 @@ public class KtorSiteBuilder(
     private val ktorRoute: Route,
 ) : SiteBuilder {
 
-    private fun file(item: DataTreeItem<Any>, routeName: Name) {
-        val extension = item.meta[FileData.FILE_EXTENSION_KEY]?.string?.let { ".$it" } ?: ""
-
+    private fun files(item: DataTreeItem<Any>, routeName: Name) {
         //try using direct file rendering
         item.meta[FileData.FILE_PATH_KEY]?.string?.let {
-            try {
-                val file = Path.of(it).toFile()
-                if (file.isDirectory) {
-                    ktorRoute.static(routeName.toWebPath()) {
-                        files(file)
-                    }
-                } else {
-                    val fileName = routeName.toWebPath() + extension //TODO add extension
-                    ktorRoute.file(fileName, file)
-                }
-                //success, don't do anything else
-                return@file
+            val file = try {
+                Path.of(it).toFile()
             } catch (ex: Exception) {
                 //failure,
+                logger.error { "File $it could not be converted to java.io.File"}
                 return@let
             }
+
+            if (file.isDirectory) {
+                ktorRoute.static(routeName.toWebPath()) {
+                    files(file)
+                }
+            } else {
+                val fileName = routeName.toWebPath()
+                ktorRoute.file(fileName, file)
+            }
+            //success, don't do anything else
+            return@files
         }
         when (item) {
             is DataTreeItem.Leaf -> {
                 val datum = item.data
                 if (datum.type != typeOf<Binary>()) error("Can't directly serve file of type ${item.data.type}")
-                ktorRoute.get(routeName.toWebPath() + extension) {
+                ktorRoute.get(routeName.toWebPath()) {
                     val binary = datum.await() as Binary
+                    val extension = item.meta[FileData.FILE_EXTENSION_KEY]?.string?.let { ".$it" } ?: ""
                     val contentType: ContentType = extension
                         .let(ContentType::fromFileExtension)
                         .firstOrNull()
@@ -93,15 +98,15 @@ public class KtorSiteBuilder(
 
             is DataTreeItem.Node -> {
                 item.tree.items.forEach { (token, childItem) ->
-                    file(childItem, routeName + token)
+                    files(childItem, routeName + token)
                 }
             }
         }
     }
 
-    override fun file(dataName: Name, routeName: Name) {
-        val item: DataTreeItem<Any> = data.getItem(dataName) ?: error("Data with name is not resolved")
-        file(item, routeName)
+    override fun static(dataName: Name, routeName: Name) {
+        val item: DataTreeItem<Any> = data.getItem(dataName) ?: error("Data with name $dataName is not resolved")
+        files(item, routeName)
     }
 //
 //    override fun file(file: Path, webPath: String) {
@@ -140,13 +145,13 @@ public class KtorSiteBuilder(
         override val snark: SnarkHtmlPlugin get() = this@KtorSiteBuilder.snark
         override val data: DataTree<*> get() = this@KtorSiteBuilder.data
 
-        override fun resolveRef(ref: String): String = resolveRef(pageBaseUrl, ref)
+        override fun resolveRef(ref: String): String = this@KtorSiteBuilder.resolveRef(pageBaseUrl, ref)
 
         override fun resolvePageRef(
             pageName: Name,
             relative: Boolean,
         ): String {
-            val fullPageName = if (relative) route + pageName else pageName
+            val fullPageName = if (relative) this@KtorSiteBuilder.route + pageName else pageName
             return if (fullPageName.endsWith(SiteBuilder.INDEX_PAGE_TOKEN)) {
                 resolveRef(fullPageName.cutLast().toWebPath())
             } else {
@@ -155,7 +160,7 @@ public class KtorSiteBuilder(
         }
     }
 
-    override fun page(route: Name, pageMeta: Meta, content: context(WebPage, HTML)() -> Unit) {
+    override fun page(route: Name, pageMeta: Meta, content: context(HTML, WebPage) () -> Unit) {
         ktorRoute.get(route.toWebPath()) {
             call.respondHtml {
                 val request = call.request
@@ -172,7 +177,7 @@ public class KtorSiteBuilder(
                 }
 
                 val pageBuilder = KtorWebPage(url.buildString(), Laminate(modifiedPageMeta, siteMeta))
-                content(pageBuilder, this)
+                content(this, pageBuilder)
             }
         }
     }
@@ -213,26 +218,30 @@ public class KtorSiteBuilder(
 //    }
 }
 
-context(Route, SnarkEnvironment)
-private fun siteInRoute(
+private fun Route.site(
+    snarkHtmlPlugin: SnarkHtmlPlugin,
+    data: DataTree<*>,
     baseUrl: String = "",
+    siteMeta: Meta = data.meta,
     block: KtorSiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    block(KtorSiteBuilder(buildHtmlPlugin(), data, meta, baseUrl, route = Name.EMPTY, this@Route))
+    block(KtorSiteBuilder(snarkHtmlPlugin, data, siteMeta, baseUrl, route = Name.EMPTY, this@Route))
 }
 
-context(Application)
-public fun SnarkEnvironment.site(
+public fun Application.site(
+    snark: SnarkHtmlPlugin,
+    data: DataTree<*>,
     baseUrl: String = "",
-    block: KtorSiteBuilder.() -> Unit,
+    siteMeta: Meta = data.meta,
+    block: SiteBuilder.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
     routing {
-        siteInRoute(baseUrl, block)
+        site(snark, data, baseUrl, siteMeta, block)
     }
 }

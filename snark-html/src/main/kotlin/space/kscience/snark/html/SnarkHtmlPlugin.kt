@@ -3,6 +3,7 @@ package space.kscience.snark.html
 import io.ktor.utils.io.core.readBytes
 import space.kscience.dataforge.context.*
 import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.io.IOFormat
 import space.kscience.dataforge.io.IOPlugin
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.JsonMetaFormat
@@ -17,7 +18,6 @@ import space.kscience.dataforge.names.asName
 import space.kscience.dataforge.names.parseAsName
 import space.kscience.dataforge.workspace.FileData
 import space.kscience.dataforge.workspace.readDataDirectory
-import space.kscience.snark.SnarkEnvironment
 import space.kscience.snark.SnarkParser
 import java.nio.file.Path
 import kotlin.io.path.extension
@@ -66,16 +66,19 @@ public class SnarkHtmlPlugin : AbstractPlugin() {
             "png".asName() to SnarkParser(ImageIOReader, "png"),
             "jpg".asName() to SnarkParser(ImageIOReader, "jpg", "jpeg"),
             "gif".asName() to SnarkParser(ImageIOReader, "gif"),
+            "svg".asName() to SnarkParser(IOReader.binary, "svg"),
+            "raw".asName() to SnarkParser(IOReader.binary, "css", "js", "scss", "woff", "woff2", "ttf", "eot")
         )
+
         TextProcessor.TYPE -> mapOf(
             "basic".asName() to BasicTextProcessor
         )
+
         else -> super.content(target)
     }
 
     public companion object : PluginFactory<SnarkHtmlPlugin> {
         override val tag: PluginTag = PluginTag("snark")
-        override val type: KClass<out SnarkHtmlPlugin> = SnarkHtmlPlugin::class
 
         override fun build(context: Context, meta: Meta): SnarkHtmlPlugin = SnarkHtmlPlugin()
 
@@ -87,30 +90,28 @@ public class SnarkHtmlPlugin : AbstractPlugin() {
     }
 }
 
-/**
- * Load necessary dependencies and return a [SnarkHtmlPlugin] in a finalized context
- */
-public fun SnarkEnvironment.buildHtmlPlugin(): SnarkHtmlPlugin {
-    val context = parentContext.buildContext("snark".asName()) {
-        plugin(SnarkHtmlPlugin)
-        plugins.forEach {
-            plugin(it)
-        }
-    }
-    return context.request(SnarkHtmlPlugin)
-}
-
 @OptIn(DFExperimental::class)
-public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDataDirectory(path) { dataPath, meta ->
+public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDataDirectory(path, setOf("md","html")) { dataPath, meta ->
     val fileExtension = meta[FileData.FILE_EXTENSION_KEY].string ?: dataPath.extension
     val parser: SnarkParser<Any> = parsers.values.filter { parser ->
         fileExtension in parser.fileExtensions
     }.maxByOrNull {
         it.priority
     } ?: run {
-        logger.warn { "The parser is not found for file $dataPath with meta $meta" }
+        logger.debug { "The parser is not found for file $dataPath with meta $meta" }
         SnarkHtmlPlugin.byteArraySnarkParser
     }
 
     parser.asReader(context, meta)
 }
+
+public fun SnarkHtmlPlugin.readResourceDirectory(
+    resource: String = "",
+    classLoader: ClassLoader = SnarkHtmlPlugin::class.java.classLoader,
+): DataTree<Any> = readDirectory(
+    Path.of(
+        classLoader.getResource(resource)?.toURI() ?: error(
+            "Resource with name $resource is not resolved"
+        )
+    )
+)

@@ -7,6 +7,7 @@ import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
+import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 
 context(SnarkContext)
@@ -21,6 +22,7 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
 /**
  *  A context for building a single page
  */
+@SnarkBuilder
 public interface WebPage : ContextAware, SnarkContext {
 
     public val snark: SnarkHtmlPlugin
@@ -62,7 +64,7 @@ public val WebPage.name: Name? get() = pageMeta["name"].string?.parseAsName()
  * Resolve a Html builder by its full name
  */
 context(SnarkContext)
-public fun DataTree<*>.resolveHtml(name: Name): HtmlData? {
+public fun DataTree<*>.resolveHtmlOrNull(name: Name): HtmlData? {
     val resolved = (getByType<HtmlFragment>(name) ?: getByType<HtmlFragment>(name + SiteBuilder.INDEX_PAGE_TOKEN))
 
     return resolved?.takeIf {
@@ -71,7 +73,11 @@ public fun DataTree<*>.resolveHtml(name: Name): HtmlData? {
 }
 
 context(SnarkContext)
-public fun DataTree<*>.resolveHtml(name: String): HtmlData? = resolveHtml(name.parseAsName())
+public fun DataTree<*>.resolveHtmlOrNull(name: String): HtmlData? = resolveHtmlOrNull(name.parseAsName())
+
+context(SnarkContext)
+public fun DataTree<*>.resolveHtml(name: String): HtmlData = resolveHtmlOrNull(name)
+    ?: error("Html fragment with name $name is not resolved")
 
 /**
  * Find all Html blocks using given name/meta filter
