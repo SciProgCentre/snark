@@ -3,7 +3,6 @@ package space.kscience.snark.html
 import io.ktor.utils.io.core.readBytes
 import space.kscience.dataforge.context.*
 import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.io.IOFormat
 import space.kscience.dataforge.io.IOPlugin
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.JsonMetaFormat
@@ -21,7 +20,6 @@ import space.kscience.dataforge.workspace.readDataDirectory
 import space.kscience.snark.SnarkParser
 import java.nio.file.Path
 import kotlin.io.path.extension
-import kotlin.reflect.KClass
 
 /**
  * A plugin used for rendering a [DataTree] as HTML
@@ -91,7 +89,10 @@ public class SnarkHtmlPlugin : AbstractPlugin() {
 }
 
 @OptIn(DFExperimental::class)
-public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDataDirectory(path, setOf("md","html")) { dataPath, meta ->
+public fun SnarkHtmlPlugin.readDirectory(path: Path): DataTree<Any> = io.readDataDirectory(
+    path,
+    setOf("md", "html", "yaml", "json")
+) { dataPath, meta ->
     val fileExtension = meta[FileData.FILE_EXTENSION_KEY].string ?: dataPath.extension
     val parser: SnarkParser<Any> = parsers.values.filter { parser ->
         fileExtension in parser.fileExtensions
