@@ -41,5 +41,6 @@ include(
     ":snark-gradle-plugin",
     ":snark-core",
     ":snark-html",
-    ":snark-ktor"
+    ":snark-ktor",
+    ":snark-storage-driver",
 )
