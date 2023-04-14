@@ -11,5 +11,5 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
     // s3 Driver dependency
-    implementation("aws.sdk.kotlin:dynamodb:$awsSdkVersion")
+    implementation("aws.sdk.kotlin:s3:$awsSdkVersion")
 }
