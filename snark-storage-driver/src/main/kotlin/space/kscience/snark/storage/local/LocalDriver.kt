@@ -10,14 +10,14 @@ public fun localStorage(rootPath: Path): Directory {
     return LocalDirectory(rootPath, ".")
 }
 
-public class LocalFile(private val path: String) : FileReader, FileWriter {
+private class LocalFile(private val path: String) : FileReader, FileWriter {
     override fun close() {}
     override suspend fun readAll(): ByteArray = File(this.path).readBytes()
 
     override suspend fun write(bytes: ByteArray) = File(this.path).writeBytes(bytes)
 }
 
-public class LocalDirectory(private val root: Path, path: String) : Directory {
+private class LocalDirectory(private val root: Path, path: String) : Directory {
     private val current = "$root/$path"
 
     private fun child(child: String): String = "$current/$child"
