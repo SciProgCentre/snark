@@ -13,23 +13,29 @@ public class LocalFile(private val path: String) : FileReader, FileWriter {
     override suspend fun write(bytes: ByteArray) = File(this.path).writeBytes(bytes)
 }
 
-public class LocalDirectory(private val path: String) : Directory {
+public class LocalDirectory(private val root: String, private val path: String) : Directory {
+    private val current = "$root/$path"
+
+    private fun child(child: String): String = "$current/$child"
+
     override fun close() {}
-    override suspend fun get(filename: String): FileReader = LocalFile("${this.path}${File.separator}$filename")
+
+    override suspend fun get(filename: String): FileReader = LocalFile(child(filename))
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
-        if (!File("${this.path}${File.separator}$filename").createNewFile() && !ignoreIfExists) {
+        if (!File(child(filename)).createNewFile() && !ignoreIfExists) {
             throw UnsupportedOperationException("File already exists")
         }
     }
 
-    override suspend fun put(filename: String): FileWriter = LocalFile("${this.path}${File.separator}$filename")
+    override suspend fun put(filename: String): FileWriter = LocalFile(child(filename))
 
-    override suspend fun getSubdir(dirpath: Path): Directory = LocalDirectory("${this.path}${File.separator}$dirpath")
+    override suspend fun getSubdir(path: Path): Directory = LocalDirectory(root, child(path.toString()))
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): Directory {
-        if (!File("${this.path}${File.separator}$dirname").mkdir() && !ignoreIfExists) {
+        val dir = child(dirname)
+        if (!File(dir).mkdir() && !ignoreIfExists) {
             throw UnsupportedOperationException("File already exists")
         }
-        return this.getSubdir(File(dirname).toPath())
+        return this.getSubdir(File(dir).toPath())
     }
 }
