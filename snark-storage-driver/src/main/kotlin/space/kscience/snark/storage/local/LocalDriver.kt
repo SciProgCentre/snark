@@ -6,6 +6,10 @@ import space.kscience.snark.storage.FileWriter
 import java.io.File
 import java.nio.file.Path
 
+public fun localStorage(rootPath: Path): Directory {
+    return LocalDirectory(rootPath, ".")
+}
+
 public class LocalFile(private val path: String) : FileReader, FileWriter {
     override fun close() {}
     override suspend fun readAll(): ByteArray = File(this.path).readBytes()
@@ -13,7 +17,7 @@ public class LocalFile(private val path: String) : FileReader, FileWriter {
     override suspend fun write(bytes: ByteArray) = File(this.path).writeBytes(bytes)
 }
 
-public class LocalDirectory(private val root: String, private val path: String) : Directory {
+public class LocalDirectory(private val root: Path, path: String) : Directory {
     private val current = "$root/$path"
 
     private fun child(child: String): String = "$current/$child"
