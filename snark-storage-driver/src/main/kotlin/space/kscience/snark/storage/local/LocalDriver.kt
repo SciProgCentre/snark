@@ -18,9 +18,9 @@ private class LocalFile(private val path: String) : FileReader, FileWriter {
 }
 
 private class LocalDirectory(private val root: Path, path: String) : Directory {
-    private val current = "$root/$path"
+    private val current = "$root${File.separator}$path"
 
-    private fun child(child: String): String = "$current/$child"
+    private fun child(child: String): String = "$current${File.separator}$child"
 
     override fun close() {}
 
