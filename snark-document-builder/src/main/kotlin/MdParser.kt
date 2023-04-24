@@ -19,10 +19,6 @@ data class DependencyGraphVertex(
     val dependencies: MutableList<DependencyGraphEdge>
 )
 
-// data class DependencyGraph(
-//     val root: DependencyGraphVertex
-// )
-
 enum class DependenceType {
     INCLUDE
 }
@@ -31,8 +27,9 @@ data class ParseResult(val dependencies: Dependencies, val vertex: DependencyGra
 
 typealias Dependencies = HashMap<DependenceType, MutableList<String>>
 
-// public suspend fun parseMd(mdFile: ByteArray): ParseResult {
-// }
+public suspend fun parseMd(mdFile: ByteArray): ParseResult {
+    TODO()
+}
 
 @Serializable
 data class Point(val line: Int, val column: Int, val offset: Int)
