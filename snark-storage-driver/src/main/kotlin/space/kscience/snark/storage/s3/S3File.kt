@@ -7,12 +7,14 @@ import aws.smithy.kotlin.runtime.content.ByteStream
 import aws.smithy.kotlin.runtime.content.toByteArray
 import space.kscience.snark.storage.FileReader
 import space.kscience.snark.storage.FileWriter
+import java.nio.file.Path
+import kotlin.io.path.*
 
-public class S3FileReader(private val client: S3Client, private val bucketName: String, private val fullQualifiedPath: String) : FileReader {
+internal class S3FileReader(private val client: S3Client, private val bucketName: String, private val path: Path) : FileReader {
     override suspend fun readAll(): ByteArray {
         val result = client.getObject(GetObjectRequest{
             bucket = bucketName
-            key = fullQualifiedPath
+            key = path.toString()
         }) {
             it.body?.toByteArray() ?: ByteArray(0)
         }
@@ -23,11 +25,11 @@ public class S3FileReader(private val client: S3Client, private val bucketName: 
     }
 }
 
-public class S3FileWriter(private val client: S3Client, private val bucketName: String, private val fullQualifiedPath: String) : FileWriter {
+internal class S3FileWriter(private val client: S3Client, private val bucketName: String, private val path: Path) : FileWriter {
     override suspend fun write(bytes: ByteArray) {
         client.putObject {
             bucket = bucketName
-            key = fullQualifiedPath
+            key = path.toString()
             body = ByteStream.fromBytes(bytes)
         }
     }
