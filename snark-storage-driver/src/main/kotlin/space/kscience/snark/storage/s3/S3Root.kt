@@ -9,13 +9,11 @@ import java.lang.Exception
 import java.nio.file.Path
 import kotlin.io.path.*
 
-public fun s3Storage(client: S3Client): Directory {
-    return S3Root(client)
-}
+public fun s3Storage(client: S3Client): Directory =
+    S3Root(client)
 
-public fun s3Bucket(client: S3Client, bucket: String): Directory {
-    return S3Directory(client, bucket, Path(""))
-}
+public fun s3Bucket(client: S3Client, bucket: String): Directory =
+    S3Directory(client, bucket, Path(""))
 
 internal fun splitPathIntoBucketAndPath(path: Path): Pair<String, Path> {
     val bucket = path.getName(0)
@@ -43,7 +41,7 @@ internal class S3Root(private val client: S3Client) : Directory {
         }
         S3Directory(client, bucketName, recentPath)
     } catch (ex: Exception) {
-        throw java.nio.file.AccessDeniedException(path.toString()).initCause(ex)
+        throw AccessDeniedException(path.toFile(), reason = ex.message)
     }
 
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): Directory = try {
@@ -53,7 +51,7 @@ internal class S3Root(private val client: S3Client) : Directory {
         }
         S3Directory(client, bucketName, recentPath)
     } catch (ex: Exception) {
-        throw java.nio.file.AccessDeniedException(dirname).initCause(ex)
+        throw AccessDeniedException(File(dirname), reason = ex.message)
     }
 
     override fun close() {

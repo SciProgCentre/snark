@@ -28,12 +28,12 @@ internal class S3Directory(
     override suspend fun getSubdir(path: Path): S3Directory =
         S3Directory(client, bucketName, currentDir / path)
 
-    override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): S3Directory = run {
+    override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): S3Directory =
         if (!ignoreIfExists) {
-            throw IllegalArgumentException("could not check if directory exists")
+            TODO("could not check if directory exists")
+        } else {
+            S3Directory(client, bucketName, currentDir / dirname)
         }
-        S3Directory(client, bucketName, currentDir / dirname)
-    }
 
     override fun close() {
     }
