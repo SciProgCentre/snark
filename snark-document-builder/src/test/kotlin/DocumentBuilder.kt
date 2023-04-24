@@ -1,4 +1,4 @@
-package hello
+package documentBuilder
 
 import org.junit.jupiter.api.Test
 import kotlinx.coroutines.runBlocking
@@ -6,6 +6,6 @@ import kotlinx.coroutines.runBlocking
 class SomeTest {
     @Test
     fun testEssential() = runBlocking {
-        doSomethingEssential()
+        buildDocument("./example")
     }
 }
