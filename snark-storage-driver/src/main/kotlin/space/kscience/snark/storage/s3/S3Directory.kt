@@ -12,9 +12,8 @@ internal class S3Directory(
     private val bucketName: String,
     private val currentDir: Path,
 ) : Directory {
-    override suspend fun get(filename: String): FileReader = run {
+    override suspend fun get(filename: String): FileReader =
         S3FileReader(client, bucketName, currentDir / filename)
-    }
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         if (!ignoreIfExists) {
