@@ -17,7 +17,7 @@ internal class S3Directory(
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         if (!ignoreIfExists) {
-            throw IllegalArgumentException("could not check if file exists")
+            TODO("could not check if file exists")
         }
     }
 

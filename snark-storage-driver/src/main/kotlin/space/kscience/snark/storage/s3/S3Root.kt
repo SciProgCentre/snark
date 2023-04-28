@@ -17,8 +17,8 @@ public fun s3Bucket(client: S3Client, bucket: String): Directory =
 
 internal fun splitPathIntoBucketAndPath(path: Path): Pair<String, Path> {
     val bucket = path.getName(0)
-    val recent = path.relativize(bucket)
-    return Pair(bucket.toString(), recent)
+    val filePath = path.relativize(bucket)
+    return Pair(bucket.toString(), filePath)
 }
 
 internal class S3Root(private val client: S3Client) : Directory {
@@ -35,21 +35,21 @@ internal class S3Root(private val client: S3Client) : Directory {
     }
 
     override suspend fun getSubdir(path: Path): Directory = try {
-        val (bucketName, recentPath) = splitPathIntoBucketAndPath(path)
+        val (bucketName, filePath) = splitPathIntoBucketAndPath(path)
         client.headBucket {
             bucket = bucketName
         }
-        S3Directory(client, bucketName, recentPath)
+        S3Directory(client, bucketName, filePath)
     } catch (ex: Exception) {
         throw AccessDeniedException(path.toFile(), reason = ex.message)
     }
 
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): Directory = try {
-        val (bucketName, recentPath) = splitPathIntoBucketAndPath(Path(dirname))
+        val (bucketName, filePath) = splitPathIntoBucketAndPath(Path(dirname))
         client.createBucket {
             bucket = bucketName
         }
-        S3Directory(client, bucketName, recentPath)
+        S3Directory(client, bucketName, filePath)
     } catch (ex: Exception) {
         throw AccessDeniedException(File(dirname), reason = ex.message)
     }
