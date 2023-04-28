@@ -4,7 +4,6 @@ import aws.sdk.kotlin.services.s3.*
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.FileReader
 import space.kscience.snark.storage.FileWriter
-import java.io.File
 import java.lang.Exception
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -23,15 +22,15 @@ internal fun splitPathIntoBucketAndPath(path: Path): Pair<String, Path> {
 
 internal class S3Root(private val client: S3Client) : Directory {
     override suspend fun get(filename: String): FileReader {
-        throw NoSuchFileException(File(filename))
+        throw NoSuchFileException(Path(filename).toFile())
     }
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
-        throw NoSuchFileException(File(filename))
+        throw NoSuchFileException(Path(filename).toFile())
     }
 
     override suspend fun put(filename: String): FileWriter {
-        throw NoSuchFileException(File(filename))
+        throw NoSuchFileException(Path(filename).toFile())
     }
 
     override suspend fun getSubdir(path: Path): Directory = try {
@@ -51,7 +50,7 @@ internal class S3Root(private val client: S3Client) : Directory {
         }
         S3Directory(client, bucketName, filePath)
     } catch (ex: Exception) {
-        throw AccessDeniedException(File(dirname), reason = ex.message)
+        throw AccessDeniedException(Path(dirname).toFile(), reason = ex.message)
     }
 
     override fun close() {
