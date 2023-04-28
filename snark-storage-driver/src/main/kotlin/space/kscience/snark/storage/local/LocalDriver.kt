@@ -28,19 +28,10 @@ internal class LocalDirectory(private val path: Path) : Directory {
     override suspend fun get(filename: String): FileReader = LocalFile(child(filename))
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
-        val parts = filename.split(File.separator)
-        var cdir = this
-        for (i in 0..(parts.size - 1)) {
-            cdir = cdir.createSubdir(parts[i], true)
-        }
-        try {
-            val nfile = cdir.child(parts.last()).createFile()
-            /*
-            nfile.toFile().setReadable(true)
+        child(filename).parent.createDirectories()
 
-            nfile.toFile().setWritable(true)
-            nfile.toFile().setExecutable(true)
-            */
+        try {
+            child(filename).createFile()
         } catch (ex: java.nio.file.FileAlreadyExistsException) {
             if (!ignoreIfExists) {
                 throw ex
@@ -54,7 +45,7 @@ internal class LocalDirectory(private val path: Path) : Directory {
         return LocalFile(tmp)
     }
 
-    override suspend fun getSubdir(path: Path): Directory = LocalDirectory(child(path))
+    override suspend fun getSubdir(path: Path): LocalDirectory = LocalDirectory(child(path))
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): LocalDirectory {
         val dir = child(dirname)
         try {

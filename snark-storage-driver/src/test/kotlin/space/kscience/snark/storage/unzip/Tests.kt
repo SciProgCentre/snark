@@ -27,7 +27,7 @@ internal class UnzipTests {
 
         val writter = dir.put(filename)
         if (!(tempDir!! / Path("source") / Path(filename)).isRegularFile()) {
-            println("shit")
+            println("new shit")
         }
         writter.write(content)
     }
@@ -38,6 +38,8 @@ internal class UnzipTests {
         ZipOutputStream(BufferedOutputStream( FileOutputStream(zipFile))).use {
             it.use {
                 zipFiles(it, sourceFile, "")
+                it.closeEntry()
+                it.close()
             }
         }
     }
@@ -47,7 +49,6 @@ internal class UnzipTests {
         val data = ByteArray(2048)
 
         for (f in sourceFile.listFiles()) {
-
             if (f.isDirectory) {
                 val entry = ZipEntry(f.name + File.separator)
                 entry.time = f.lastModified()
@@ -90,7 +91,7 @@ internal class UnzipTests {
         val bytes3 = byteArrayOf(3, 2, 1, 0)
         makeFile(source, "tmp1", bytes1)
         makeFile(source, "tmp2", bytes2);
-        makeFile(source, "tdir${File.separator}tmp3", bytes3)
+        makeFile(source, (Path("tdir") / "tmp3").toString(), bytes3)
 
         dir.create("archive.zip")
         val archive_path = (tempDir!! / Path("archive.zip")).toString()
@@ -99,8 +100,19 @@ internal class UnzipTests {
 
         unzip(archive_path, target)
 
-        val entries = (tempDir!! / Path("target")).listDirectoryEntries()
+        val targetPath = tempDir!! / Path("target")
+        val entries = targetPath.listDirectoryEntries()
+
         assertEquals(3, entries.size)
+        val exp_entries = listOf(
+            targetPath / Path("tmp1"),
+            targetPath / Path("tmp2"),
+            targetPath / Path("tdir"))
+        assertContentEquals(entries.sorted(), exp_entries.sorted())
+
+        val tdirEntries = (targetPath / Path("tdir")).listDirectoryEntries()
+        assertEquals(1, tdirEntries.size)
+        assertEquals(tdirEntries.first(), targetPath / Path("tdir") / Path("tmp3"))
     }
 
     @AfterTest
