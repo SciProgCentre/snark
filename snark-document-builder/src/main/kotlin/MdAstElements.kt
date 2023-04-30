@@ -1,9 +1,9 @@
+package documentBuilder
+
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-
-package documentBuilder
 
 @Serializable
 data class Point(val line: Int, val column: Int, val offset: Int)
