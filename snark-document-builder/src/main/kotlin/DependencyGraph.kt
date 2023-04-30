@@ -1,12 +1,14 @@
 package documentBuilder
 
+typealias FileName = String
+
 sealed interface DependencyGraphEdge {
 }
  
 data class IncludeDependency(
     val parentNode: MdAstParent,
     val dependentNode: Iterator<MdAstElement>,
-    val includeList: List<String>
+    val includeList: List<FileName>
 ) : DependencyGraphEdge
  
 data class DependencyGraphNode(
@@ -15,5 +17,5 @@ data class DependencyGraphNode(
 )
  
 data class DependencyGraph(
-    val nodes: Map<String, DependencyGraphNode>
+    val nodes: Map<FileName, DependencyGraphNode>
 )
