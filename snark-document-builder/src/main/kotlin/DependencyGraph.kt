@@ -1,6 +1,6 @@
 package documentBuilder
 
-typealias FileName = String
+public typealias FileName = String
 
 /**
  * Node of dependency graph.
@@ -10,7 +10,7 @@ typealias FileName = String
  * @property mdAst - AST tree of current file.
  * @property dependencies - list of tail end adjacent to this node (dependencies of current file to be resolved).
  */
-data class DependencyGraphNode(
+public data class DependencyGraphNode(
     val mdAst: MdAstRoot,
     val dependencies: List<DependencyGraphEdge>
 )
@@ -18,7 +18,7 @@ data class DependencyGraphNode(
 /**
  * Interface of all dependency edges.
  */
-sealed interface DependencyGraphEdge {
+public sealed interface DependencyGraphEdge {
 }
 
 /**
@@ -28,7 +28,7 @@ sealed interface DependencyGraphEdge {
  * @property dependentNode - iterator to a dependent node, i.e. node of part of document with include commands
  * @property includeList - list of files to be included.
  */
-data class IncludeDependency(
+public data class IncludeDependency(
     val parentNode: MdAstParent,
     val dependentNode: Iterator<MdAstElement>,
     val includeList: List<FileName>
@@ -39,6 +39,6 @@ data class IncludeDependency(
  *
  * @property nodes - map of nodes, where you can find DependencyGraphNode of file by its name.
  */
-data class DependencyGraph(
+public data class DependencyGraph(
     val nodes: Map<FileName, DependencyGraphNode>
 )

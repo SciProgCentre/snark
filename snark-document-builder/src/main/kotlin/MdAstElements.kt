@@ -6,10 +6,10 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 @Serializable
-data class Point(val line: Int, val column: Int, val offset: Int)
+public data class Point(val line: Int, val column: Int, val offset: Int)
 
 @Serializable
-data class Position(val start: Point, val end: Point)
+public data class Position(val start: Point, val end: Point)
 
 @JsonTypeInfo(
     use = JsonTypeInfo.Id.NAME,
@@ -27,18 +27,18 @@ data class Position(val start: Point, val end: Point)
 )
 
 @Serializable
-sealed interface MdAstElement{
-    abstract var position: Position
+public sealed interface MdAstElement{
+    public abstract var position: Position
 }
 
 @Serializable
-sealed interface MdAstParent: MdAstElement{
-    var children: List<MdAstElement>
+public sealed interface MdAstParent: MdAstElement{
+    public var children: List<MdAstElement>
 }
 
 @Serializable
 @SerialName("root")
-data class MdAstRoot(
+public data class MdAstRoot(
     override var children: List<MdAstElement>,
     override var position: Position
 ): MdAstParent
@@ -46,7 +46,7 @@ data class MdAstRoot(
 
 @Serializable
 @SerialName("paragraph")
-data class MdAstParagraph(
+public data class MdAstParagraph(
     override var children: List<MdAstElement>,
     override var position: Position
 ): MdAstParent
@@ -54,14 +54,14 @@ data class MdAstParagraph(
 
 @Serializable
 @SerialName("text")
-data class MdAstText(
+public data class MdAstText(
     val value: String,
     override var position: Position
 ): MdAstElement
 
 @Serializable
 @SerialName("heading")
-data class MdAstHeading(
+public data class MdAstHeading(
     val depth: Int, 
     override var children: List<MdAstElement>,
     override var position: Position
@@ -69,7 +69,7 @@ data class MdAstHeading(
 
 @Serializable
 @SerialName("code")
-data class MdAstCode(
+public data class MdAstCode(
     var lang: String? = null,
     var meta: String? = null,
     var value: String,
@@ -78,7 +78,7 @@ data class MdAstCode(
 
 @Serializable
 @SerialName("blockquote")
-data class MdAstBlockquote(
+public data class MdAstBlockquote(
     override var children: List<MdAstElement>,
     override var position: Position
 ): MdAstParent
