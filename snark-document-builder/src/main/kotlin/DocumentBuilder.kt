@@ -9,7 +9,25 @@ val DEFAULT_DOCUMENT_ROOT = "main.md"
 
 public suspend fun buildDocument(documentPath: String) {
     val documentDirectory: Directory = LocalDirectory(documentPath)
-    val documentRoot = documentDirectory.get(DEFAULT_DOCUMENT_ROOT)
 
+    val dependencyGraph = buildDependencyGraph(documentDirectory)
+
+    TODO() /*resolving of dependencies*/
+}
+
+public suspend fun buildDependencyGraph(root: Directory) : DependencyGraph {
+    // val rootDcoument = root.get(DEFAULT_DOCUMENT_ROOT)
+
+    // val filesToParse: Queue<FileReader> = LinkedList<FileReader>(listOf(root))
+    // var documentName = "."
+
+    // val nodes = HashMap<FileName, DependencyGraphNode>()
+
+    // while (!filesToParse.isEmpty())
+    // {
+    //     dependencyGraphNode = buildDependencyNode(filesToParse.remove())
+
+    //     nodes.put()
+    // }
     TODO()
 }
