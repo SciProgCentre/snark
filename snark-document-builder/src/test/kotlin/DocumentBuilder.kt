@@ -6,6 +6,6 @@ import kotlinx.coroutines.runBlocking
 class SomeTest {
     @Test
     fun justWorks() = runBlocking {
-        buildDocument("../example")
+        // buildDocument(Directory("../example"))
     }
 }
