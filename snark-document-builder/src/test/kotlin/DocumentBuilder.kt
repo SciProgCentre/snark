@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 
 class SomeTest {
     @Test
-    fun testEssential() = runBlocking {
+    fun justWorks() = runBlocking {
         buildDocument("../example")
     }
 }
