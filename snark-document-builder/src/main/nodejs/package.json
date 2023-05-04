@@ -1,0 +1,30 @@
+{
+
+  "type": "module",
+
+  "dependencies": {
+
+    "fs": "^0.0.1-security",
+
+    "hast-util-to-html": "^8.0.4",
+
+    "mdast-util-to-hast": "^12.3.0",
+
+    "node-fetch": "^3.3.1",
+
+    "remark-html": "^15.0.2",
+
+    "remark-parse": "^10.0.1",
+
+    "require": "^2.4.20",
+
+    "to-vfile": "^7.2.4",
+
+    "unified": "^10.1.2",
+
+    "whatwg-fetch": "^3.6.2"
+
+  }
+
+}
+
