@@ -25,12 +25,20 @@ internal class S3Root(private val client: S3Client) : Directory {
         throw NoSuchFileException(Path(filename).toFile())
     }
 
+    override suspend fun get(filename: Path): FileReader {
+        throw NoSuchFileException(filename.toFile())
+    }
+
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         throw NoSuchFileException(Path(filename).toFile())
     }
 
     override suspend fun put(filename: String): FileWriter {
         throw NoSuchFileException(Path(filename).toFile())
+    }
+
+    override suspend fun put(filename: Path): FileWriter {
+        throw NoSuchFileException(filename.toFile())
     }
 
     override suspend fun getSubdir(path: Path): Directory = try {
@@ -52,6 +60,9 @@ internal class S3Root(private val client: S3Client) : Directory {
     } catch (ex: Exception) {
         throw AccessDeniedException(Path(dirname).toFile(), reason = ex.message)
     }
+
+    override val path: Path
+        get() = Path("")
 
     override fun close() {
     }
