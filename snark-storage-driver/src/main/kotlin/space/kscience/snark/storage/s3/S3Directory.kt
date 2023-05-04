@@ -15,6 +15,9 @@ internal class S3Directory(
     override suspend fun get(filename: String): FileReader =
         S3FileReader(client, bucketName, currentDir / filename)
 
+    override suspend fun get(filename: Path): FileReader =
+        S3FileReader(client, bucketName, currentDir / filename)
+
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         if (!ignoreIfExists) {
             TODO("could not check if file exists")
@@ -22,6 +25,9 @@ internal class S3Directory(
     }
 
     override suspend fun put(filename: String): FileWriter =
+        S3FileWriter(client, bucketName, currentDir / filename)
+
+    override suspend fun put(filename: Path): FileWriter =
         S3FileWriter(client, bucketName, currentDir / filename)
 
     override suspend fun getSubdir(path: Path): S3Directory =
@@ -33,6 +39,9 @@ internal class S3Directory(
         } else {
             S3Directory(client, bucketName, currentDir / dirname)
         }
+
+    override val path: Path
+        get() = currentDir
 
     override fun close() {
     }
