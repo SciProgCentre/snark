@@ -3,6 +3,7 @@ package documentBuilder
 import com.fasterxml.jackson.core.io.BigDecimalParser
 import space.kscience.snark.storage.*
 import java.nio.file.Path
+import java.nio.file.Paths
 
 private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
@@ -31,10 +32,19 @@ private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, Depen
 
     for (dependency in dependencies) {
         if (!nodes.containsKey(dependency))
-            buildNodes(folder.getSubdir(dependency), nodes)
+            buildNodes(folder.getSubdir(Paths.get(dependency)), nodes)
     }
 }
 
 public suspend fun getDependencies(node: DependencyGraphNode): Set<FileName> {
-    TODO()
+    val dependencies = mutableListOf<FileName>()
+    
+    for (dependency in node.dependencies) {
+        when (dependency) {
+            is IncludeDependency -> dependencies.addAll(dependency.includeList)
+            else -> TODO()
+        }
+    }
+
+    return dependencies.toSet()
 }
