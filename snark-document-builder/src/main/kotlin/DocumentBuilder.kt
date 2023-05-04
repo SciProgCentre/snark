@@ -43,7 +43,6 @@ public suspend fun getDependencies(node: DependencyGraphNode): Set<FileName> {
     for (dependency in node.dependencies) {
         when (dependency) {
             is IncludeDependency -> dependencies.addAll(dependency.includeList)
-            else -> TODO()
         }
     }
 
