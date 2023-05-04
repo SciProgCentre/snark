@@ -7,7 +7,7 @@ import java.nio.file.Path
 import kotlin.io.path.*
 
 public fun localStorage(rootPath: Path): Directory {
-    return LocalDirectory(rootPath)
+    return LocalDirectory(rootPath, Path(""))
 }
 
 private class LocalFile(private val path: Path) : FileReader, FileWriter {
@@ -17,13 +17,15 @@ private class LocalFile(private val path: Path) : FileReader, FileWriter {
     override suspend fun write(bytes: ByteArray) = path.writeBytes(bytes)
 }
 
-private class LocalDirectory(private val path: Path) : Directory {
-    private fun child(child: String): Path = path / child
-    private fun child(child: Path): Path = path / child
+private class LocalDirectory(private val root: Path, private val currentDir: Path) : Directory {
+    private fun child(child: String): Path = root / currentDir / child
+    private fun child(child: Path): Path = root / currentDir / child
 
     override fun close() {}
 
     override suspend fun get(filename: String): FileReader = LocalFile(child(filename))
+
+    override suspend fun get(filename: Path): FileReader = LocalFile(child(filename))
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         try {
@@ -37,7 +39,9 @@ private class LocalDirectory(private val path: Path) : Directory {
 
     override suspend fun put(filename: String): FileWriter = LocalFile(child(filename))
 
-    override suspend fun getSubdir(path: Path): Directory = LocalDirectory(child(path))
+    override suspend fun put(filename: Path): FileWriter = LocalFile(child(filename))
+
+    override suspend fun getSubdir(path: Path): Directory = LocalDirectory(root, child(path))
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): Directory {
         val dir = child(dirname)
         try {
@@ -47,6 +51,9 @@ private class LocalDirectory(private val path: Path) : Directory {
                 throw ex
             }
         }
-        return LocalDirectory(dir)
+        return LocalDirectory(root, dir)
     }
+
+    override val path: Path
+        get() = currentDir
 }
