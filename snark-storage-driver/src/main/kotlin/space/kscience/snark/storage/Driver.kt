@@ -23,6 +23,10 @@ public interface Directory : AutoCloseable {
     public suspend fun getSubdir(path: Path): Directory
     public suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean = false): Directory
 
+    @Deprecated(
+        message = "Not a good idea",
+        level = DeprecationLevel.WARNING,
+    )
     public val path: Path
 }
 
