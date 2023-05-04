@@ -22,13 +22,14 @@ public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
 }
 
 private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, DependencyGraphNode>) {
-    assert(!nodes.containsKey(folder.getPath()))
+    val pathString = folder.getPath().pathString
+    
+    assert(!nodes.containsKey(pathString))
 
-    val path = folder.getPath()
     val rootDcoument = folder.get(DEFAULT_DOCUMENT_ROOT)
-    nodes.put(path, buildDependencyGraphNode(rootDcoument.readAll()))
+    nodes.put(pathString, buildDependencyGraphNode(rootDcoument.readAll()))
 
-    val dependencies = getDependencies(nodes.getValue(path))
+    val dependencies = getDependencies(nodes.getValue(pathString))
 
     for (dependency in dependencies) {
         if (!nodes.containsKey(dependency))
