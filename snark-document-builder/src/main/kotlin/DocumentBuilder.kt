@@ -22,7 +22,7 @@ public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
 }
 
 private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, DependencyGraphNode>) {
-    val pathString = folder.getPath().toString()
+    val pathString = folder.path.toString()
     
     assert(!nodes.containsKey(pathString))
 
