@@ -15,35 +15,25 @@ public suspend fun buildDocument(documentDirectory: Directory) {
 public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {  
     val nodes = HashMap<FileName, DependencyGraphNode>()
 
-    // buildNodes(root, nodes)
-
-    val rootDcoument = root.get(DEFAULT_DOCUMENT_ROOT)
-
-    nodes.put(".", buildDependencyGraphNode(rootDcoument.readAll()))
-
-    val filesToParse = getDependencies(nodes.getValue("."))  
-
-    while (!filesToParse.isEmpty())
-    {
-        val currentFile = filesToParse.remove()
-        val currentDocument = Directory(currentFile).get(DEFAULT_DOCUMENT_ROOT)
-
-        nodes.put(currentFile, buildDependencyGraphNode(currentDocument.readAll()))
-
-        val currentDependencies = getDependencies(nodes.getValue(currentFile))
-
-        for (fileName in currentDependencies) {
-            if (!nodes.containsKey(fileName) && !filesToParse.contains(fileName))
-                filesToParse.add(fileName)    
-        }
-    }
+    buildNodes(root, nodes)
 
     return DependencyGraph(nodes)
 }
 
-// private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, DependencyGraphNode>) {
-//     assert(!nodes.containsKey(folder.getPath()))
-// }
+private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, DependencyGraphNode>) {
+    assert(!nodes.containsKey(folder.getPath()))
+
+    val path = folder.getPath()
+    val rootDcoument = folder.get(DEFAULT_DOCUMENT_ROOT)
+    nodes.put(path, buildDependencyGraphNode(rootDcoument.readAll()))
+
+    val dependencies = getDependencies(nodes.getValue(path))
+
+    for (dependency in dependencies) {
+        if (!nodes.containsKey(dependency))
+            buildNodes(folder.getSubdir(dependency), nodes)
+    }
+}
 
 public suspend fun getDependencies(node: DependencyGraphNode): Set<FileName> {
     TODO()
