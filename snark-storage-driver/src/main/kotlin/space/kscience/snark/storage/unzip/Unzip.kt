@@ -12,7 +12,11 @@ public suspend fun unzip(source_path: String, target: Directory) {
             val filename = zipEntry.name
             target.create(filename, true)
             val fos = target.put(filename)
-            val buffer = ByteArray(zipEntry.size.toInt())
+            var sz = zipEntry.size.toInt()
+            if (sz == -1) {
+                sz = 1024
+            }
+            val buffer = ByteArray(sz)
             zis.read(buffer)
             fos.write(buffer)
             fos.close()
