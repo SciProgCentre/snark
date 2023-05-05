@@ -4,6 +4,7 @@ import kotlinx.coroutines.runBlocking
 
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.LocalDirectory
+import space.kscience.snark.storage.local.localStorage
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -24,55 +25,40 @@ internal class UnzipTests {
 
     private suspend fun makeFile(dir: Directory, filename: String, content: ByteArray) {
         dir.create(filename)
-
-        val writter = dir.put(filename)
-        if (!(tempDir!! / Path("source") / Path(filename)).isRegularFile()) {
-            println("new shit")
-        }
-        writter.write(content)
+        dir.put(filename).write(content)
     }
 
     private fun zipAll(directory: String, zipFile: String) {
         val sourceFile = File(directory)
 
         ZipOutputStream(BufferedOutputStream( FileOutputStream(zipFile))).use {
-            it.use {
-                zipFiles(it, sourceFile, "")
-                it.closeEntry()
-                it.close()
-            }
+            zipFiles(it, sourceFile, File.separator)
+            it.closeEntry()
+            it.close()
         }
     }
 
-    private fun zipFiles(zipOut: ZipOutputStream, sourceFile: File, parentDirPath: String) {
+    private fun zipFiles(zipOut: ZipOutputStream, sourceFile: File, parentDirname: String) {
 
         val data = ByteArray(2048)
 
         for (f in sourceFile.listFiles()) {
             if (f.isDirectory) {
-                val entry = ZipEntry(f.name + File.separator)
-                entry.time = f.lastModified()
-                entry.isDirectory
-                entry.size = f.length()
-                zipOut.putNextEntry(entry)
-                zipFiles(zipOut, f, f.name)
+                zipFiles(zipOut, f, parentDirname + f.name + File.separator)
             } else {
-                if (!f.name.contains(".zip")) { //If folder contains a file with extension ".zip", skip it
-                    FileInputStream(f).use { fi ->
-                        BufferedInputStream(fi).use { origin ->
-                            val path = parentDirPath + File.separator + f.name
-                            val entry = ZipEntry(path)
-                            entry.time = f.lastModified()
-                            entry.isDirectory
-                            entry.size = f.length()
-                            zipOut.putNextEntry(entry)
-                            while (true) {
-                                val readBytes = origin.read(data)
-                                if (readBytes == -1) {
-                                    break
-                                }
-                                zipOut.write(data, 0, readBytes)
+                FileInputStream(f).use { fi ->
+                    BufferedInputStream(fi).use { origin ->
+                        var path = parentDirname + f.name
+                        val entry = ZipEntry(path.drop(1))
+                        entry.time = f.lastModified()
+                        entry.size = f.length()
+                        zipOut.putNextEntry(entry)
+                        while (true) {
+                            val readBytes = origin.read(data)
+                            if (readBytes == -1) {
+                                break
                             }
+                            zipOut.write(data, 0, readBytes)
                         }
                     }
                 }
@@ -83,7 +69,7 @@ internal class UnzipTests {
 
     @Test
     fun testUnzip() = runBlocking {
-        val dir: Directory = LocalDirectory(tempDir!!)
+        val dir: Directory = localStorage(tempDir!!)
         val source = dir.createSubdir("source")
         val target = dir.createSubdir("target")
         val bytes1 = byteArrayOf(0, 1, 2, 3)
@@ -101,6 +87,7 @@ internal class UnzipTests {
         unzip(archive_path, target)
 
         val targetPath = tempDir!! / Path("target")
+        println(targetPath)
         val entries = targetPath.listDirectoryEntries()
 
         assertEquals(3, entries.size)

@@ -17,7 +17,7 @@ internal class LocalDriverTests {
     @BeforeTest
     fun setUp() {
         tempDir = createTempDirectory()
-        testSample = LocalDirectory(tempDir!!)
+        testSample = localStorage(tempDir!!)
     }
 
     @Test

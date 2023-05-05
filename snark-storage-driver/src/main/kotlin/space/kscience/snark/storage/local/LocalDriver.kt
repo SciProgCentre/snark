@@ -19,19 +19,19 @@ internal class LocalFile(private val path: Path) : FileReader, FileWriter {
     override suspend fun write(bytes: ByteArray) = path.writeBytes(bytes)
 }
 
-private class LocalDirectory(private val root: Path, private val currentDir: Path) : Directory {
+internal class LocalDirectory(private val root: Path, private val currentDir: Path) : Directory {
     private fun child(child: String): Path = root / currentDir / child
     private fun child(child: Path): Path = root / currentDir / child
 
     override fun close() {}
 
-    override suspend fun get(filename: String): FileReader = LocalFile(child(filename))
+    override suspend fun get(filename: String): LocalFile = LocalFile(child(filename))
 
-    override suspend fun get(filename: Path): FileReader = LocalFile(child(filename))
+    override suspend fun get(filename: Path): LocalFile = LocalFile(child(filename))
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
-        child(filename).parent.createDirectories()
-
+        val dir = child(filename)
+        dir.parent.createDirectories()
         try {
             child(filename).createFile()
         } catch (ex: java.nio.file.FileAlreadyExistsException) {
@@ -41,18 +41,14 @@ private class LocalDirectory(private val root: Path, private val currentDir: Pat
         }
     }
 
-    override suspend fun put(filename: String): FileWriter {
-        val tmp = child(filename)
-        //tmp.toFile().setWritable(true)
-        return LocalFile(tmp)
-    }
+    override suspend fun put(filename: String): LocalFile = get(filename)
 
+    override suspend fun put(filename: Path): LocalFile = get(filename)
 
-    override suspend fun put(filename: Path): FileWriter = LocalFile(child(filename))
-
-    override suspend fun getSubdir(path: Path): LocalDirectory = LocalDirectory(root, child(path))
+    override suspend fun getSubdir(path: Path): LocalDirectory = LocalDirectory(root, currentDir / path)
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): LocalDirectory {
         val dir = child(dirname)
+        dir.parent.createDirectories()
         try {
             dir.createDirectory()
         } catch (ex: java.nio.file.FileAlreadyExistsException) {
@@ -60,7 +56,7 @@ private class LocalDirectory(private val root: Path, private val currentDir: Pat
                 throw ex
             }
         }
-        return LocalDirectory(root, dir)
+        return LocalDirectory(root, currentDir / dirname)
     }
 
     override val path: Path
