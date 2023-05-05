@@ -9,7 +9,7 @@ import java.nio.file.attribute.PosixFilePermission
 import kotlin.io.path.*
 
 public fun localStorage(rootPath: Path): Directory {
-    return LocalDirectory(rootPath)
+    return LocalDirectory(rootPath, Path(""))
 }
 
 internal class LocalFile(private val path: Path) : FileReader, FileWriter {
@@ -19,13 +19,15 @@ internal class LocalFile(private val path: Path) : FileReader, FileWriter {
     override suspend fun write(bytes: ByteArray) = path.writeBytes(bytes)
 }
 
-internal class LocalDirectory(private val path: Path) : Directory {
-    private fun child(child: String): Path = path / child
-    private fun child(child: Path): Path = path / child
+private class LocalDirectory(private val root: Path, private val currentDir: Path) : Directory {
+    private fun child(child: String): Path = root / currentDir / child
+    private fun child(child: Path): Path = root / currentDir / child
 
     override fun close() {}
 
     override suspend fun get(filename: String): FileReader = LocalFile(child(filename))
+
+    override suspend fun get(filename: Path): FileReader = LocalFile(child(filename))
 
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         child(filename).parent.createDirectories()
@@ -45,7 +47,10 @@ internal class LocalDirectory(private val path: Path) : Directory {
         return LocalFile(tmp)
     }
 
-    override suspend fun getSubdir(path: Path): LocalDirectory = LocalDirectory(child(path))
+
+    override suspend fun put(filename: Path): FileWriter = LocalFile(child(filename))
+
+    override suspend fun getSubdir(path: Path): LocalDirectory = LocalDirectory(root, child(path))
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): LocalDirectory {
         val dir = child(dirname)
         try {
@@ -55,6 +60,9 @@ internal class LocalDirectory(private val path: Path) : Directory {
                 throw ex
             }
         }
-        return LocalDirectory(dir)
+        return LocalDirectory(root, dir)
     }
+
+    override val path: Path
+        get() = currentDir
 }
