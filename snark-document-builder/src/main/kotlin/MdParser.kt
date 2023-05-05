@@ -14,5 +14,29 @@ public suspend fun parseMd(mdFile: ByteArray): MdAstRoot {
 }
 
 public suspend fun buildDependencyGraphNode(mdFile: ByteArray): DependencyGraphNode {
+    val treeRoot = parseMd(mdFile)
+    val dependencies = mutableListOf<DependencyGraphEdge>()
+
+    fillDependencies(treeRoot, dependencies)
+
+    return DependencyGraphNode(treeRoot, dependencies)
+}
+
+private suspend fun fillDependencies(
+        currentNode: MdAstElement,
+        dependencies: MutableList<DependencyGraphEdge>) {
+    // when (currentNode) {
+    //     is MdAstParent -> {
+    //         val iterator = currentNode.children.listIterator()
+
+    //         while (iterator.hasNext()) {
+
+
+    //             iterator.next()
+    //         }
+
+    //     }
+    //     else -> {}
+    // }
     TODO()
 }
