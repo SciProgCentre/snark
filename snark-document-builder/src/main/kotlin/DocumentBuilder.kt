@@ -13,7 +13,7 @@ public suspend fun buildDocument(documentDirectory: Directory) {
     TODO() /*resolving of dependencies*/
 }
 
-public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {  
+public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
     val nodes = HashMap<FileName, DependencyGraphNode>()
 
     buildNodes(root, nodes)
@@ -23,11 +23,11 @@ public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
 
 private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, DependencyGraphNode>) {
     val pathString = folder.path.toString()
-    
+
     assert(!nodes.containsKey(pathString))
 
     val rootDcoument = folder.get(DEFAULT_DOCUMENT_ROOT)
-    nodes.put(pathString, buildDependencyGraphNode(rootDcoument.readAll()))
+    nodes.put(pathString, buildDependencyGraphNode(rootDcoument.readAll(), folder.path))
 
     val dependencies = getDependencies(nodes.getValue(pathString))
 
@@ -39,7 +39,7 @@ private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, Depen
 
 public suspend fun getDependencies(node: DependencyGraphNode): Set<FileName> {
     val dependencies = mutableListOf<FileName>()
-    
+
     for (dependency in node.dependencies) {
         when (dependency) {
             is IncludeDependency -> dependencies.addAll(dependency.includeList)
