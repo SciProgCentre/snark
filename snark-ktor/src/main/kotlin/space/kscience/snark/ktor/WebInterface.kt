@@ -11,6 +11,7 @@ import io.ktor.server.response.*
 import io.ktor.server.http.content.*
 import kotlinx.html.*
 import io.ktor.server.routing.*
+import kotlinx.css.html
 import java.nio.file.Path
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.localStorage
@@ -24,11 +25,13 @@ public interface DataHolder {
 
     fun init() : Directory
     fun represent(): String
+    //will be HTML later
 }
 class LocalDataHolder: DataHolder {
     private var source: Path? = null
     private var response: String = ""
     override fun init(): Directory {
+        source?.toFile()?.deleteRecursively()
         source = createTempDirectory()
         return localStorage(source!!)
     }
@@ -50,58 +53,69 @@ class LocalDataHolder: DataHolder {
             response
         }
 }
-fun main() {
-    val dataHolder: DataHolder = LocalDataHolder()
-    embeddedServer(Netty, 9090) {
-        routing {
-            get("/") {
-                call.respondHtml(HttpStatusCode.OK) {
-                    head {
-                        title {
-                            +"SNARK"
-                        }
-                    }
-                    body {
-                        h1 {
-                            +"SNARK"
-                        }
-                    }
-                    body {
-                        postForm (action = "/upload", encType = FormEncType.multipartFormData)  {
-                            label {
-                                +"Choose zip archive: "
-                            }
-                            input (name = "file", type = InputType.file) {}
-                            button {
-                                +"Upload file"
-                            }
-                        }
-                        a("/data") {
-                            +"Show data\n"
-                        }
-                    }
+
+public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
+    private suspend fun renderGet(call: ApplicationCall) {
+        call.respondText(dataHolder.represent())
+    }
+    private suspend fun renderUpload(call: ApplicationCall) {
+        val multipartData = call.receiveMultipart()
+        val tmp = createTempFile(suffix=".zip")
+        multipartData.forEachPart { part ->
+            when (part) {
+                is PartData.FileItem -> {
+                    val fileBytes = part.streamProvider().readBytes()
+                    tmp.writeBytes(fileBytes)
+                }
+                else -> {
                 }
             }
-            post("/upload") {
-                val multipartData = call.receiveMultipart()
-                val tmp = createTempFile(suffix=".zip")
-                multipartData.forEachPart { part ->
-                    when (part) {
-                        is PartData.FileItem -> {
-                            val fileBytes = part.streamProvider().readBytes()
-                            tmp.writeBytes(fileBytes)
-                        }
-                        else -> {
-                        }
-                    }
-                    part.dispose()
+            part.dispose()
+        }
+        unzip(tmp.toPath().toString(), dataHolder.init())
+        call.respondText("File is successfully uploaded")
+    }
+    private suspend fun renderMainPage(call: ApplicationCall)  {
+        call.respondHtml(HttpStatusCode.OK) {
+            head {
+                title {
+                    +"SNARK"
                 }
-                unzip(tmp.toPath().toString(), dataHolder.init())
-                call.respondText("File is successfully uploaded")
             }
-            get("/data") {
-                call.respondText(dataHolder.represent())
+            body {
+                h1 {
+                    +"SNARK"
+                }
+            }
+            body {
+                postForm (action = "/upload", encType = FormEncType.multipartFormData)  {
+                    label {
+                        +"Choose zip archive: "
+                    }
+                    input (name = "file", type = InputType.file) {}
+                    button {
+                        +"Upload file"
+                    }
+                }
+                a("/data") {
+                    +"Show data\n"
+                }
             }
         }
-    }.start(wait = true)
+    }
+    override fun run() {
+        embeddedServer(Netty, port) {
+            routing {
+                get("/") {
+                    renderMainPage(call)
+                }
+                post("/upload") {
+                    renderUpload(call)
+                }
+                get("/data") {
+                    renderGet(call)
+                }
+            }
+        }.start(wait = true)
+    }
 }
