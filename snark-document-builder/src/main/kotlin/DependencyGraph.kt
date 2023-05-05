@@ -25,12 +25,12 @@ public sealed interface DependencyGraphEdge {
  * Include dependency edge.
  *
  * @property parentNode - node inside AST tree, that is parent for dependent node.
- * @property dependentNode - iterator to a dependent node, i.e. node of part of document with include commands
+ * @property dependentNode - dependent node, i.e. node of part of document with include commands
  * @property includeList - list of files to be included.
  */
 public data class IncludeDependency(
     val parentNode: MdAstParent,
-    val dependentNode: Iterator<MdAstElement>,
+    val dependentNode: MdAstElement,
     val includeList: List<FileName>
 ) : DependencyGraphEdge
 
