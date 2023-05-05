@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.file.Path
 
 private val MARKDOWN_PARSER = "../nodejs/MarkdownParser.js"
+private val SNARK_PARSER = "../python/SnarkParse.py"
 
 public suspend fun parseMd(mdFile: ByteArray): MdAstRoot {
     return jacksonObjectMapper()
@@ -48,5 +49,9 @@ internal suspend fun fillDependencies(
 }
 
 public suspend fun getIncludeFiles(string: String): List<FileName> {
-    TODO()
+    return jacksonObjectMapper()
+        .readValue<List<FileName>>(ProcessBuilder("python3", SNARK_PARSER, string)
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .start().inputStream.bufferedReader().readText())
 }
