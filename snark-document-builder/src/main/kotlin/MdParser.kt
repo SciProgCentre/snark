@@ -4,8 +4,8 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.file.Path
 
-private val MARKDOWN_PARSER = "../nodejs/MarkdownParser.js"
-private val SNARK_PARSER = "../python/SnarkParse.py"
+private val MARKDOWN_PARSER = "snark-document-builder/src/main/nodejs/MarkdownParser.js"
+private val SNARK_PARSER = "snark-document-builder/src/main/python/SnarkParser.py"
 
 public suspend fun parseMd(mdFile: ByteArray): MdAstRoot {
     return jacksonObjectMapper()

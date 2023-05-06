@@ -9,10 +9,12 @@ import kotlinx.html.dom.createHTMLDocument
 
 private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
-public suspend fun buildDocument(documentDirectory: Directory): HTML {
+public suspend fun buildDocument(documentDirectory: Directory): String {
     val dependencyGraph = buildDependencyGraph(documentDirectory)
 
-    TODO() /*resolving of dependencies*/
+//    TODO() /*resolving of dependencies*/
+
+    return "Not implemented"
 }
 
 public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
