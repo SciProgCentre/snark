@@ -12,10 +12,6 @@ internal class S3Directory(
     private val bucketName: String,
     private val currentDir: Path,
 ) : Directory {
-    @Deprecated("Use Path, not String")
-    override suspend fun get(filename: String): FileReader =
-        S3FileReader(client, bucketName, currentDir / filename)
-
     override suspend fun get(filename: Path): FileReader =
         S3FileReader(client, bucketName, currentDir / filename)
 
@@ -25,10 +21,6 @@ internal class S3Directory(
             TODO("could not check if file exists")
         }
     }
-
-    @Deprecated("Use Path, not String")
-    override suspend fun put(filename: String): FileWriter =
-        S3FileWriter(client, bucketName, currentDir / filename)
 
     override suspend fun put(filename: Path): FileWriter =
         S3FileWriter(client, bucketName, currentDir / filename)

@@ -19,7 +19,7 @@ internal class LocalFile(private val path: Path) : FileReader, FileWriter {
         path.parent.createDirectories()
         try {
             path.createFile()
-        } catch (ex: java.nio.file.FileAlreadyExistsException) {
+        } catch (ex: Exception) {
             // Do nothing
         }
         path.writeBytes(bytes)
@@ -32,9 +32,6 @@ internal class LocalDirectory(private val root: Path, private val currentDir: Pa
     private fun realpath(child: Path): Path = root / currentDir / child
 
     override fun close() {}
-
-    @Deprecated("Use Path, not String")
-    override suspend fun get(filename: String): LocalFile = LocalFile(realpath(filename))
 
     override suspend fun get(filename: Path): LocalFile = LocalFile(realpath(filename))
 
@@ -50,9 +47,6 @@ internal class LocalDirectory(private val root: Path, private val currentDir: Pa
             }
         }
     }
-
-    @Deprecated("Use Path, not String")
-    override suspend fun put(filename: String): LocalFile = get(filename)
 
     override suspend fun put(filename: Path): LocalFile = get(filename)
 
