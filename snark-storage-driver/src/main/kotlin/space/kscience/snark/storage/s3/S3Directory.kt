@@ -5,7 +5,7 @@ import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.FileReader
 import space.kscience.snark.storage.FileWriter
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.div
 
 internal class S3Directory(
     private val client: S3Client,

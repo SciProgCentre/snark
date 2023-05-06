@@ -3,7 +3,6 @@ package space.kscience.snark.storage.local
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.FileReader
 import space.kscience.snark.storage.FileWriter
-import java.lang.Exception
 import java.nio.file.Path
 import kotlin.io.path.*
 

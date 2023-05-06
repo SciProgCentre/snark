@@ -1,7 +1,7 @@
 package space.kscience.snark.storage
 
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.Path
 
 public interface Directory : AutoCloseable {
     // get file from subtree
