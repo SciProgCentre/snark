@@ -11,7 +11,10 @@ import io.ktor.server.response.*
 import io.ktor.server.http.content.*
 import kotlinx.html.*
 import io.ktor.server.routing.*
+import kotlinx.css.h1
 import kotlinx.css.html
+import kotlinx.html.dom.create
+import kotlinx.html.dom.document
 import java.nio.file.Path
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.localStorage
@@ -22,9 +25,8 @@ import kotlin.io.path.name
 import space.kscience.snark.storage.unzip.unzip
 
 public interface DataHolder {
-
-    fun init() : Directory
-    fun represent(): String
+    public fun init() : Directory
+    public suspend fun represent(): String
     //will be HTML later
 }
 class LocalDataHolder: DataHolder {
@@ -44,7 +46,7 @@ class LocalDataHolder: DataHolder {
             }
         }
     }
-    override fun represent() : String =
+    override suspend fun represent(): String =
         if (source == null) {
             "No data was loaded!"
         } else {

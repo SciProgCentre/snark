@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.io.BigDecimalParser
 import space.kscience.snark.storage.*
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlinx.html.*
+import kotlinx.html.dom.createHTMLDocument
 
 private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
-public suspend fun buildDocument(documentDirectory: Directory) {
+public suspend fun buildDocument(documentDirectory: Directory): HTML {
     val dependencyGraph = buildDependencyGraph(documentDirectory)
 
     TODO() /*resolving of dependencies*/

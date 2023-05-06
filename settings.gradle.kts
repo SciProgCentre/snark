@@ -44,4 +44,5 @@ include(
     ":snark-ktor",
     ":snark-storage-driver",
     ":snark-document-builder",
+    ":snark-main",
 )
