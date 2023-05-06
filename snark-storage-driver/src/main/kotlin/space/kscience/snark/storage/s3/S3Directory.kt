@@ -12,18 +12,21 @@ internal class S3Directory(
     private val bucketName: String,
     private val currentDir: Path,
 ) : Directory {
+    @Deprecated("Use Path, not String")
     override suspend fun get(filename: String): FileReader =
         S3FileReader(client, bucketName, currentDir / filename)
 
     override suspend fun get(filename: Path): FileReader =
         S3FileReader(client, bucketName, currentDir / filename)
 
+    @Deprecated("Use put")
     override suspend fun create(filename: String, ignoreIfExists: Boolean) {
         if (!ignoreIfExists) {
             TODO("could not check if file exists")
         }
     }
 
+    @Deprecated("Use Path, not String")
     override suspend fun put(filename: String): FileWriter =
         S3FileWriter(client, bucketName, currentDir / filename)
 
@@ -33,6 +36,7 @@ internal class S3Directory(
     override suspend fun getSubdir(path: Path): S3Directory =
         S3Directory(client, bucketName, currentDir / path)
 
+    @Deprecated("Directories are created on put")
     override suspend fun createSubdir(dirname: String, ignoreIfExists: Boolean): S3Directory =
         if (!ignoreIfExists) {
             TODO("could not check if directory exists")
@@ -40,6 +44,7 @@ internal class S3Directory(
             S3Directory(client, bucketName, currentDir / dirname)
         }
 
+    @Deprecated("Not a good idea")
     override val path: Path
         get() = currentDir
 
