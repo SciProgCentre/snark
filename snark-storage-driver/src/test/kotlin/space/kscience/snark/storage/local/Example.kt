@@ -30,8 +30,8 @@ class Example {
 
     @Test
     fun exampleTest() = runBlocking {
-        somedir!!.put(Path("somefile")).write("hello".toByteArray())
-        assertEquals("hello", somedir!!.get(Path("somefile")).readAll().decodeToString())
+        somedir!!.put("somefile").write("hello".toByteArray())
+        assertEquals("hello", somedir!!.get("somefile").readAll().decodeToString())
     }
 
     @Test
