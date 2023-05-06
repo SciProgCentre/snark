@@ -1,5 +1,7 @@
 package documentBuilder
 
+import kotlinx.coroutines.coroutineScope
+
 public typealias FileName = String
 
 /**
@@ -19,6 +21,7 @@ public data class DependencyGraphNode(
  * Interface of all dependency edges.
  */
 public sealed interface DependencyGraphEdge {
+    public fun visit(graphManager: GraphManager)
 }
 
 /**
@@ -32,7 +35,16 @@ public data class IncludeDependency(
     val parentNode: MdAstParent,
     val dependentNode: MdAstElement,
     val includeList: List<FileName>
-) : DependencyGraphEdge
+) : DependencyGraphEdge {
+    override fun visit(graphManager: GraphManager) {
+        val parent = parentNode
+        for (file in includeList) {
+            graphManager.buildDocument(file)
+            parent.children.add(graphManager.graph.nodes[file].mdAst)
+        }
+        dependentNode = parent
+    }
+}
 
 /**
  * Whole dependency graph.
