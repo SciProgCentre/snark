@@ -13,9 +13,9 @@ private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
 public suspend fun buildDocument(documentDirectory: Directory): String {
     val dependencyGraph = buildDependencyGraph(documentDirectory)
-    val roooot: MdAstRoot = dependencyGraph.nodes[""]!!.mdAst
+    val root: MdAstRoot = dependencyGraph.nodes[""]!!.mdAst
 
-    return jacksonObjectMapper().writeValueAsString(roooot)
+    return jacksonObjectMapper().writeValueAsString(root)
     // TODO прикрутить html
 }
 
