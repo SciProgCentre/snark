@@ -1,6 +1,6 @@
 package documentBuilder
 
-public class GraphManager(private val graph: DependencyGraph) {
+public class GraphManager(public val graph: DependencyGraph) {
     fun buildDocument(file: FileName) {
         val list = graph.nodes[file]
         if (list != null) {

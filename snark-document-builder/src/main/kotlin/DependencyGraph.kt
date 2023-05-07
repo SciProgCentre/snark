@@ -1,6 +1,8 @@
 package documentBuilder
 
 import kotlinx.coroutines.coroutineScope
+import kotlin.collections.MutableList
+
 
 public typealias FileName = String
 
@@ -38,13 +40,28 @@ public data class IncludeDependency(
 ) : DependencyGraphEdge {
     override fun visit(graphManager: GraphManager) {
         val parent = parentNode
+        val childs: MutableList<MdAstElement> = mutableListOf()
         for (file in includeList) {
             graphManager.buildDocument(file)
-            parent.children.add(graphManager.graph.nodes[file].mdAst)
+            childs.addAll(graphManager.graph.nodes[file]!!.mdAst.children)
         }
-        dependentNode = parent
+        val elements: MutableList<MdAstElement> = parent.children.toMutableList()
+        val index = parent.children.indexOf(dependentNode)
+        elements.removeAt(index)
+        elements.addAll(index, childs)
+        parent.children = elements
     }
 }
+
+// parent - List<MdAstElement> --------------------------------------
+//                |                                                  \
+//                |                                                   \
+//                 \                                                   \
+//                  |                                                   \
+//                  |                                                    \
+// dependentNode - MdAstElement                                           \
+//                                                                         |
+// List<FileName> -> List<MdAstRoot> --> List<List<MdAstElement>> ===> List<MdAstElement>
 
 /**
  * Whole dependency graph.
