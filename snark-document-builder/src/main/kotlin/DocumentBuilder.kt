@@ -6,15 +6,18 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlinx.html.*
 import kotlinx.html.dom.createHTMLDocument
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 
 private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
 public suspend fun buildDocument(documentDirectory: Directory): String {
     val dependencyGraph = buildDependencyGraph(documentDirectory)
-
-//    TODO() /*resolving of dependencies*/
-
-    return "Not implemented"
+    println(1)
+    val roooot: MdAstRoot = dependencyGraph.nodes[""]!!.mdAst
+    println(2)
+    return jacksonObjectMapper().writeValueAsString(roooot)
+    // TODO прикрутить html
 }
 
 public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {

@@ -53,14 +53,12 @@ public data class IncludeDependency(
     }
 }
 
-// parent - List<MdAstElement> --------------------------------------
+// parent - List<MdAstElement> -------------------------------------
 //                |                                                  \
-//                |                                                   \
-//                 \                                                   \
-//                  |                                                   \
-//                  |                                                    \
-// dependentNode - MdAstElement                                           \
-//                                                                         |
+//                 \                                                  \
+//                  |                                                  \
+// dependentNode - MdAstElement                                         \
+//                                                                       |
 // List<FileName> -> List<MdAstRoot> --> List<List<MdAstElement>> ===> List<MdAstElement>
 
 /**
