@@ -8,17 +8,14 @@ import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.server.http.content.*
 import kotlinx.html.*
 import io.ktor.server.routing.*
-import kotlinx.css.html
 import java.nio.file.Path
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.localStorage
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
 import space.kscience.snark.storage.unzip.unzip
 
 public interface DataHolder {
@@ -56,7 +53,7 @@ class LocalDataHolder: DataHolder {
 
 public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
     private suspend fun renderGet(call: ApplicationCall) {
-        call.respondText(dataHolder.represent())
+        call.respondText(dataHolder.represent(), ContentType.Text.Html)
     }
     private suspend fun renderUpload(call: ApplicationCall) {
         val multipartData = call.receiveMultipart()
