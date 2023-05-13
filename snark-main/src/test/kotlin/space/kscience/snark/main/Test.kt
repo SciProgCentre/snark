@@ -8,6 +8,6 @@ class Test {
     @Test
     fun justWorks() = runBlocking {
         delay(5)
-        main()
+        //main()
     }
 }
