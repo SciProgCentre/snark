@@ -7,7 +7,7 @@ sudo apt-get install -y kotlin
 
 for dir in ./*/
 do
-    if [[($dir == *'snark'*)]]
+    if [[ $dir == *'snark'* ]]
     then
         cd "$dir"
 
