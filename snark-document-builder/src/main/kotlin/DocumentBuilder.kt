@@ -8,15 +8,27 @@ import kotlinx.html.*
 import kotlinx.html.dom.createHTMLDocument
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import kotlinx.serialization.json.Json
+
+private val SNARK_HTML_RENDER = "snark-document-builder/src/main/nodejs/HtmlRenderer.js"
+fun getHtml(ast_string: String): String
+{
+    return ProcessBuilder("node", SNARK_HTML_RENDER, ast_string)
+        .redirectOutput(ProcessBuilder.Redirect.PIPE)
+        .redirectError(ProcessBuilder.Redirect.INHERIT)
+        .start().inputStream.bufferedReader().readText()
+}
 
 private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
 public suspend fun buildDocument(documentDirectory: Directory): String {
     val dependencyGraph = buildDependencyGraph(documentDirectory)
+
     val root: MdAstRoot = dependencyGraph.nodes[""]!!.mdAst
 
-    return jacksonObjectMapper().writeValueAsString(root)
-    // TODO прикрутить html
+    // return getHtml(jacksonObjectMapper().writeValueAsString(root))
+    // return jacksonObjectMapper().writeValueAsString(root)
+    return root.toString()
 }
 
 public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
