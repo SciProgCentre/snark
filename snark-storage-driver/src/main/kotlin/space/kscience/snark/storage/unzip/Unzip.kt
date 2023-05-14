@@ -1,6 +1,6 @@
 package space.kscience.snark.storage.unzip
 
-import space.kscience.snark.storage.Directory
+import space.kscience.snark.storage.*
 import java.io.FileInputStream
 import java.util.zip.ZipInputStream
 

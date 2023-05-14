@@ -2,7 +2,7 @@ package space.kscience.snark.storage.local
 
 import kotlinx.coroutines.runBlocking
 
-import space.kscience.snark.storage.Directory
+import space.kscience.snark.storage.*
 import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.*
