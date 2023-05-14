@@ -16,4 +16,5 @@ README.md
 LICENSE
 gradlew.bat
 .dockerignore
+.gitignore
 Dockerfile
