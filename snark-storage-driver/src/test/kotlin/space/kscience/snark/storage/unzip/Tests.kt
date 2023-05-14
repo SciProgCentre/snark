@@ -2,8 +2,7 @@ package space.kscience.snark.storage.unzip
 
 import kotlinx.coroutines.runBlocking
 
-import space.kscience.snark.storage.Directory
-import space.kscience.snark.storage.local.LocalDirectory
+import space.kscience.snark.storage.*
 import space.kscience.snark.storage.local.localStorage
 import java.io.*
 import java.nio.file.Files
