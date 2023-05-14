@@ -26,9 +26,8 @@ public suspend fun buildDocument(documentDirectory: Directory): String {
 
     val root: MdAstRoot = dependencyGraph.nodes[""]!!.mdAst
 
-    // return getHtml(jacksonObjectMapper().writeValueAsString(root))
+    return getHtml(jacksonObjectMapper().writeValueAsString(root))
     // return jacksonObjectMapper().writeValueAsString(root)
-    return root.toString()
 }
 
 public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
