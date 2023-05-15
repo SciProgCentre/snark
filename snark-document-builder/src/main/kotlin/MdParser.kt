@@ -7,12 +7,14 @@ import java.nio.file.Path
 private val MARKDOWN_PARSER = "snark-document-builder/src/main/nodejs/MarkdownParser.js"
 private val SNARK_PARSER = "snark-document-builder/src/main/python/SnarkParser.py"
 
-public suspend fun parseMd(mdFile: ByteArray): MdAstRoot {
-    return jacksonObjectMapper()
-        .readValue<MdAstRoot>(ProcessBuilder("node", MARKDOWN_PARSER, mdFile.toString())
+public suspend fun parseMd(mdFile: ByteArray, parserPath: String = MARKDOWN_PARSER): MdAstRoot {
+    val process = ProcessBuilder("node", parserPath, String(mdFile))
+    val result = process
         .redirectOutput(ProcessBuilder.Redirect.PIPE)
         .redirectError(ProcessBuilder.Redirect.INHERIT)
-        .start().inputStream.bufferedReader().readText())
+        .start().inputStream.bufferedReader().readText()
+
+    return jacksonObjectMapper().readValue<MdAstRoot>(result)
 }
 
 public suspend fun buildDependencyGraphNode(mdFile: ByteArray, path: Path): DependencyGraphNode {
