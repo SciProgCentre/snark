@@ -12,14 +12,14 @@ public sealed interface Config {
     public fun build(): Directory
 }
 
-public data class LocalConfig(val path: Path): Config {
+public data class LocalConfig(val path: Path) : Config {
     override fun build(): Directory {
         return localStorage(path)
     }
 }
 
 /*
- * `~/.aws/credentials.json file is required
+ * ~/.aws/credentials.json file is required
  */
 internal fun buildS3Client(regionSpec: String): S3Client {
     return S3Client {
@@ -27,13 +27,13 @@ internal fun buildS3Client(regionSpec: String): S3Client {
     }
 }
 
-public data class S3BucketConfig(val bucketName: String, val region: String = DEFAULT_REGION): Config {
+public data class S3BucketConfig(val bucketName: String, val region: String = DEFAULT_REGION) : Config {
     override fun build(): Directory {
         return s3Bucket(buildS3Client(region), bucketName)
     }
 }
 
-public data class S3ServiceConfig(val region: String = DEFAULT_REGION): Config {
+public data class S3ServiceConfig(val region: String = DEFAULT_REGION) : Config {
     override fun build(): Directory {
         return s3Storage(buildS3Client(region))
     }

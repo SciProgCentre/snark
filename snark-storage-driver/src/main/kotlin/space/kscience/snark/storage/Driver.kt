@@ -1,7 +1,5 @@
 package space.kscience.snark.storage
 
-import space.kscience.snark.storage.local.localStorage
-import space.kscience.snark.storage.s3.s3Bucket
 import java.nio.file.Path
 import kotlin.io.path.Path
 
