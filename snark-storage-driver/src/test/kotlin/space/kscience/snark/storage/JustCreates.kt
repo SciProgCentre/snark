@@ -7,7 +7,7 @@ class JustCreates {
 
     @Test
     fun s3Created() {
-        val dir = Directory.fromConfig(S3ServiceConfig)
+        val dir = Directory.fromConfig(S3ServiceConfig())
         dir.close()
     }
 
