@@ -69,7 +69,7 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
     private var relativePath = "/"
 
     private suspend fun receivePath(call: ApplicationCall) {
-        relativePath = call.receiveText().drop(5).replace("%2F", "/")
+        relativePath = call.receiveParameters()["path"]?:"/"
         call.respondText("Path is successfully changed to: " + relativePath)
     }
     private suspend fun renderGet(call: ApplicationCall) {
