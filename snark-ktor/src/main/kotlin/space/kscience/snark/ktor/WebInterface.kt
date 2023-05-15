@@ -8,15 +8,12 @@ import io.ktor.server.application.*
 import io.ktor.server.html.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
-import io.ktor.server.http.content.*
 import kotlinx.html.*
 import io.ktor.server.routing.*
-import kotlinx.css.html
 import java.nio.file.Path
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.localStorage
 import space.kscience.snark.storage.unzip.unzip
-import java.io.File
 import kotlin.io.createTempFile
 import kotlin.io.path.*
 import kotlin.io.writeBytes
@@ -50,7 +47,7 @@ class LocalDataHolder: DataHolder {
             if (entry.isDirectory()) {
                 buildResponse(from, entry)
             } else {
-                response += from.relativize(entry).toString() + "\n"
+                response += from.relativize(entry).toString() + "<br>"
             }
         }
     }
@@ -58,7 +55,7 @@ class LocalDataHolder: DataHolder {
         if (source == null) {
             "No data was loaded!"
         } else {
-            response = "List of files:\n"
+            response = "List of files:<br>"
             val path = getPath(relativePath)
             buildResponse(path, path)
             response
@@ -70,10 +67,11 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
 
     private suspend fun receivePath(call: ApplicationCall) {
         relativePath = call.receiveParameters()["path"]?:"/"
-        call.respondText("Path is successfully changed to: " + relativePath)
+        call.respondRedirect("/")
+        //call.respondText("Path is successfully changed to: " + relativePath)
     }
     private suspend fun renderGet(call: ApplicationCall) {
-        call.respondText(dataHolder.represent(relativePath))
+        call.respondText(dataHolder.represent(relativePath), ContentType.Text.Html)
     }
     private suspend fun renderUpload(call: ApplicationCall) {
         val multipartData = call.receiveMultipart()
@@ -90,7 +88,8 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
             part.dispose()
         }
         unzip(tmp.toPath().toString(), dataHolder.init(relativePath))
-        call.respondText("File is successfully uploaded")
+        //call.respondText("File is successfully uploaded")
+        call.respondRedirect("/")
     }
     private suspend fun renderMainPage(call: ApplicationCall)  {
         call.respondHtml(HttpStatusCode.OK) {
