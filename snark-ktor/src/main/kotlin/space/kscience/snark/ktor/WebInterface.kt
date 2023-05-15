@@ -15,48 +15,65 @@ import kotlinx.css.html
 import java.nio.file.Path
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.localStorage
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
 import space.kscience.snark.storage.unzip.unzip
+import java.io.File
+import kotlin.io.createTempFile
+import kotlin.io.path.*
+import kotlin.io.writeBytes
 
 public interface DataHolder {
 
-    fun init() : Directory
-    fun represent(): String
+    fun init(relativePath: String = "/") : Directory
+    fun represent(relativePath: String = "/"): String
     //will be HTML later
 }
+
 class LocalDataHolder: DataHolder {
     private var source: Path? = null
     private var response: String = ""
-    override fun init(): Directory {
-        source?.toFile()?.deleteRecursively()
-        source = createTempDirectory()
-        return localStorage(source!!)
+
+    private fun getPath(relativePath: String) : Path {
+        return source!! / Path(relativePath.drop(1))
     }
-    private fun buildResponse(path: Path) {
-        for (entry in path.listDirectoryEntries()) {
+    override fun init(relativePath: String): Directory {
+        if (source == null) {
+            source = createTempDirectory()
+        }
+        val path = getPath(relativePath)
+        path.createDirectories()
+        path.toFile().deleteRecursively()
+        path.createDirectory()
+        return localStorage(path)
+    }
+    private fun buildResponse(from: Path, cur: Path) {
+        for (entry in cur.listDirectoryEntries()) {
             if (entry.isDirectory()) {
-                buildResponse(entry)
+                buildResponse(from, entry)
             } else {
-                response += source!!.relativize(entry).toString() + "\n"
+                response += from.relativize(entry).toString() + "\n"
             }
         }
     }
-    override fun represent() : String =
+    override fun represent(relativePath: String) : String =
         if (source == null) {
             "No data was loaded!"
         } else {
             response = "List of files:\n"
-            buildResponse(source!!)
+            val path = getPath(relativePath)
+            buildResponse(path, path)
             response
         }
 }
 
 public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
+    private var relativePath = "/"
+
+    private suspend fun receivePath(call: ApplicationCall) {
+        relativePath = call.receiveText().drop(5).replace("%2F", "/")
+        call.respondText("Path is successfully changed to: " + relativePath)
+    }
     private suspend fun renderGet(call: ApplicationCall) {
-        call.respondText(dataHolder.represent())
+        call.respondText(dataHolder.represent(relativePath))
     }
     private suspend fun renderUpload(call: ApplicationCall) {
         val multipartData = call.receiveMultipart()
@@ -72,7 +89,7 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
             }
             part.dispose()
         }
-        unzip(tmp.toPath().toString(), dataHolder.init())
+        unzip(tmp.toPath().toString(), dataHolder.init(relativePath))
         call.respondText("File is successfully uploaded")
     }
     private suspend fun renderMainPage(call: ApplicationCall)  {
@@ -86,8 +103,20 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
                 h1 {
                     +"SNARK"
                 }
+                p {
+                    +("Path: " + relativePath)
+                }
             }
             body {
+                postForm(action = "/changePath") {
+                    label {
+                        + "Enter new path:"
+                    }
+                    input(name = "path", type = InputType.text) {}
+                    button {
+                        +"Change path"
+                    }
+                }
                 postForm (action = "/upload", encType = FormEncType.multipartFormData)  {
                     label {
                         +"Choose zip archive: "
@@ -108,6 +137,9 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
             routing {
                 get("/") {
                     renderMainPage(call)
+                }
+                post("/changePath") {
+                    receivePath(call)
                 }
                 post("/upload") {
                     renderUpload(call)
