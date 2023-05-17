@@ -12,20 +12,24 @@ import kotlinx.html.*
 import io.ktor.server.routing.*
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.unzip.unzip
+import java.io.File
+import java.nio.file.Path
 import kotlin.io.createTempFile
 import kotlin.io.writeBytes
+import kotlin.io.path.Path
 
 public interface DataHolder {
-    public fun init(relativePath: String = "/") : Directory
+    public suspend fun init(relativePath: Path) : Directory
 
-    public fun represent(relativePath: String = "/"): String
+    public suspend fun represent(relativePath: Path): String
 }
 
 public class SNARKServer(private val dataHolder: DataHolder, private val port: Int): Runnable {
-    private var relativePath = "/"
+    private var relativePath = Path("")
 
     private suspend fun receivePath(call: ApplicationCall) {
-        relativePath = call.receiveParameters()["path"]?:"/"
+        val pathString = call.receiveParameters()["path"]?:""
+        relativePath = Path(pathString.dropWhile{it == '/'})
         call.respondRedirect("/")
     }
     private suspend fun renderGet(call: ApplicationCall) {
@@ -60,7 +64,7 @@ public class SNARKServer(private val dataHolder: DataHolder, private val port: I
                     +"SNARK"
                 }
                 p {
-                    +("Path: " + relativePath)
+                    +("Path: /" + relativePath.toString())
                 }
             }
             body {

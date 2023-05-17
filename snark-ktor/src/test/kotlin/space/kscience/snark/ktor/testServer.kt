@@ -12,10 +12,10 @@ private class LocalDataHolder: DataHolder {
     private var source: Path? = null
     private var response: String = ""
 
-    private fun getPath(relativePath: String) : Path {
-        return source!! / Path(relativePath.dropWhile{it == '/'})
+    private fun getPath(relativePath: Path) : Path {
+        return source!! / relativePath
     }
-    override fun init(relativePath: String): Directory {
+    override suspend fun init(relativePath: Path): Directory {
         if (source == null) {
             source = createTempDirectory()
         }
@@ -34,7 +34,7 @@ private class LocalDataHolder: DataHolder {
             }
         }
     }
-    override fun represent(relativePath: String) : String =
+    override suspend fun represent(relativePath: Path) : String =
         if (source == null) {
             "No data was loaded!"
         } else {
