@@ -1,0 +1,84 @@
+{
+  "id": "d71ae081-b8eb-401b-8e18-d7fc286c9686",
+  "version": "2.0",
+  "name": "SNARK",
+  "url": "localhost:9090",
+  "tests": [{
+    "id": "a270149b-6cb5-4600-a8a8-ddd72f9525f7",
+    "name": "web_integration_test",
+    "commands": [{
+      "id": "c308fef3-3b59-4d9c-bb10-9a869a5cd68e",
+      "comment": "",
+      "command": "open",
+      "target": "http://localhost:9090/",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "a8aa6f0f-4afd-45b8-8954-324310e38810",
+      "comment": "",
+      "command": "setWindowSize",
+      "target": "1262x660",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "170d23dc-6c25-4254-b6a9-c28d69b68515",
+      "comment": "",
+      "command": "click",
+      "target": "name=file",
+      "targets": [
+        ["name=file", "name"],
+        ["css=form:nth-child(4) > input", "css:finder"],
+        ["xpath=//input[@name='file']", "xpath:attributes"],
+        ["xpath=//form[2]/input", "xpath:position"]
+      ],
+      "value": ""
+    }, {
+      "id": "7f8ecab4-b100-417d-a436-ad3c510a746c",
+      "comment": "",
+      "command": "type",
+      "target": "name=file",
+      "targets": [
+        ["name=file", "name"],
+        ["css=form:nth-child(4) > input", "css:finder"],
+        ["xpath=//input[@name='file']", "xpath:attributes"],
+        ["xpath=//form[2]/input", "xpath:position"]
+      ],
+      "value": "C:\\Users\\user\\Desktop\\test.zip"
+    }, {
+      "id": "34d46901-273c-4720-83e3-336973477a06",
+      "comment": "",
+      "command": "click",
+      "target": "css=form:nth-child(4) > button",
+      "targets": [
+        ["css=form:nth-child(4) > button", "css:finder"],
+        ["xpath=//form[2]/button", "xpath:position"],
+        ["xpath=//button[contains(.,'Upload file')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }, {
+      "id": "3ebde08b-0db8-4e92-8113-8f8b4dd9a2d5",
+      "comment": "",
+      "command": "click",
+      "target": "linkText=Show data",
+      "targets": [
+        ["linkText=Show data", "linkText"],
+        ["css=a", "css:finder"],
+        ["xpath=//a[contains(text(),'Show data')]", "xpath:link"],
+        ["xpath=//a[contains(@href, '/data')]", "xpath:href"],
+        ["xpath=//a", "xpath:position"],
+        ["xpath=//a[contains(.,'Show data')]", "xpath:innerText"]
+      ],
+      "value": ""
+    }]
+  }],
+  "suites": [{
+    "id": "b2053230-b6c0-42df-85b0-864ac179024b",
+    "name": "Default Suite",
+    "persistSession": false,
+    "parallel": false,
+    "timeout": 300,
+    "tests": []
+  }],
+  "urls": ["localhost:9090"],
+  "plugins": []
+}
