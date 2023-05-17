@@ -20,12 +20,12 @@ import kotlin.io.writeBytes
 
 public interface DataHolder {
 
-    fun init(relativePath: String = "/") : Directory
-    fun represent(relativePath: String = "/"): String
-    //will be HTML later
+    public fun init(relativePath: String = "/") : Directory
+
+    public fun represent(relativePath: String = "/"): String
 }
 
-class LocalDataHolder: DataHolder {
+internal class LocalDataHolder: DataHolder {
     private var source: Path? = null
     private var response: String = ""
 
@@ -62,13 +62,12 @@ class LocalDataHolder: DataHolder {
         }
 }
 
-public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
+public class SNARKServer(private val dataHolder: DataHolder, private val port: Int): Runnable {
     private var relativePath = "/"
 
     private suspend fun receivePath(call: ApplicationCall) {
         relativePath = call.receiveParameters()["path"]?:"/"
         call.respondRedirect("/")
-        //call.respondText("Path is successfully changed to: " + relativePath)
     }
     private suspend fun renderGet(call: ApplicationCall) {
         call.respondText(dataHolder.represent(relativePath), ContentType.Text.Html)
@@ -88,7 +87,6 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
             part.dispose()
         }
         unzip(tmp.toPath().toString(), dataHolder.init(relativePath))
-        //call.respondText("File is successfully uploaded")
         call.respondRedirect("/")
     }
     private suspend fun renderMainPage(call: ApplicationCall)  {
