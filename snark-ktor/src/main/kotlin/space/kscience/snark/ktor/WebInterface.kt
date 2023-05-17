@@ -13,13 +13,15 @@ import io.ktor.server.routing.*
 import java.nio.file.Path
 import space.kscience.snark.storage.Directory
 import space.kscience.snark.storage.local.localStorage
+import kotlin.io.path.createTempDirectory
+import kotlin.io.path.isDirectory
+import kotlin.io.path.listDirectoryEntries
 import space.kscience.snark.storage.unzip.unzip
 import kotlin.io.createTempFile
 import kotlin.io.path.*
 import kotlin.io.writeBytes
 
 public interface DataHolder {
-
     public fun init(relativePath: String = "/") : Directory
 
     public fun represent(relativePath: String = "/"): String

@@ -1,0 +1,20 @@
+# .gitignore contents
+
+.gradle/
+build/
+.idea/
+/logs/
+
+!gradle/wrapper/gradle-wrapper.jar
+
+kotlin-js-store
+*.iml
+
+# addition to .gitignore
+
+README.md
+LICENSE
+gradlew.bat
+.dockerignore
+.gitignore
+Dockerfile
