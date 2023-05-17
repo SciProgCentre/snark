@@ -10,58 +10,15 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import kotlinx.html.*
 import io.ktor.server.routing.*
-import java.nio.file.Path
 import space.kscience.snark.storage.Directory
-import space.kscience.snark.storage.local.localStorage
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
 import space.kscience.snark.storage.unzip.unzip
 import kotlin.io.createTempFile
-import kotlin.io.path.*
 import kotlin.io.writeBytes
 
 public interface DataHolder {
     public fun init(relativePath: String = "/") : Directory
 
     public fun represent(relativePath: String = "/"): String
-}
-
-internal class LocalDataHolder: DataHolder {
-    private var source: Path? = null
-    private var response: String = ""
-
-    private fun getPath(relativePath: String) : Path {
-        return source!! / Path(relativePath.drop(1))
-    }
-    override fun init(relativePath: String): Directory {
-        if (source == null) {
-            source = createTempDirectory()
-        }
-        val path = getPath(relativePath)
-        path.createDirectories()
-        path.toFile().deleteRecursively()
-        path.createDirectory()
-        return localStorage(path)
-    }
-    private fun buildResponse(from: Path, cur: Path) {
-        for (entry in cur.listDirectoryEntries()) {
-            if (entry.isDirectory()) {
-                buildResponse(from, entry)
-            } else {
-                response += from.relativize(entry).toString() + "<br>"
-            }
-        }
-    }
-    override fun represent(relativePath: String) : String =
-        if (source == null) {
-            "No data was loaded!"
-        } else {
-            response = "List of files:<br>"
-            val path = getPath(relativePath)
-            buildResponse(path, path)
-            response
-        }
 }
 
 public class SNARKServer(private val dataHolder: DataHolder, private val port: Int): Runnable {
