@@ -10,53 +10,30 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import kotlinx.html.*
 import io.ktor.server.routing.*
-import kotlinx.css.h1
-import kotlinx.css.html
-import kotlinx.html.dom.create
-import kotlinx.html.dom.document
-import java.nio.file.Path
 import space.kscience.snark.storage.Directory
-import space.kscience.snark.storage.local.localStorage
-import kotlin.io.path.createTempDirectory
-import kotlin.io.path.isDirectory
-import kotlin.io.path.listDirectoryEntries
 import space.kscience.snark.storage.unzip.unzip
+import java.io.File
+import java.nio.file.Path
+import kotlin.io.createTempFile
+import kotlin.io.writeBytes
+import kotlin.io.path.Path
 
 public interface DataHolder {
-    public fun init() : Directory
-    public suspend fun represent(): String
-    //will be HTML later
-}
-class LocalDataHolder: DataHolder {
-    private var source: Path? = null
-    private var response: String = ""
-    override fun init(): Directory {
-        source?.toFile()?.deleteRecursively()
-        source = createTempDirectory()
-        return localStorage(source!!)
-    }
-    private fun buildResponse(path: Path) {
-        for (entry in path.listDirectoryEntries()) {
-            if (entry.isDirectory()) {
-                buildResponse(entry)
-            } else {
-                response += source!!.relativize(entry).toString() + "\n"
-            }
-        }
-    }
-    override suspend fun represent(): String =
-        if (source == null) {
-            "No data was loaded!"
-        } else {
-            response = "List of files:\n"
-            buildResponse(source!!)
-            response
-        }
+    public suspend fun init(relativePath: Path) : Directory
+
+    public suspend fun represent(relativePath: Path): String
 }
 
-public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
+public class SNARKServer(private val dataHolder: DataHolder, private val port: Int): Runnable {
+    private var relativePath = Path("")
+
+    private suspend fun receivePath(call: ApplicationCall) {
+        val pathString = call.receiveParameters()["path"]?:""
+        relativePath = Path(pathString.dropWhile{it == '/'})
+        call.respondRedirect("/")
+    }
     private suspend fun renderGet(call: ApplicationCall) {
-        call.respondText(dataHolder.represent(), ContentType.Text.Html)
+        call.respondText(dataHolder.represent(relativePath), ContentType.Text.Html)
     }
     private suspend fun renderUpload(call: ApplicationCall) {
         val multipartData = call.receiveMultipart()
@@ -72,8 +49,8 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
             }
             part.dispose()
         }
-        unzip(tmp.toPath().toString(), dataHolder.init())
-        call.respondText("File is successfully uploaded")
+        unzip(tmp.toPath().toString(), dataHolder.init(relativePath))
+        call.respondRedirect("/")
     }
     private suspend fun renderMainPage(call: ApplicationCall)  {
         call.respondHtml(HttpStatusCode.OK) {
@@ -86,8 +63,20 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
                 h1 {
                     +"SNARK"
                 }
+                p {
+                    +("Path: /" + relativePath.toString())
+                }
             }
             body {
+                postForm(action = "/changePath") {
+                    label {
+                        + "Enter new path:"
+                    }
+                    input(name = "path", type = InputType.text) {}
+                    button {
+                        +"Change path"
+                    }
+                }
                 postForm (action = "/upload", encType = FormEncType.multipartFormData)  {
                     label {
                         +"Choose zip archive: "
@@ -108,6 +97,9 @@ public class SNARKServer(val dataHolder: DataHolder, val port: Int): Runnable {
             routing {
                 get("/") {
                     renderMainPage(call)
+                }
+                post("/changePath") {
+                    receivePath(call)
                 }
                 post("/upload") {
                     renderUpload(call)
