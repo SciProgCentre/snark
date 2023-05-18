@@ -8,7 +8,7 @@ string = sys.argv[1]
 
 outputfile = sys.argv[2] if len(sys.argv) >= 3 else None
 
-pattern = r'^([\n|\t| ]*@include\([a-z|0-9|.|_]*.md\)[\n|\t| ]*)*$'
+pattern = r'^([\n|\t| ]*@include\([a-z|0-9|.|_|\/]*\)[\n|\t| ]*)*$'
 
 files = []
 
