@@ -25,7 +25,15 @@ private val DEFAULT_DOCUMENT_ROOT = "main.md"
 public suspend fun buildDocument(root: Directory, path: Path): String {
     val dependencyGraph = buildDependencyGraph(root, path)
 
-    println("dependency graph nodes (size: ${dependencyGraph.nodes.size}):\n${dependencyGraph.nodes}")
+    val graphManage = GraphManager(dependencyGraph)
+
+    graphManage.buildDocument(path.toString())
+
+//    for ((key, value) in dependencyGraph.nodes) {
+//        println("Key ${key}")
+//        println("Value.mdAst ${value.mdAst}")
+//        println("Value.dependencies ${value.dependencies}")
+//    }
 
     val root: MdAstRoot = dependencyGraph.nodes[path.toString()]!!.mdAst
 
