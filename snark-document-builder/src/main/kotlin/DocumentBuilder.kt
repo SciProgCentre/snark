@@ -9,6 +9,7 @@ import kotlinx.html.dom.createHTMLDocument
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import kotlinx.serialization.json.Json
+import kotlin.io.path.*
 
 private val SNARK_HTML_RENDER = "snark-document-builder/src/main/nodejs/HtmlRenderer.js"
 fun getHtml(ast_string: String): String
@@ -21,35 +22,37 @@ fun getHtml(ast_string: String): String
 
 private val DEFAULT_DOCUMENT_ROOT = "main.md"
 
-public suspend fun buildDocument(documentDirectory: Directory): String {
-    val dependencyGraph = buildDependencyGraph(documentDirectory)
+public suspend fun buildDocument(root: Directory, path: Path): String {
+    val dependencyGraph = buildDependencyGraph(root, path)
 
-    val root: MdAstRoot = dependencyGraph.nodes[documentDirectory.path.toString()]!!.mdAst
+    println("dependency graph nodes (size: ${dependencyGraph.nodes.size}):\n${dependencyGraph.nodes}")
+
+    val root: MdAstRoot = dependencyGraph.nodes[path.toString()]!!.mdAst
 
     return getHtml(jacksonObjectMapper().writeValueAsString(root))
 }
 
-public suspend fun buildDependencyGraph(root: Directory): DependencyGraph {
+public suspend fun buildDependencyGraph(root: Directory, path: Path): DependencyGraph {
     val nodes = HashMap<FileName, DependencyGraphNode>()
 
-    buildNodes(root, nodes)
+    buildNodes(root, path, nodes)
 
     return DependencyGraph(nodes)
 }
 
-private suspend fun buildNodes(folder: Directory, nodes: HashMap<FileName, DependencyGraphNode>) {
-    val pathString = folder.path.toString()
+private suspend fun buildNodes(root: Directory, path: Path, nodes: HashMap<FileName, DependencyGraphNode>) {
+    val pathString = path.toString()
 
     assert(!nodes.containsKey(pathString))
 
-    val rootDcoument = folder.get(DEFAULT_DOCUMENT_ROOT)
-    nodes.put(pathString, buildDependencyGraphNode(rootDcoument.readAll(), folder.path))
+    val rootDcoument = (root / path).get(DEFAULT_DOCUMENT_ROOT)
+    nodes.put(pathString, buildDependencyGraphNode(rootDcoument.readAll(), path))
 
     val dependencies = getDependencies(nodes.getValue(pathString))
 
     for (dependency in dependencies) {
         if (!nodes.containsKey(dependency))
-            buildNodes(folder.getSubdir(Paths.get(dependency)), nodes)
+            buildNodes(root, Path(dependency), nodes)
     }
 }
 
