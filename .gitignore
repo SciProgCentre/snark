@@ -2,6 +2,7 @@
 build/
 .idea/
 /logs/
+rundata/
 
 !gradle/wrapper/gradle-wrapper.jar
 
