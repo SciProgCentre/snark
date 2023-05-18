@@ -20,6 +20,12 @@ public interface Directory : AutoCloseable {
 
     @Deprecated("Not a good idea")
     public val path: Path
+
+    public companion object {
+        public fun fromConfig(config: Config): Directory {
+            return config.build()
+        }
+    }
 }
 
 
