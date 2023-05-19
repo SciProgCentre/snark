@@ -3,9 +3,21 @@ package documentBuilder
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.createFile
+import kotlin.io.path.writeBytes
 
 private val MARKDOWN_PARSER = "snark-document-builder/src/main/nodejs/MarkdownParser.js"
 private val SNARK_PARSER = "snark-document-builder/src/main/python/SnarkParser.py"
+
+internal fun prepareResources(resourceName: String, expectedPath: Path) {
+    val text = object {}.javaClass.getResource(resourceName)?.readBytes()
+    if (text != null) {
+        expectedPath.parent.createDirectories()
+        expectedPath.createFile()
+        expectedPath.writeBytes(text)
+    }
+}
 
 public suspend fun parseMd(mdFile: ByteArray, parserPath: String = MARKDOWN_PARSER): MdAstRoot {
     val process = ProcessBuilder("node", parserPath, String(mdFile))
