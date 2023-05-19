@@ -20,7 +20,7 @@ fun buildS3Client(regionSpec: String, endpointUrlSpec: Url): S3Client {
     return S3Client {
         endpointProvider = EndpointProvider { _ -> Endpoint(endpointUrlSpec) }
         region = regionSpec
-        logMode = LogMode.LogResponse
+        logMode = LogMode.LogRequest
     }
 }
 
@@ -40,6 +40,7 @@ class Tests {
             bucket = "snark-test"
         }).contents ?: emptyList()
         println("objects: $objects")
+        assert(objects.isNotEmpty())
     }
 
     @Test
@@ -48,13 +49,13 @@ class Tests {
         client.putObject {
             bucket = "snark-test"
             body = ByteStream.fromString("Hello")
-            key = "test/file.txt"
+            key = "file.txt"
         }
         assert(true)
     }
 
     @Test
-    fun loadFile() = runBlocking {
+    fun putFile() = runBlocking {
         val client = s3Bucket(buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL), "snark-test")
         val filepath = Path("test/testfile.txt")
         client.put(filepath).write("Hello".toByteArray())
@@ -66,9 +67,17 @@ class Tests {
         val client = buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL)
         client.getObject(GetObjectRequest{
             bucket = "snark-test"
-            key = "test/file.txt"
+            key = "file.txt"
         }) {
             assertEquals("Hello from s3\n", it.body?.toByteArray()?.decodeToString())
         }
+    }
+
+    @Test
+    fun getFile() = runBlocking {
+        val client = s3Bucket(buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL), "snark-test")
+        val filepath = Path("file.txt")
+        client.get(filepath).readAll()
+        assert(true)
     }
 }
