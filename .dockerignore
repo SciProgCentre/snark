@@ -21,3 +21,4 @@ Dockerfile
 
 tmp
 rundata
+credentials.json

@@ -20,4 +20,6 @@ RUN ./gradlew clean build
 
 EXPOSE 8080
 
+RUN mkdir -p ~/.aws/ && ln -s /run/secrets/credentials.json ~/.aws/credentials.json
+
 CMD ./gradlew :snark-main:run_server

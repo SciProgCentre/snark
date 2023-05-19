@@ -9,5 +9,11 @@ services:
       - 8081
     volumes:
       - storage:/app/rundata
+    secrets:
+      - credentials.json
 volumes:
   storage:
+
+secrets:
+  credentials.json:
+    file: ./credentials.json
