@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import java.nio.file.Path
 
+// snark-main/build.gradle.kts depends on these pathes
 private val MARKDOWN_PARSER = "snark-document-builder/src/main/nodejs/MarkdownParser.js"
 private val SNARK_PARSER = "snark-document-builder/src/main/python/SnarkParser.py"
 
