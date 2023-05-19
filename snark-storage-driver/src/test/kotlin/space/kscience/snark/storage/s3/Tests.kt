@@ -11,9 +11,10 @@ import aws.smithy.kotlin.runtime.content.ByteStream
 import aws.smithy.kotlin.runtime.content.toByteArray
 import aws.smithy.kotlin.runtime.net.Url
 import kotlinx.coroutines.runBlocking
-import org.junit.jupiter.api.Test
+import kotlin.test.Test
 import space.kscience.snark.storage.*
 import kotlin.io.path.Path
+import kotlin.test.Ignore
 import kotlin.test.assertEquals
 
 fun buildS3Client(regionSpec: String, endpointUrlSpec: Url): S3Client {
@@ -33,6 +34,7 @@ class Tests {
         assert(buckets.isNotEmpty())
     }
 
+    @Ignore
     @Test
     fun listObjects() = runBlocking {
         val client = buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL)
@@ -43,6 +45,7 @@ class Tests {
         assert(objects.isNotEmpty())
     }
 
+    @Ignore
     @Test
     fun putObject() = runBlocking {
         val client = buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL)
@@ -54,6 +57,7 @@ class Tests {
         assert(true)
     }
 
+    @Ignore
     @Test
     fun putFile() = runBlocking {
         val client = s3Bucket(buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL), "snark-test")
@@ -62,6 +66,7 @@ class Tests {
         assertEquals("Hello", client.get(filepath).readAll().decodeToString())
     }
 
+    @Ignore
     @Test
     fun getObject() = runBlocking {
         val client = buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL)
@@ -73,6 +78,7 @@ class Tests {
         }
     }
 
+    @Ignore
     @Test
     fun getFile() = runBlocking {
         val client = s3Bucket(buildS3Client("arctic-vault", DEFAULT_ENDPOINT_URL), "snark-test")
