@@ -23,4 +23,5 @@ tasks.test {
 tasks.register<JavaExec>("run_server") {
     classpath = sourceSets.main.get().runtimeClasspath
     main = "space.kscience.snark.main.MainKt"
+    workingDir = File(workingDir.parent)
 }
