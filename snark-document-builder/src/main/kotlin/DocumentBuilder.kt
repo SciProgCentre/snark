@@ -29,12 +29,6 @@ public suspend fun buildDocument(root: Directory, path: Path): String {
 
     graphManage.buildDocument(path.toString())
 
-//    for ((key, value) in dependencyGraph.nodes) {
-//        println("Key ${key}")
-//        println("Value.mdAst ${value.mdAst}")
-//        println("Value.dependencies ${value.dependencies}")
-//    }
-
     val root: MdAstRoot = dependencyGraph.nodes[path.toString()]!!.mdAst
 
     return getHtml(jacksonObjectMapper().writeValueAsString(root))
