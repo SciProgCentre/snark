@@ -41,27 +41,28 @@ public suspend fun buildDocument(root: Directory, path: Path): String {
 }
 
 public suspend fun buildDependencyGraph(root: Directory, path: Path): DependencyGraph {
-    val nodes = HashMap<FileName, DependencyGraphNode>()
-
-    buildNodes(root, path, nodes)
+    val nodes = buildNodes(root, path, HashMap<FileName, DependencyGraphNode>())
 
     return DependencyGraph(nodes)
 }
 
-private suspend fun buildNodes(root: Directory, path: Path, nodes: HashMap<FileName, DependencyGraphNode>) {
+private suspend fun buildNodes(root: Directory, path: Path, nodes: Map<FileName, DependencyGraphNode>) : Map<FileName, DependencyGraphNode> {
     val pathString = path.toString()
 
     assert(!nodes.containsKey(pathString))
 
     val rootDcoument = (root / path).get(DEFAULT_DOCUMENT_ROOT)
-    nodes.put(pathString, buildDependencyGraphNode(rootDcoument.readAll(), path))
 
-    val dependencies = getDependencies(nodes.getValue(pathString))
+    var newNodes = nodes + mapOf(pathString to buildDependencyGraphNode(rootDcoument.readAll(), path))
+
+    val dependencies = getDependencies(newNodes.getValue(pathString))
 
     for (dependency in dependencies) {
-        if (!nodes.containsKey(dependency))
-            buildNodes(root, Path(dependency), nodes)
+        if (!newNodes.containsKey(dependency))
+            newNodes = buildNodes(root, Path(dependency), newNodes)
     }
+
+    return newNodes
 }
 
 public suspend fun getDependencies(node: DependencyGraphNode): Set<FileName> {
