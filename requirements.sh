@@ -15,8 +15,9 @@ do
         then
 
             cd ci
-            if [[ -f requirements.sh ]]; then
-              ./requirments.sh
+            if [[ -f "requirements.sh" ]]; then
+              echo "executing sub"
+              bash -c "./requirements.sh"
             fi
 
             cd ..

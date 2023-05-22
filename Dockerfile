@@ -14,7 +14,7 @@ RUN ./snark-main/ci/install_java.sh "$JAVA_VERSION"
 
 COPY . .
 
-RUN ./requirments.sh
+RUN ./requirements.sh
 
 RUN bash -c "source ~/.sdkman/bin/sdkman-init.sh && ./gradlew clean build"
 
