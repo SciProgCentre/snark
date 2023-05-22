@@ -5,8 +5,6 @@ set -e
 apt-get update
 apt-get install -y sudo
 
-sudo apt-get install -y kotlin
-
 for dir in ./*/
 do
     if [[ $dir == *'snark'* ]]
@@ -17,8 +15,9 @@ do
         then
 
             cd ci
-
-            ./requirments.sh
+            if [[ -f requirements.sh ]]; then
+              ./requirments.sh
+            fi
 
             cd ..
         fi
