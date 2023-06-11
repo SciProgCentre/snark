@@ -14,6 +14,8 @@ dependencies {
     api("io.ktor:ktor-server-host-common:$ktorVersion")
     implementation("io.ktor:ktor-server-netty:2.3.0")
     implementation(project(":snark-storage-driver"))
+    implementation("io.ktor:ktor-server-partial-content:$ktorVersion")
+    implementation("io.ktor:ktor-server-auto-head-response:$ktorVersion")
 
     testApi("io.ktor:ktor-server-tests:$ktorVersion")
 }

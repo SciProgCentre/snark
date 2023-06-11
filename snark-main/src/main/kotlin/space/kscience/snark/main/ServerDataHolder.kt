@@ -13,4 +13,8 @@ internal class ServerDataHolder(private val directory: Directory): DataHolder {
     override suspend fun represent(relativePath: Path): String {
         return buildDocument(directory, relativePath)
     }
+
+    override suspend fun toPdf(relativePath: Path) :  Path {
+        return buildLatex(directory, relativePath)
+    }
 }

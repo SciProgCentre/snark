@@ -14,6 +14,8 @@ dependencies {
     api("io.ktor:ktor-server-html-builder:$ktorVersion")
 
     implementation(project(":snark-storage-driver"))
+    implementation(project(":snark-pandoc-plugin"))
+
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:$jacksonVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.3")
 }

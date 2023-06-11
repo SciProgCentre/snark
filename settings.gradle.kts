@@ -45,4 +45,5 @@ include(
     ":snark-storage-driver",
     ":snark-document-builder",
     ":snark-main",
+    ":snark-pandoc-plugin",
 )
