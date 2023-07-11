@@ -7,9 +7,7 @@ import io.ktor.http.fromFileExtension
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.html.respondHtml
-import io.ktor.server.http.content.file
-import io.ktor.server.http.content.files
-import io.ktor.server.http.content.static
+import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Route
@@ -63,18 +61,12 @@ public class KtorSiteBuilder(
                 Path.of(it).toFile()
             } catch (ex: Exception) {
                 //failure,
-                logger.error { "File $it could not be converted to java.io.File"}
+                logger.error { "File $it could not be converted to java.io.File" }
                 return@let
             }
 
-            if (file.isDirectory) {
-                ktorRoute.static(routeName.toWebPath()) {
-                    files(file)
-                }
-            } else {
-                val fileName = routeName.toWebPath()
-                ktorRoute.file(fileName, file)
-            }
+            val fileName = routeName.toWebPath()
+            ktorRoute.staticFiles(fileName, file)
             //success, don't do anything else
             return@files
         }
