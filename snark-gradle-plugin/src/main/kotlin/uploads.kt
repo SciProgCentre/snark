@@ -14,7 +14,7 @@ private fun ChannelSftp.recursiveFolderUpload(sourceFile: File, destinationPath:
         cd(destinationPath)
         if (!sourceFile.name.startsWith(".")) put(
             FileInputStream(sourceFile),
-            sourceFile.getName(),
+            sourceFile.name,
             ChannelSftp.OVERWRITE
         )
     } else {
@@ -32,13 +32,13 @@ private fun ChannelSftp.recursiveFolderUpload(sourceFile: File, destinationPath:
 
             // else create a directory
             if (attrs != null) {
-                println("Directory $directoryPath exists IsDir=${attrs.isDir()}")
+                println("Directory $directoryPath exists IsDir=${attrs.isDir}")
             } else {
                 println("Creating directory $directoryPath")
-                mkdir(sourceFile.getName())
+                mkdir(sourceFile.name)
             }
             for (f in files) {
-                recursiveFolderUpload(f, destinationPath + "/" + sourceFile.getName())
+                recursiveFolderUpload(f, destinationPath + "/" + sourceFile.name)
             }
         }
     }
