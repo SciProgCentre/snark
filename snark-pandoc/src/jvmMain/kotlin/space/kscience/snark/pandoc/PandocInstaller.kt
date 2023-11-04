@@ -100,7 +100,9 @@ internal object PandocInstaller {
             )
         )
 
-        Files.setPosixFilePermissions(pandocExecutablePath, setOf(PosixFilePermission.GROUP_EXECUTE))
+        if (os == OSType.LINUX_AMD || os == OSType.LINUX_ARM) {
+            Files.setPosixFilePermissions(pandocExecutablePath, setOf(PosixFilePermission.GROUP_EXECUTE))
+        }
 
         return pandocExecutablePath
     }
@@ -180,7 +182,7 @@ internal object PandocInstaller {
     }
 
     private fun downloadWithRetry(url: URL): Path? {
-        val targetPath = Files.createTempFile("pandoc",".tmp")
+        val targetPath = Files.createTempFile("pandoc", ".tmp")
         log.info("Downloading pandoc to $targetPath")
 
         repeat(ATTEMPTS) {
