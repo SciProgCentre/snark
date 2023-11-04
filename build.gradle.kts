@@ -1,3 +1,5 @@
+import space.kscience.gradle.*
+
 plugins {
     id("space.kscience.gradle.project")
 }
@@ -12,10 +14,13 @@ allprojects {
     }
 }
 
-val dataforgeVersion by extra("0.6.1-dev-6")
+val dataforgeVersion by extra("0.6.2")
 
 ksciencePublish {
-    github("SciProgCentre", "snark")
-    space("https://maven.pkg.jetbrains.space/mipt-npm/p/sci/maven")
+    pom("https://github.com/SciProgCentre/snark") {
+        useApache2Licence()
+        useSPCTeam()
+    }
+    repository("spc","https://maven.sciprog.center/kscience")
 //    sonatype()
 }

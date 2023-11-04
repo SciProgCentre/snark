@@ -29,11 +29,13 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
         plugins.withId("org.jetbrains.kotlin.jvm") {
             val writeBuildDate = tasks.register("writeBuildDate") {
-                val outputFile = File(project.buildDir, "resources/main/buildDate")
+                val outputFile = project.layout.buildDirectory.file("resources/main/buildDate")
                 doLast {
                     val deployDate = LocalDateTime.now()
-                    outputFile.parentFile.mkdirs()
-                    outputFile.writeText(deployDate.toString())
+                    outputFile.get().asFile.run {
+                        parentFile.mkdirs()
+                        writeText(deployDate.toString())
+                    }
                 }
                 outputs.file(outputFile)
                 outputs.upToDateWhen { false }
