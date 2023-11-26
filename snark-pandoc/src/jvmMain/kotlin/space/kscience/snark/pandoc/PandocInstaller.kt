@@ -31,7 +31,7 @@ internal object PandocInstaller {
     private const val TIMEOUT_SECONDS = 2
     private const val ATTEMPTS = 3
 
-    private enum class OSType(public val assetSuffix: String, public val propertySuffix: String) {
+    private enum class OSType(val assetSuffix: String, val propertySuffix: String) {
         WINDOWS("windows-x86_64.zip", "windows"),
         MAC_OS_AMD("x86_64-macOS.zip", "mac.os.amd"),
         MAC_OS_ARM("arm64-macOS.zip", "mac.os.arm"),

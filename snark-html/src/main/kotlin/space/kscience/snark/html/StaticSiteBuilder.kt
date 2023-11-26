@@ -1,17 +1,16 @@
 package space.kscience.snark.html
 
-import io.ktor.utils.io.streams.asInput
-import io.ktor.utils.io.streams.asOutput
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.HTML
 import kotlinx.html.html
 import kotlinx.html.stream.createHTML
+import kotlinx.io.asSink
+import kotlinx.io.buffered
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.DataTreeItem
 import space.kscience.dataforge.data.await
 import space.kscience.dataforge.data.getItem
 import space.kscience.dataforge.io.Binary
-import space.kscience.dataforge.io.toByteArray
 import space.kscience.dataforge.io.writeBinary
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.Name
@@ -66,7 +65,7 @@ internal class StaticSiteBuilder(
                 if (datum.type != typeOf<Binary>()) error("Can't directly serve file of type ${item.data.type}")
                 val targetPath = outputPath.resolve(routeName.toWebPath())
                 val binary = datum.await() as Binary
-                targetPath.outputStream().asOutput().use{
+                targetPath.outputStream().asSink().buffered().use {
                     it.writeBinary(binary)
                 }
             }

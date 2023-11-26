@@ -1,96 +1,97 @@
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import space.kscience.snark.pandoc.Pandoc
-import java.io.BufferedReader
-import java.io.FileReader
-import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.stream.Collectors
-import kotlin.io.path.Path
-import kotlin.io.path.createDirectories
-import kotlin.io.path.div
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
+import kotlin.io.path.readText
+import kotlin.io.path.writeBytes
+import kotlin.test.assertContains
+import kotlin.test.assertFails
 
 class PandocTest {
     @Test
     fun when_gotPandocAndCorrectArgs_doConverting() {
-        try {
-            val res = Pandoc.execute {
-                addInputFile(CORRECT_MD)
-                outputFile(TEX_PATH_TO)
-            }
-            assertTrue(res)
-            assertTrue(TEX_PATH_TO.toFile().exists())
 
-            val reader = BufferedReader(FileReader(TEX_PATH_TO.toFile()))
-            val fileString = reader.lines().collect(Collectors.joining())
+        val inputFile = Files.createTempFile("snark-pandoc", "first_test.md")
+        inputFile.writeBytes(javaClass.getResourceAsStream("/first_test.md")!!.readAllBytes())
+        val outputFile = Files.createTempFile("snark-pandoc", "output1.tex")
 
-            assertTrue(fileString.contains("Some simple text"))
-            assertTrue(fileString.contains("\\subsection{Copy elision}"))
-            assertTrue(fileString.contains("return"))
-
-            Files.delete(TEX_PATH_TO)
-        } catch (ex: Exception) {
-            fail<Any>("Unexpected exception during test when_gotPandocAndCorrectArgs_doConverting()", ex)
+        Pandoc.execute {
+            addInputFile(inputFile)
+            outputFile(outputFile)
         }
+
+        assertTrue(outputFile.exists())
+
+        val result = outputFile.readText()
+
+        assertContains(result, "Some simple text")
+        assertContains(result, "\\subsection{Copy elision}")
+        assertContains(result, "return")
     }
 
     @Test
     fun when_gotPandocAndNotExistsFromFile_then_error() {
+
+        val outputFile = Files.createTempFile("snark-pandoc", "output2.tex")
         val notExistsFile = Path.of("./src/test/testing_directory/non_exists_test.md")
-        assertFalse(notExistsFile.toFile().exists())
-        val res = Pandoc.execute {
-            addInputFile(notExistsFile)
-            outputFile(TEX_PATH_TO)
+        assertFalse(notExistsFile.exists())
+        assertFails {
+            Pandoc.execute {
+                addInputFile(notExistsFile)
+                outputFile(outputFile)
+            }
         }
-        assertFalse(res)
     }
 
     @Test
     fun when_gotPandocAndPassDirectory_then_error() {
-        assertTrue(TESTING_DIRECTORY.toFile().isDirectory)
+        val tempDir = Files.createTempDirectory("snark-pandoc")
+        assertTrue(tempDir.isDirectory())
 
-        val res = Pandoc.execute {
-            addInputFile(TESTING_DIRECTORY)
-            outputFile(TEX_PATH_TO)
+        val outputFile = Files.createTempFile("snark-pandoc", "output3.tex")
+
+        assertFails {
+            Pandoc.execute {
+                addInputFile(tempDir)
+                outputFile(outputFile)
+            }
         }
 
-        assertFalse(res)
     }
 
     @Test
     fun when_askVersionToFile_then_Ok() {
-        val outputFile = TESTING_DIRECTORY/"output.txt"
+        val outputFile = Files.createTempFile("snark-pandoc", "output4.tex")
 
         val res = Pandoc.execute(redirectOutput = outputFile) {
             getVersion()
         }
 
-        val reader = BufferedReader(FileReader(outputFile.toFile()))
-        val fileString = reader.lines().collect(Collectors.joining())
-        assertTrue(fileString.contains("pandoc"))
-        assertTrue(fileString.contains("This is free software"))
-        assertTrue(res)
+        val fileContent = outputFile.readText()
+        assertContains(fileContent, "pandoc")
+        assertContains(fileContent, "This is free software")
     }
 
     @Test
     fun when_error_then_writeToErrorStream() {
-        val outputFile = Files.createTempFile(TESTING_DIRECTORY, "output", ".txt")
-        val errorFile = Files.createTempFile(TESTING_DIRECTORY, "error", ".txt")
+        val inputFile = Files.createTempFile("snark-pandoc", "simple.txt")
+        inputFile.writeBytes(javaClass.getResourceAsStream("/simple.txt")!!.readAllBytes())
+        val outputFile = Files.createTempFile("snark-pandoc", "output.txt")
+        val errorFile = Files.createTempFile("snark-pandoc", "error.txt")
 
-        val res = Pandoc.execute(outputFile, errorFile) {
-            addInputFile(Path.of("./simple.txt"))
-            outputFile(TEX_PATH_TO)
-            formatFrom("txt")
+        assertFails {
+            Pandoc.execute(redirectError = errorFile) {
+                addInputFile(inputFile)
+                outputFile(outputFile)
+                formatFrom("txt")
+            }
         }
 
-        val reader = BufferedReader(FileReader(errorFile.toFile()))
-        val fileString = reader.lines().collect(Collectors.joining())
-        assertFalse(res)
-        assertTrue(fileString.contains("21"))
-
-        Files.delete(outputFile)
-        Files.delete(errorFile)
+        assertContains(errorFile.readText(), "input format")
     }
 
 
@@ -101,11 +102,4 @@ class PandocTest {
 //        assertTrue(Pandoc.isPandocInstalled())
 //    }
 
-    companion object {
-        private val TESTING_DIRECTORY: Path = Path("./testing_directory").apply {
-            createDirectories()
-        }
-        private val CORRECT_MD: Path = TESTING_DIRECTORY.resolve("first_test.md")
-        private val TEX_PATH_TO: Path = TESTING_DIRECTORY.resolve("output1.tex")
-    }
 }

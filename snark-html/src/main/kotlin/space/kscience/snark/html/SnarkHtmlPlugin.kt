@@ -1,6 +1,7 @@
 package space.kscience.snark.html
 
 import io.ktor.utils.io.core.readBytes
+import kotlinx.io.readByteArray
 import space.kscience.dataforge.context.*
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.node
@@ -83,7 +84,7 @@ public class SnarkHtmlPlugin : AbstractPlugin() {
         override fun build(context: Context, meta: Meta): SnarkHtmlPlugin = SnarkHtmlPlugin()
 
         private val byteArrayIOReader = IOReader {
-            readBytes()
+            readByteArray()
         }
 
         internal val byteArraySnarkParser = SnarkParser(byteArrayIOReader)

@@ -1,15 +1,14 @@
 package space.kscience.snark.html
 
-import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.misc.Type
+import space.kscience.dataforge.misc.DfId
 import space.kscience.dataforge.names.NameToken
 import space.kscience.dataforge.names.parseAsName
 
 /**
  * An object that conducts page-based text transformation. Like using link replacement or templating.
  */
-@Type(TextProcessor.TYPE)
+@DfId(TextProcessor.TYPE)
 public fun interface TextProcessor {
     context(WebPage)
     public fun process(text: String): String

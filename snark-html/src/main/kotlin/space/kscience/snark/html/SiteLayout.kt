@@ -1,13 +1,13 @@
 package space.kscience.snark.html
 
 import space.kscience.dataforge.data.DataTreeItem
-import space.kscience.dataforge.misc.Type
+import space.kscience.dataforge.misc.DfId
 import space.kscience.dataforge.names.NameToken
 
 /**
  * An abstraction to render singular data or a data tree.
  */
-@Type(SiteLayout.TYPE)
+@DfId(SiteLayout.TYPE)
 public fun interface SiteLayout {
 
     context(SiteBuilder)

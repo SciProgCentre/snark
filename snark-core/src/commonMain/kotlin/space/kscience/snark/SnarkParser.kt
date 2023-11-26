@@ -1,20 +1,20 @@
 package space.kscience.snark
 
-import io.ktor.utils.io.core.Input
-import io.ktor.utils.io.core.readBytes
+import kotlinx.io.Source
+import kotlinx.io.readByteArray
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.asBinary
 import space.kscience.dataforge.io.readWith
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.misc.Type
+import space.kscience.dataforge.misc.DfId
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 /**
  * A parser of binary content including priority flag and file extensions
  */
-@Type(SnarkParser.TYPE)
+@DfId(SnarkParser.TYPE)
 public interface SnarkParser<out R> {
     public val type: KType
 
@@ -28,7 +28,7 @@ public interface SnarkParser<out R> {
     public fun asReader(context: Context, meta: Meta): IOReader<R> = object : IOReader<R> {
         override val type: KType get() = this@SnarkParser.type
 
-        override fun readObject(input: Input): R = parse(context, meta, input.readBytes())
+        override fun readFrom(source: Source): R = parse(context, meta, source.readByteArray())
     }
 
     public companion object {

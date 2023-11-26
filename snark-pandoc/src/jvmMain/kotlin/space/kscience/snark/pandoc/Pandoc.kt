@@ -2,12 +2,9 @@ package space.kscience.snark.pandoc
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardOpenOption
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.Path
 
@@ -36,34 +33,24 @@ public object Pandoc {
         redirectError: Path? = null,
         pandocExecutablePath: Path = Path("./pandoc").toAbsolutePath(),
         commandBuilder: PandocCommandBuilder.() -> Unit,
-    ): Boolean {
+    ) {
 
         val path = getOrInstallPandoc(pandocExecutablePath)
 
-        try {
-            val commandLine = PandocCommandBuilder().apply(commandBuilder).build(path)
-            logger.info("Running pandoc: ${commandLine.joinToString(separator = " ")}")
-            val pandoc = ProcessBuilder(commandLine).apply {
-                if(redirectOutput!= null){
-                    redirectOutput(redirectOutput.toFile())
-                }
-                if(redirectError !=null){
-                    redirectError(redirectError.toFile())
-                }
-
-            }.start()
-            pandoc.waitFor(1, TimeUnit.SECONDS)
-
-            if (pandoc.exitValue() == 0) {
-                logger.info("Successfully execute")
-                return true
-            } else{
-                return false
+        val commandLine = PandocCommandBuilder().apply(commandBuilder).build(path)
+        logger.info("Running pandoc: ${commandLine.joinToString(separator = " ")}")
+        val pandoc = ProcessBuilder(commandLine).apply {
+            if (redirectOutput != null) {
+                redirectOutput(redirectOutput.toFile())
             }
-        } catch (e: Exception) {
-            logger.error("Got problems with executing: " + e.message)
-            return false
-        }
-    }
+            if (redirectError != null) {
+                redirectError(redirectError.toFile())
+            }
 
+        }.start()
+        pandoc.waitFor()
+
+        if (pandoc.exitValue() != 0)
+            error("Non-zero process return for pandoc.")
+    }
 }
