@@ -17,6 +17,7 @@ import io.ktor.server.routing.routing
 import kotlinx.css.CssBuilder
 import kotlinx.html.CommonAttributeGroupFacade
 import kotlinx.html.HTML
+import kotlinx.html.head
 import kotlinx.html.style
 import space.kscience.dataforge.context.error
 import space.kscience.dataforge.context.logger
@@ -33,7 +34,7 @@ import space.kscience.dataforge.names.endsWith
 import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.FileData
 import space.kscience.snark.html.SiteBuilder
-import space.kscience.snark.html.SnarkHtmlPlugin
+import space.kscience.snark.html.SnarkHtml
 import space.kscience.snark.html.WebPage
 import space.kscience.snark.html.toWebPath
 import java.nio.file.Path
@@ -46,7 +47,7 @@ public fun CommonAttributeGroupFacade.css(block: CssBuilder.() -> Unit) {
 }
 
 public class KtorSiteBuilder(
-    override val snark: SnarkHtmlPlugin,
+    override val snark: SnarkHtml,
     override val data: DataTree<*>,
     override val siteMeta: Meta,
     private val baseUrl: String,
@@ -134,7 +135,7 @@ public class KtorSiteBuilder(
         val pageBaseUrl: String,
         override val pageMeta: Meta,
     ) : WebPage {
-        override val snark: SnarkHtmlPlugin get() = this@KtorSiteBuilder.snark
+        override val snark: SnarkHtml get() = this@KtorSiteBuilder.snark
         override val data: DataTree<*> get() = this@KtorSiteBuilder.data
 
         override fun resolveRef(ref: String): String = this@KtorSiteBuilder.resolveRef(pageBaseUrl, ref)
@@ -154,21 +155,22 @@ public class KtorSiteBuilder(
 
     override fun page(route: Name, pageMeta: Meta, content: context(HTML, WebPage) () -> Unit) {
         ktorRoute.get(route.toWebPath()) {
+            val request = call.request
+            //substitute host for url for backwards calls
+            val url = URLBuilder(baseUrl).apply {
+                protocol = URLProtocol.createOrDefault(request.origin.scheme)
+                host = request.origin.serverHost
+                port = request.origin.serverPort
+            }
+
+            val modifiedPageMeta = pageMeta.toMutableMeta().apply {
+                "name" put route.toString()
+                "url" put url.buildString()
+            }
+            val pageBuilder = KtorWebPage(url.buildString(), Laminate(modifiedPageMeta, siteMeta))
+
             call.respondHtml {
-                val request = call.request
-                //substitute host for url for backwards calls
-                val url = URLBuilder(baseUrl).apply {
-                    protocol = URLProtocol.createOrDefault(request.origin.scheme)
-                    host = request.origin.serverHost
-                    port = request.origin.serverPort
-                }
-
-                val modifiedPageMeta = pageMeta.toMutableMeta().apply {
-                    "name" put route.toString()
-                    "url" put url.buildString()
-                }
-
-                val pageBuilder = KtorWebPage(url.buildString(), Laminate(modifiedPageMeta, siteMeta))
+                head{}
                 content(this, pageBuilder)
             }
         }
@@ -211,7 +213,7 @@ public class KtorSiteBuilder(
 }
 
 private fun Route.site(
-    snarkHtmlPlugin: SnarkHtmlPlugin,
+    snarkHtmlPlugin: SnarkHtml,
     data: DataTree<*>,
     baseUrl: String = "",
     siteMeta: Meta = data.meta,
@@ -224,7 +226,7 @@ private fun Route.site(
 }
 
 public fun Application.site(
-    snark: SnarkHtmlPlugin,
+    snark: SnarkHtml,
     data: DataTree<*>,
     baseUrl: String = "",
     siteMeta: Meta = data.meta,

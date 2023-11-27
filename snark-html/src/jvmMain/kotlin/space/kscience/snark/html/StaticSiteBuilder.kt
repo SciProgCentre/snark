@@ -28,7 +28,7 @@ import kotlin.reflect.typeOf
  * An implementation of [SiteBuilder] to render site as a static directory [outputPath]
  */
 internal class StaticSiteBuilder(
-    override val snark: SnarkHtmlPlugin,
+    override val snark: SnarkHtml,
     override val data: DataTree<*>,
     override val siteMeta: Meta,
     private val baseUrl: String,
@@ -121,7 +121,7 @@ internal class StaticSiteBuilder(
     inner class StaticWebPage(override val pageMeta: Meta) : WebPage {
         override val data: DataTree<*> get() = this@StaticSiteBuilder.data
 
-        override val snark: SnarkHtmlPlugin get() = this@StaticSiteBuilder.snark
+        override val snark: SnarkHtml get() = this@StaticSiteBuilder.snark
 
 
         override fun resolveRef(ref: String): String =
@@ -186,7 +186,7 @@ internal class StaticSiteBuilder(
  * Use [siteUrl] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
  *
  */
-public fun SnarkHtmlPlugin.static(
+public fun SnarkHtml.static(
     data: DataTree<*>,
     outputPath: Path,
     siteUrl: String = outputPath.absolutePathString().replace("\\", "/"),

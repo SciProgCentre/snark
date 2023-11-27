@@ -9,31 +9,6 @@ import java.time.LocalDateTime
 import kotlin.io.path.*
 
 
-//public fun KtorSiteBuilder.extractResources(uri: URI, targetPath: Path): Path {
-//    if (Files.isDirectory(targetPath)) {
-//        logger.info { "Using existing data directory at $targetPath." }
-//    } else {
-//        logger.info { "Copying data from $uri into $targetPath." }
-//        targetPath.createDirectories()
-//        //Copy everything into a temporary directory
-//        FileSystems.newFileSystem(uri, emptyMap<String, Any>()).use { fs ->
-//            val rootPath: Path = fs.provider().getPath(uri)
-//            Files.walk(rootPath).forEach { source: Path ->
-//                if (source.isRegularFile()) {
-//                    val relative = source.relativeTo(rootPath).toString()
-//                    val destination: Path = targetPath.resolve(relative)
-//                    destination.parent.createDirectories()
-//                    Files.copy(source, destination)
-//                }
-//            }
-//        }
-//    }
-//    return targetPath
-//}
-//
-//public fun KtorSiteBuilder.extractResources(resource: String, targetPath: Path): Path =
-//    extractResources(javaClass.getResource(resource)!!.toURI(), targetPath)
-
 private const val DEPLOY_DATE_FILE = "deployDate"
 private const val BUILD_DATE_FILE = "/buildDate"
 

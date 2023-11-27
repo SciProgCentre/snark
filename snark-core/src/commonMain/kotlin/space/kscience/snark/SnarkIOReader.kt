@@ -1,0 +1,36 @@
+package space.kscience.snark
+
+import kotlinx.io.Source
+import space.kscience.dataforge.io.IOReader
+import space.kscience.dataforge.misc.DfId
+import space.kscience.snark.SnarkIOReader.Companion.DF_TYPE
+
+/**
+ * A wrapper class for IOReader that adds priority and MIME type handling.
+ *
+ * @param T The type of data to be read by the IOReader.
+ * @property reader The underlying IOReader instance used for reading data.
+ * @property types The set of supported types that can be read by the SnarkIOReader.
+ * @property priority The priority of the SnarkIOReader. Higher priority SnarkIOReader instances will be preferred over lower priority ones.
+ */
+@DfId(DF_TYPE)
+public class SnarkIOReader<out T>(
+    private val reader: IOReader<T>,
+    public val types: Set<String>,
+    public val priority: Int = DEFAULT_PRIORITY,
+) : IOReader<T> by reader {
+
+    public fun readFrom(source: String): T{
+
+    }
+
+    public companion object {
+        public const val DF_TYPE: String = "snark.reader"
+        public const val DEFAULT_PRIORITY: Int = 10
+    }
+}
+
+public fun <T : Any> SnarkIOReader(
+    reader: IOReader<T>,
+    vararg types: String,
+): SnarkIOReader<T> = SnarkIOReader(reader, types.toSet())

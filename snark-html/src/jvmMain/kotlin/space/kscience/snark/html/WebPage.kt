@@ -25,7 +25,7 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
 @SnarkBuilder
 public interface WebPage : ContextAware, SnarkContext {
 
-    public val snark: SnarkHtmlPlugin
+    public val snark: SnarkHtml
 
     override val context: Context get() = snark.context
 

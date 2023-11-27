@@ -1,0 +1,20 @@
+package space.kscience.snark
+
+import space.kscience.dataforge.misc.DfId
+import space.kscience.dataforge.names.NameToken
+
+/**
+ * An object that conducts page-based text transformation. Like using link replacement or templating.
+ */
+@DfId(TextProcessor.DF_TYPE)
+public fun interface TextProcessor {
+
+    public fun process(text: String): String
+
+    public companion object {
+        public const val DF_TYPE: String = "snark.textTransformation"
+        public val TEXT_TRANSFORMATION_KEY: NameToken = NameToken("transformation")
+    }
+}
+
+

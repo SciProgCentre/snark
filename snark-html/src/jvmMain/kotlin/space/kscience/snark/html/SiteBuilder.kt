@@ -39,7 +39,7 @@ public interface SiteBuilder : ContextAware, SnarkContext {
     /**
      * Snark plugin and context used for layout resolution, preprocessors, etc
      */
-    public val snark: SnarkHtmlPlugin
+    public val snark: SnarkHtml
 
     override val context: Context get() = snark.context
 
@@ -49,7 +49,7 @@ public interface SiteBuilder : ContextAware, SnarkContext {
     public val siteMeta: Meta
 
     /**
-     * Serve a static data as a file from [data] with given [dataName] at given [routeName].
+     * Serve static data as a file from [data] with given [dataName] at given [routeName].
      */
     public fun static(dataName: Name, routeName: Name = dataName)
 
