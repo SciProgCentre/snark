@@ -6,12 +6,15 @@ import io.ktor.http.ContentType
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.context.*
 import space.kscience.dataforge.data.*
+import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.IOPlugin
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.JsonMetaFormat
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
-import space.kscience.dataforge.meta.*
+import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.get
+import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
 import space.kscience.dataforge.names.*
 import space.kscience.dataforge.provider.dfId
@@ -28,7 +31,7 @@ public fun <T : Any> SnarkIOReader(
     reader: IOReader<T>,
     vararg types: ContentType,
     priority: Int = SnarkIOReader.DEFAULT_PRIORITY,
-): SnarkIOReader<T> = SnarkIOReader(reader, types.map { it.toString() }.toSet(), priority)
+): SnarkIOReader<T> = SnarkIOReader(reader, *types.map { it.toString() }.toTypedArray(),  priority = priority)
 
 
 /**
@@ -59,10 +62,10 @@ public class SnarkHtml : WorkspacePlugin() {
 
     override fun content(target: String): Map<Name, Any> = when (target) {
         SnarkIOReader::class.dfId -> mapOf(
-            "html".asName() to HtmlIOFormat.snarkReader,
-            "markdown".asName() to MarkdownIOFormat.snarkReader,
+            "html".asName() to HtmlReader,
+            "markdown".asName() to MarkdownReader,
             "json".asName() to SnarkIOReader(JsonMetaFormat, ContentType.Application.Json),
-            "yaml".asName() to SnarkIOReader(YamlMetaFormat, "text/yaml"),
+            "yaml".asName() to SnarkIOReader(YamlMetaFormat, "text/yaml", "yaml"),
             "png".asName() to SnarkIOReader(ImageIOReader, ContentType.Image.PNG),
             "jpg".asName() to SnarkIOReader(ImageIOReader, ContentType.Image.JPEG),
             "gif".asName() to SnarkIOReader(ImageIOReader, ContentType.Image.GIF),
@@ -83,9 +86,15 @@ public class SnarkHtml : WorkspacePlugin() {
         else -> super.content(target)
     }
 
+//    public val assets: TaskReference<Binary> by task<Binary> {
+//        node(Name.EMPTY, from(allData).filter { name, meta ->
+//
+//        })
+//    }
+
 
     public val preprocess: TaskReference<String> by task<String> {
-        pipeFrom<String,String>(dataByType<String>()) { text, _, meta ->
+        pipeFrom<String, String>(dataByType<String>()) { text, _, meta ->
             meta[TextProcessor.TEXT_TRANSFORMATION_KEY]?.let {
                 snark.textProcessor(it).process(text)
             } ?: text

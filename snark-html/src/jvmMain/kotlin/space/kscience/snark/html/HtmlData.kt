@@ -13,22 +13,18 @@ import space.kscience.snark.SnarkContext
 
 
 //TODO replace by VisionForge type
-//typealias HtmlFragment = context(PageBuilder, TagConsumer<*>) () -> Unit
 
 public fun interface HtmlFragment {
-    public fun TagConsumer<*>.renderFragment(page: WebPage)
-    //TODO move pageBuilder to a context receiver after KT-52967 is fixed
+    public fun TagConsumer<*>.renderFragment()
 }
 
 public typealias HtmlData = Data<HtmlFragment>
 
-//fun HtmlData(meta: Meta, content: context(PageBuilder) TagConsumer<*>.() -> Unit): HtmlData =
-//    Data(HtmlFragment(content), meta)
-
-
 context(WebPage)
 public fun FlowContent.htmlData(data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
-    with(data.await()) { consumer.renderFragment(page) }
+    withSnarkPage(page) {
+        with(data.await()) { consumer.renderFragment() }
+    }
 }
 
 context(SnarkContext)

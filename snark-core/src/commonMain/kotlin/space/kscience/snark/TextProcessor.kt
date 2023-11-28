@@ -9,7 +9,7 @@ import space.kscience.dataforge.names.NameToken
 @DfId(TextProcessor.DF_TYPE)
 public fun interface TextProcessor {
 
-    public fun process(text: String): String
+    public fun process(text: CharSequence): String
 
     public companion object {
         public const val DF_TYPE: String = "snark.textTransformation"
