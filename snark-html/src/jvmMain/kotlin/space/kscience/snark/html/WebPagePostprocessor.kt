@@ -1,22 +1,19 @@
 package space.kscience.snark.html
 
-import kotlinx.html.A
-import kotlinx.html.FlowContent
-import kotlinx.html.Tag
-import kotlinx.html.TagConsumer
+import kotlinx.html.*
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.parseAsName
 import space.kscience.snark.TextProcessor
 
-public class WebPageTextProcessor(private val page: WebPage) : TextProcessor {
+public class WebPageTextProcessor(private val page: PageContext) : TextProcessor {
     private val regex = """\$\{([\w.]*)(?>\("(.*)"\))?}""".toRegex()
 
     /**
      * A basic [TextProcessor] that replaces `${...}` expressions in text. The following expressions are recognised:
      * * `homeRef` resolves to [homeRef]
-     * * `resolveRef("...")` -> [WebPage.resolveRef]
-     * * `resolvePageRef("...")` -> [WebPage.resolvePageRef]
-     * * `pageMeta.get("...") -> [WebPage.pageMeta] get string method
+     * * `resolveRef("...")` -> [PageContext.resolveRef]
+     * * `resolvePageRef("...")` -> [PageContext.resolvePageRef]
+     * * `pageMeta.get("...") -> [PageContext.pageMeta] get string method
      * Otherwise return unchanged string
      */
     override fun process(text: CharSequence): String = text.replace(regex) { match ->
@@ -45,9 +42,8 @@ public class WebPageTextProcessor(private val page: WebPage) : TextProcessor {
 
 }
 
-
 public class WebPagePostprocessor<out R>(
-    public val page: WebPage,
+    public val page: PageContext,
     private val consumer: TagConsumer<R>,
 ) : TagConsumer<R> by consumer {
 
@@ -64,9 +60,20 @@ public class WebPagePostprocessor<out R>(
     override fun onTagContent(content: CharSequence) {
         consumer.onTagContent(processor.process(content))
     }
+
+    override fun onTagContentUnsafe(block: Unsafe.() -> Unit) {
+        val proxy = object :Unsafe{
+            override fun String.unaryPlus() {
+                consumer.onTagContentUnsafe {
+                    processor.process(this@unaryPlus).unaryPlus()
+                }
+            }
+        }
+        proxy.block()
+    }
 }
 
-public inline fun FlowContent.withSnarkPage(page: WebPage, block: FlowContent.() -> Unit) {
+public inline fun FlowContent.withSnarkPage(page: PageContext, block: FlowContent.() -> Unit) {
     val fc = object : FlowContent by this {
         override val consumer: TagConsumer<*> = WebPagePostprocessor(page, this@withSnarkPage.consumer)
     }

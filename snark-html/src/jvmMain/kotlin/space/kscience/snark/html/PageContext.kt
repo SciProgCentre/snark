@@ -1,5 +1,6 @@
 package space.kscience.snark.html
 
+import kotlinx.html.HTML
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.*
@@ -10,7 +11,6 @@ import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 
-context(SnarkContext)
 public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
     if (it.hasIndex()) {
         "${it.body}[${it.index}]"
@@ -23,13 +23,7 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
  *  A context for building a single page
  */
 @SnarkBuilder
-public interface WebPage : ContextAware, SnarkContext {
-
-    public val snark: SnarkHtml
-
-    override val context: Context get() = snark.context
-
-    public val data: DataTree<*>
+public interface PageContext :  SnarkContext {
 
     /**
      * A metadata for a page. It should include site metadata
@@ -45,27 +39,27 @@ public interface WebPage : ContextAware, SnarkContext {
     /**
      * Resolve absolute url for a page with given [pageName].
      *
-     * @param relative if true, add [SiteBuilder] route to the absolute page name
+     * @param relative if true, add [SiteContext] route to the absolute page name
      */
     public fun resolvePageRef(pageName: Name, relative: Boolean = false): String
 }
 
-context(WebPage)
-public val page: WebPage
-    get() = this@WebPage
+context(PageContext)
+public val page: PageContext
+    get() = this@PageContext
 
-public fun WebPage.resolvePageRef(pageName: String): String = resolvePageRef(pageName.parseAsName())
+public fun PageContext.resolvePageRef(pageName: String): String = resolvePageRef(pageName.parseAsName())
 
-public val WebPage.homeRef: String get() = resolvePageRef(SiteBuilder.INDEX_PAGE_TOKEN.asName())
+public val PageContext.homeRef: String get() = resolvePageRef(SiteContext.INDEX_PAGE_TOKEN.asName())
 
-public val WebPage.name: Name? get() = pageMeta["name"].string?.parseAsName()
+public val PageContext.name: Name? get() = pageMeta["name"].string?.parseAsName()
 
 /**
  * Resolve a Html builder by its full name
  */
 context(SnarkContext)
 public fun DataTree<*>.resolveHtmlOrNull(name: Name): HtmlData? {
-    val resolved = (getByType<HtmlFragment>(name) ?: getByType<HtmlFragment>(name + SiteBuilder.INDEX_PAGE_TOKEN))
+    val resolved = (getByType<HtmlFragment>(name) ?: getByType<HtmlFragment>(name + SiteContext.INDEX_PAGE_TOKEN))
 
     return resolved?.takeIf {
         it.published //TODO add language confirmation

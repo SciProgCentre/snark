@@ -3,11 +3,11 @@ package space.kscience.snark
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.asBinary
 import space.kscience.dataforge.misc.DfId
-import space.kscience.snark.SnarkIOReader.Companion.DEFAULT_PRIORITY
-import space.kscience.snark.SnarkIOReader.Companion.DF_TYPE
+import space.kscience.snark.SnarkReader.Companion.DEFAULT_PRIORITY
+import space.kscience.snark.SnarkReader.Companion.DF_TYPE
 
 @DfId(DF_TYPE)
-public interface SnarkIOReader<out T>: IOReader<T> {
+public interface SnarkReader<out T>: IOReader<T> {
     public val types: Set<String>
     public val priority: Int get() = DEFAULT_PRIORITY
     public fun readFrom(source: String): T
@@ -27,17 +27,17 @@ public interface SnarkIOReader<out T>: IOReader<T> {
  * @property priority The priority of the SnarkIOReader. Higher priority SnarkIOReader instances will be preferred over lower priority ones.
  */
 
-private class SnarkIOReaderWrapper<out T>(
+private class SnarkReaderWrapper<out T>(
     private val reader: IOReader<T>,
     override val types: Set<String>,
     override val priority: Int = DEFAULT_PRIORITY,
-) : IOReader<T> by reader, SnarkIOReader<T> {
+) : IOReader<T> by reader, SnarkReader<T> {
 
     override fun readFrom(source: String): T = readFrom(source.encodeToByteArray().asBinary())
 }
 
-public fun <T : Any> SnarkIOReader(
+public fun <T : Any> SnarkReader(
     reader: IOReader<T>,
     vararg types: String,
     priority: Int = DEFAULT_PRIORITY
-): SnarkIOReader<T> = SnarkIOReaderWrapper(reader, types.toSet(), priority)
+): SnarkReader<T> = SnarkReaderWrapper(reader, types.toSet(), priority)

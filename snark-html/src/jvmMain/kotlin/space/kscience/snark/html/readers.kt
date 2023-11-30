@@ -8,11 +8,11 @@ import kotlinx.io.readString
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
-import space.kscience.snark.SnarkIOReader
+import space.kscience.snark.SnarkReader
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
-public object HtmlReader : SnarkIOReader<HtmlFragment> {
+public object HtmlReader : SnarkReader<HtmlFragment> {
     override val types: Set<String> = setOf("html")
 
     override fun readFrom(source: String): HtmlFragment = HtmlFragment {
@@ -25,7 +25,7 @@ public object HtmlReader : SnarkIOReader<HtmlFragment> {
     override val type: KType = typeOf<HtmlFragment>()
 }
 
-public object MarkdownReader : SnarkIOReader<HtmlFragment> {
+public object MarkdownReader : SnarkReader<HtmlFragment> {
     override val type: KType = typeOf<HtmlFragment>()
 
     override val types: Set<String> = setOf("text/markdown", "md", "markdown")
@@ -46,7 +46,7 @@ public object MarkdownReader : SnarkIOReader<HtmlFragment> {
 
     override fun readFrom(source: Source): HtmlFragment = readFrom(source.readString())
 
-    public val snarkReader: SnarkIOReader<HtmlFragment> = SnarkIOReader(this, ContentType.parse("text/markdown"))
+    public val snarkReader: SnarkReader<HtmlFragment> = SnarkReader(this, "text/markdown")
 
 }
 

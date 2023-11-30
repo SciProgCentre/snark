@@ -20,8 +20,8 @@ public fun interface HtmlFragment {
 
 public typealias HtmlData = Data<HtmlFragment>
 
-context(WebPage)
-public fun FlowContent.htmlData(data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
+
+public fun FlowContent.htmlData(page: PageContext, data: HtmlData): Unit = runBlocking(Dispatchers.IO) {
     withSnarkPage(page) {
         with(data.await()) { consumer.renderFragment() }
     }

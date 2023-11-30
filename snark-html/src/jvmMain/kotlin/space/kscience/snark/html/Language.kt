@@ -1,12 +1,12 @@
 package space.kscience.snark.html
 
-import space.kscience.dataforge.data.getItem
+import space.kscience.dataforge.data.DataSet
+import space.kscience.dataforge.data.branch
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGES_KEY
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
-
 
 
 public class Language : Scheme() {
@@ -35,49 +35,50 @@ public class Language : Scheme() {
 
         public val LANGUAGES_KEY: Name = "languages".asName()
 
-        public val SITE_LANGUAGE_KEY: Name = SiteBuilder.SITE_META_KEY + LANGUAGE_KEY
+        public val SITE_LANGUAGE_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_KEY
 
-        public val SITE_LANGUAGES_KEY: Name = SiteBuilder.SITE_META_KEY + LANGUAGES_KEY
+        public val SITE_LANGUAGES_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGES_KEY
 
         public const val DEFAULT_LANGUAGE: String = "en"
-
-        /**
-         * Automatically build a language map for a data piece with given [name] based on existence of appropriate data nodes.
-         */
-        context(SiteBuilder)
-        public fun forName(name: Name): Meta = Meta {
-            val currentLanguagePrefix = languages[language]?.get(Language::prefix.name)?.string ?: language
-            val fullName = (route.removeFirstOrNull(currentLanguagePrefix.asName()) ?: route) + name
-            languages.forEach { (key, meta) ->
-                val languagePrefix: String = meta[Language::prefix.name].string ?: key
-                val nameWithLanguage: Name = if (languagePrefix.isBlank()) {
-                    fullName
-                } else {
-                    languagePrefix.asName() + fullName
-                }
-                if (data.getItem(name) != null) {
-                    key put meta.asMutableMeta().apply {
-                        Language::target.name put nameWithLanguage.toString()
-                    }
-                }
-            }
-        }
+//
+//        /**
+//         * Automatically build a language map for a data piece with given [name] based on existence of appropriate data nodes.
+//         */
+//        context(SiteContext)
+//        public fun forName(name: Name): Meta = Meta {
+//            val currentLanguagePrefix = languages[language]?.get(Language::prefix.name)?.string ?: language
+//            val fullName = (route.removeFirstOrNull(currentLanguagePrefix.asName()) ?: route) + name
+//            languages.forEach { (key, meta) ->
+//                val languagePrefix: String = meta[Language::prefix.name].string ?: key
+//                val nameWithLanguage: Name = if (languagePrefix.isBlank()) {
+//                    fullName
+//                } else {
+//                    languagePrefix.asName() + fullName
+//                }
+//                if (resolveData.getItem(name) != null) {
+//                    key put meta.asMutableMeta().apply {
+//                        Language::target.name put nameWithLanguage.toString()
+//                    }
+//                }
+//            }
+//        }
     }
 }
 
-public val SiteBuilder.languages: Map<String, Meta>
+public val SiteContext.languages: Map<String, Meta>
     get() = siteMeta[SITE_LANGUAGES_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
 
-public val SiteBuilder.language: String
+public val SiteContext.language: String
     get() = siteMeta[SITE_LANGUAGE_KEY].string ?: Language.DEFAULT_LANGUAGE
 
-public val SiteBuilder.languagePrefix: Name
+public val SiteContext.languagePrefix: Name
     get() = languages[language]?.let { it[Language::prefix.name].string ?: language }?.parseAsName() ?: Name.EMPTY
 
-public fun SiteBuilder.withLanguages(languageMap: Map<String, Meta>, block: SiteBuilder.(language: String) -> Unit) {
+@SnarkBuilder
+public suspend fun SiteContext.multiLanguageSite(data: DataSet<Any>, languageMap: Map<String, Meta>, site: HtmlSite) {
     languageMap.forEach { (languageKey, languageMeta) ->
         val prefix = languageMeta[Language::prefix.name].string ?: languageKey
-        val routeMeta = Meta {
+        val languageSiteMeta = Meta {
             SITE_LANGUAGE_KEY put languageKey
             SITE_LANGUAGES_KEY put Meta {
                 languageMap.forEach {
@@ -85,65 +86,48 @@ public fun SiteBuilder.withLanguages(languageMap: Map<String, Meta>, block: Site
                 }
             }
         }
-        route(prefix, routeMeta = routeMeta) {
-            block(languageKey)
-        }
+        site(prefix.parseAsName(), data.branch(prefix), siteMeta = Laminate(languageSiteMeta, siteMeta), site)
     }
 }
-
-@SnarkBuilder
-public fun SiteBuilder.withLanguages(
-    vararg language: Pair<String, String>,
-    block: SiteBuilder.(language: String) -> Unit,
-) {
-    val languageMap = language.associate {
-        it.first to Meta {
-            Language::prefix.name put it.second
-        }
-    }
-    withLanguages(languageMap, block)
-}
-
-
 
 /**
  * The language key of this page
  */
-public val WebPage.language: String
+public val PageContext.language: String
     get() = pageMeta[Language.LANGUAGE_KEY]?.string ?: pageMeta[SITE_LANGUAGE_KEY]?.string ?: Language.DEFAULT_LANGUAGE
 
 /**
  * Mapping of language keys to other language versions of this page
  */
-public val WebPage.languages: Map<String, Meta>
+public val PageContext.languages: Map<String, Meta>
     get() = pageMeta[Language.LANGUAGES_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
 
-public fun WebPage.localisedPageRef(pageName: Name, relative: Boolean = false): String {
+public fun PageContext.localisedPageRef(pageName: Name, relative: Boolean = false): String {
     val prefix = languages[language]?.get(Language::prefix.name)?.string?.parseAsName() ?: Name.EMPTY
     return resolvePageRef(prefix + pageName, relative)
 }
 
-
-/**
- * Render all pages in a node with given name. Use localization prefix if appropriate data is available.
- */
-public fun SiteBuilder.localizedPages(
-    dataPath: Name,
-    remotePath: Name = dataPath,
-    dataRenderer: DataRenderer = DataRenderer.DEFAULT,
-) {
-    val item = data.getItem(languagePrefix + dataPath)
-        ?: data.getItem(dataPath)
-        ?: error("No data found by name $dataPath")
-    route(remotePath) {
-        pages(item, dataRenderer)
-    }
-}
-
-public fun SiteBuilder.localizedPages(
-    dataPath: String,
-    remotePath: Name = dataPath.parseAsName(),
-    dataRenderer: DataRenderer = DataRenderer.DEFAULT,
-) {
-    localizedPages(dataPath.parseAsName(), remotePath, dataRenderer = dataRenderer)
-}
+//
+///**
+// * Render all pages in a node with given name. Use localization prefix if appropriate data is available.
+// */
+//public fun SiteContext.localizedPages(
+//    dataPath: Name,
+//    remotePath: Name = dataPath,
+//    dataRenderer: DataRenderer = DataRenderer.DEFAULT,
+//) {
+//    val item = resolveData.getItem(languagePrefix + dataPath)
+//        ?: resolveData.getItem(dataPath)
+//        ?: error("No data found by name $dataPath")
+//    route(remotePath) {
+//        pages(item, dataRenderer)
+//    }
+//}
+//
+//public fun SiteContext.localizedPages(
+//    dataPath: String,
+//    remotePath: Name = dataPath.parseAsName(),
+//    dataRenderer: DataRenderer = DataRenderer.DEFAULT,
+//) {
+//    localizedPages(dataPath.parseAsName(), remotePath, dataRenderer = dataRenderer)
+//}

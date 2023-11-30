@@ -21,8 +21,8 @@ public class Snark : WorkspacePlugin() {
     public val io: IOPlugin by require(IOPlugin)
     override val tag: PluginTag get() = Companion.tag
 
-    public val readers: Map<Name, SnarkIOReader<Any>> by lazy {
-        context.gather<SnarkIOReader<Any>>(SnarkIOReader.DF_TYPE, inherit = true)
+    public val readers: Map<Name, SnarkReader<Any>> by lazy {
+        context.gather<SnarkReader<Any>>(SnarkReader.DF_TYPE, inherit = true)
     }
 
     /**
@@ -50,7 +50,7 @@ public class Snark : WorkspacePlugin() {
             readByteArray()
         }
 
-        internal val byteArraySnarkParser = SnarkIOReader(byteArrayIOReader)
+        internal val byteArraySnarkParser = SnarkReader(byteArrayIOReader)
 
     }
 }

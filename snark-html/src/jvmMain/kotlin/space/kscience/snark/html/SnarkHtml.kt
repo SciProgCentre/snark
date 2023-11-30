@@ -6,7 +6,6 @@ import io.ktor.http.ContentType
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.context.*
 import space.kscience.dataforge.data.*
-import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.IOPlugin
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.JsonMetaFormat
@@ -21,17 +20,11 @@ import space.kscience.dataforge.provider.dfId
 import space.kscience.dataforge.workspace.*
 import space.kscience.snark.ImageIOReader
 import space.kscience.snark.Snark
-import space.kscience.snark.SnarkIOReader
+import space.kscience.snark.SnarkReader
 import space.kscience.snark.TextProcessor
 import java.net.URLConnection
 import kotlin.io.path.Path
 import kotlin.io.path.extension
-
-public fun <T : Any> SnarkIOReader(
-    reader: IOReader<T>,
-    vararg types: ContentType,
-    priority: Int = SnarkIOReader.DEFAULT_PRIORITY,
-): SnarkIOReader<T> = SnarkIOReader(reader, *types.map { it.toString() }.toTypedArray(),  priority = priority)
 
 
 /**
@@ -44,33 +37,17 @@ public class SnarkHtml : WorkspacePlugin() {
 
     override val tag: PluginTag get() = Companion.tag
 
-    /**
-     * Lazy-initialized variable that holds a map of site layouts.
-     *
-     * @property siteLayouts The map of site layouts, where the key is the layout name and the value is the corresponding SiteLayout object.
-     */
-    private val siteLayouts: Map<Name, SiteLayout> by lazy {
-        context.gather(SiteLayout.TYPE, true)
-    }
-
-
-    internal fun siteLayout(layoutMeta: Meta): SiteLayout {
-        val layoutName = layoutMeta.string
-            ?: layoutMeta["name"].string ?: error("Layout name not defined in $layoutMeta")
-        return siteLayouts[layoutName.parseAsName()] ?: error("Layout with name $layoutName not found in $this")
-    }
-
     override fun content(target: String): Map<Name, Any> = when (target) {
-        SnarkIOReader::class.dfId -> mapOf(
+        SnarkReader::class.dfId -> mapOf(
             "html".asName() to HtmlReader,
             "markdown".asName() to MarkdownReader,
-            "json".asName() to SnarkIOReader(JsonMetaFormat, ContentType.Application.Json),
-            "yaml".asName() to SnarkIOReader(YamlMetaFormat, "text/yaml", "yaml"),
-            "png".asName() to SnarkIOReader(ImageIOReader, ContentType.Image.PNG),
-            "jpg".asName() to SnarkIOReader(ImageIOReader, ContentType.Image.JPEG),
-            "gif".asName() to SnarkIOReader(ImageIOReader, ContentType.Image.GIF),
-            "svg".asName() to SnarkIOReader(IOReader.binary, ContentType.Image.SVG, ContentType.parse("svg")),
-            "raw".asName() to SnarkIOReader(
+            "json".asName() to SnarkReader(JsonMetaFormat, ContentType.Application.Json.toString()),
+            "yaml".asName() to SnarkReader(YamlMetaFormat, "text/yaml", "yaml"),
+            "png".asName() to SnarkReader(ImageIOReader, ContentType.Image.PNG.toString()),
+            "jpg".asName() to SnarkReader(ImageIOReader, ContentType.Image.JPEG.toString()),
+            "gif".asName() to SnarkReader(ImageIOReader, ContentType.Image.GIF.toString()),
+            "svg".asName() to SnarkReader(IOReader.binary, ContentType.Image.SVG.toString(), "svg"),
+            "raw".asName() to SnarkReader(
                 IOReader.binary,
                 "css",
                 "js",
@@ -85,13 +62,6 @@ public class SnarkHtml : WorkspacePlugin() {
 
         else -> super.content(target)
     }
-
-//    public val assets: TaskReference<Binary> by task<Binary> {
-//        node(Name.EMPTY, from(allData).filter { name, meta ->
-//
-//        })
-//    }
-
 
     public val preprocess: TaskReference<String> by task<String> {
         pipeFrom<String, String>(dataByType<String>()) { text, _, meta ->
@@ -128,6 +98,10 @@ public class SnarkHtml : WorkspacePlugin() {
     }
 
 
+//    public val site by task<Any> {
+//
+//    }
+
 //    public val textTransformationAction: Action<String, String> = Action.map<String, String> {
 //        val transformations = actionMeta.getIndexed("transformation").entries.sortedBy {
 //            it.key?.toIntOrNull() ?: 0
@@ -144,7 +118,7 @@ public class SnarkHtml : WorkspacePlugin() {
             readByteArray()
         }
 
-        internal val byteArraySnarkParser = SnarkIOReader(byteArrayIOReader)
+        internal val byteArraySnarkParser = SnarkReader(byteArrayIOReader)
 
     }
 }
