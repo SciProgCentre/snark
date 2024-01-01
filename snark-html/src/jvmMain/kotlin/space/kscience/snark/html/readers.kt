@@ -1,6 +1,5 @@
 package space.kscience.snark.html
 
-import io.ktor.http.ContentType
 import kotlinx.html.div
 import kotlinx.html.unsafe
 import kotlinx.io.Source
@@ -12,25 +11,25 @@ import space.kscience.snark.SnarkReader
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
-public object HtmlReader : SnarkReader<HtmlFragment> {
+public object HtmlReader : SnarkReader<DataFragment> {
     override val types: Set<String> = setOf("html")
 
-    override fun readFrom(source: String): HtmlFragment = HtmlFragment {
+    override fun readFrom(source: String): DataFragment = DataFragment { _, _ ->
         div {
             unsafe { +source }
         }
     }
 
-    override fun readFrom(source: Source): HtmlFragment = readFrom(source.readString())
-    override val type: KType = typeOf<HtmlFragment>()
+    override fun readFrom(source: Source): DataFragment = readFrom(source.readString())
+    override val type: KType = typeOf<DataFragment>()
 }
 
-public object MarkdownReader : SnarkReader<HtmlFragment> {
-    override val type: KType = typeOf<HtmlFragment>()
+public object MarkdownReader : SnarkReader<DataFragment> {
+    override val type: KType = typeOf<DataFragment>()
 
     override val types: Set<String> = setOf("text/markdown", "md", "markdown")
 
-    override fun readFrom(source: String): HtmlFragment = HtmlFragment {
+    override fun readFrom(source: String): DataFragment = DataFragment { _, _ ->
         val parsedTree = markdownParser.buildMarkdownTreeFromString(source)
         val htmlString = HtmlGenerator(source, parsedTree, markdownFlavor).generateHtml()
 
@@ -44,9 +43,9 @@ public object MarkdownReader : SnarkReader<HtmlFragment> {
     private val markdownFlavor = CommonMarkFlavourDescriptor()
     private val markdownParser = MarkdownParser(markdownFlavor)
 
-    override fun readFrom(source: Source): HtmlFragment = readFrom(source.readString())
+    override fun readFrom(source: Source): DataFragment = readFrom(source.readString())
 
-    public val snarkReader: SnarkReader<HtmlFragment> = SnarkReader(this, "text/markdown")
+    public val snarkReader: SnarkReader<DataFragment> = SnarkReader(this, "text/markdown")
 
 }
 

@@ -25,6 +25,8 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
 @SnarkBuilder
 public interface PageContext :  SnarkContext {
 
+    public val site: SiteContext
+
     /**
      * A metadata for a page. It should include site metadata
      */
@@ -53,42 +55,3 @@ public fun PageContext.resolvePageRef(pageName: String): String = resolvePageRef
 public val PageContext.homeRef: String get() = resolvePageRef(SiteContext.INDEX_PAGE_TOKEN.asName())
 
 public val PageContext.name: Name? get() = pageMeta["name"].string?.parseAsName()
-
-/**
- * Resolve a Html builder by its full name
- */
-context(SnarkContext)
-public fun DataTree<*>.resolveHtmlOrNull(name: Name): HtmlData? {
-    val resolved = (getByType<HtmlFragment>(name) ?: getByType<HtmlFragment>(name + SiteContext.INDEX_PAGE_TOKEN))
-
-    return resolved?.takeIf {
-        it.published //TODO add language confirmation
-    }
-}
-
-context(SnarkContext)
-public fun DataTree<*>.resolveHtmlOrNull(name: String): HtmlData? = resolveHtmlOrNull(name.parseAsName())
-
-context(SnarkContext)
-public fun DataTree<*>.resolveHtml(name: String): HtmlData = resolveHtmlOrNull(name)
-    ?: error("Html fragment with name $name is not resolved")
-
-/**
- * Find all Html blocks using given name/meta filter
- */
-context(SnarkContext)
-public fun DataTree<*>.resolveAllHtml(predicate: (name: Name, meta: Meta) -> Boolean): Map<Name, HtmlData> =
-    filterByType<HtmlFragment> { name, meta ->
-        predicate(name, meta)
-                && meta["published"].string != "false"
-        //TODO add language confirmation
-    }.asSequence().associate { it.name to it.data }
-
-
-context(SnarkContext)
-public fun DataTree<*>.findByContentType(
-    contentType: String,
-    baseName: Name = Name.EMPTY,
-): Map<Name, Data<HtmlFragment>> = resolveAllHtml { name, meta ->
-    name.startsWith(baseName) && meta["content_type"].string == contentType
-}

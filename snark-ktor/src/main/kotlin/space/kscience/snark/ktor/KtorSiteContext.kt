@@ -1,28 +1,31 @@
 package space.kscience.snark.ktor
 
-import io.ktor.http.ContentType
-import io.ktor.http.URLBuilder
-import io.ktor.http.URLProtocol
-import io.ktor.http.fromFileExtension
+import io.ktor.http.*
+import io.ktor.http.content.TextContent
 import io.ktor.server.application.Application
 import io.ktor.server.application.call
-import io.ktor.server.html.respondHtml
 import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
+import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
-import io.ktor.server.routing.*
-import kotlinx.css.CssBuilder
-import kotlinx.html.CommonAttributeGroupFacade
-import kotlinx.html.head
-import kotlinx.html.style
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.createRouteFromPath
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.context.error
 import space.kscience.dataforge.context.logger
-import space.kscience.dataforge.data.*
+import space.kscience.dataforge.data.Data
+import space.kscience.dataforge.data.DataSet
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.await
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.toByteArray
-import space.kscience.dataforge.meta.*
+import space.kscience.dataforge.meta.Laminate
+import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.string
+import space.kscience.dataforge.meta.toMutableMeta
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.cutLast
 import space.kscience.dataforge.names.endsWith
@@ -34,11 +37,11 @@ import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 import kotlin.reflect.typeOf
 
-public fun CommonAttributeGroupFacade.css(block: CssBuilder.() -> Unit) {
-    style = CssBuilder().block().toString()
-}
+//public fun CommonAttributeGroupFacade.css(block: CssBuilder.() -> Unit) {
+//    style = CssBuilder().block().toString()
+//}
 
-public class KtorSiteBuilder(
+public class KtorSiteContext(
     override val context: Context,
     override val siteMeta: Meta,
     private val baseUrl: String,
@@ -87,18 +90,19 @@ public class KtorSiteBuilder(
     }
 
 
-    private inner class KtorPageContext(
+    private class KtorPageContext(
+        override val site: KtorSiteContext,
         val pageBaseUrl: String,
         override val pageMeta: Meta,
     ) : PageContext {
 
-        override fun resolveRef(ref: String): String = this@KtorSiteBuilder.resolveRef(pageBaseUrl, ref)
+        override fun resolveRef(ref: String): String = site.resolveRef(pageBaseUrl, ref)
 
         override fun resolvePageRef(
             pageName: Name,
             relative: Boolean,
         ): String {
-            val fullPageName = if (relative) this@KtorSiteBuilder.route + pageName else pageName
+            val fullPageName = if (relative) site.route + pageName else pageName
             return if (fullPageName.endsWith(SiteContext.INDEX_PAGE_TOKEN)) {
                 resolveRef(fullPageName.cutLast().toWebPath())
             } else {
@@ -121,27 +125,25 @@ public class KtorSiteBuilder(
                 "name" put route.toString()
                 "url" put url.buildString()
             }
-            val pageBuilder = KtorPageContext(url.buildString(), Laminate(modifiedPageMeta, siteMeta))
+            val pageContext =
+                KtorPageContext(this@KtorSiteContext, url.buildString(), Laminate(modifiedPageMeta, siteMeta))
+            //render page in suspend environment
+            val html = HtmlPage.createHtmlString(pageContext, htmlPage, data)
 
-            call.respondHtml {
-                head {}
-                with(htmlPage) {
-                    renderPage(pageBuilder, data)
-                }
-            }
+            call.respond(TextContent(html, ContentType.Text.Html.withCharset(Charsets.UTF_8), HttpStatusCode.OK))
         }
     }
 
     override suspend fun site(route: Name, data: DataSet<Any>, siteMeta: Meta, htmlSite: HtmlSite) {
-        val context = KtorSiteBuilder(
-            context,
-            siteMeta = Laminate(siteMeta, this.siteMeta),
-            baseUrl = resolveRef(baseUrl, route.toWebPath()),
-            route = Name.EMPTY,
-            ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
-        )
-
-        htmlSite.renderSite(context, data)
+        with(htmlSite) {
+            KtorSiteContext(
+                context,
+                siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
+                baseUrl = resolveRef(baseUrl, route.toWebPath()),
+                route = Name.EMPTY,
+                ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
+            ).renderSite(data)
+        }
     }
 
 }
@@ -151,12 +153,12 @@ private fun Route.site(
     data: DataTree<*>,
     baseUrl: String = "",
     siteMeta: Meta = data.meta,
-    block: KtorSiteBuilder.() -> Unit,
+    block: KtorSiteContext.() -> Unit,
 ) {
     contract {
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
-    block(KtorSiteBuilder(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route))
+    block(KtorSiteContext(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route))
 }
 
 public fun Application.site(

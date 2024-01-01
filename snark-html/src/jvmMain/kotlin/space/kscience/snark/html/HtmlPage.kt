@@ -1,15 +1,29 @@
 package space.kscience.snark.html
 
 import kotlinx.html.HTML
+import kotlinx.html.stream.createHTML
+import kotlinx.html.visitTagAndFinalize
 import space.kscience.dataforge.data.DataSet
 import space.kscience.dataforge.data.DataSetBuilder
-import space.kscience.dataforge.data.node
 import space.kscience.dataforge.data.static
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
 
 public fun interface HtmlPage {
-    public fun HTML.renderPage(pageContext: PageContext, pageData: DataSet<*>)
+    public suspend fun HTML.renderPage(page: PageContext, data: DataSet<*>)
+
+    public companion object{
+        public suspend fun createHtmlString(pageContext: PageContext, page: HtmlPage, data: DataSet<*>): String{
+            return createHTML().run {
+                HTML(kotlinx.html.emptyMap, this, null).visitTagAndFinalize(this) {
+                    with(page) {
+                        renderPage(pageContext, data)
+                    }
+                }
+            }
+
+        }
+    }
 }
 
 
@@ -19,6 +33,7 @@ public fun DataSetBuilder<Any>.page(name: Name, pageMeta: Meta = Meta.EMPTY, blo
     val page = HtmlPage(block)
     static<HtmlPage>(name, page, pageMeta)
 }
+
 
 
 

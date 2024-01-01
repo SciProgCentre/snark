@@ -11,7 +11,7 @@ import space.kscience.dataforge.names.asName
 import space.kscience.dataforge.names.parseAsName
 
 public fun interface HtmlSite {
-    public fun renderSite(siteContext: SiteContext, siteData: DataSet<Any>)
+    public suspend fun SiteContext.renderSite(data: DataSet<Any>)
 }
 
 public fun DataSetBuilder<Any>.site(

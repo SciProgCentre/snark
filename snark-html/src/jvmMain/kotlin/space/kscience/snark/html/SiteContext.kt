@@ -6,12 +6,11 @@ import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.NameToken
-import space.kscience.dataforge.names.asName
-import space.kscience.dataforge.workspace.Workspace
+import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
+import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.typeOf
 
 
 /**
@@ -71,6 +70,24 @@ public interface SiteContext : SnarkContext {
         public val SITE_META_KEY: Name = "site".asName()
         public val INDEX_PAGE_TOKEN: NameToken = NameToken("index")
         public val UP_PAGE_TOKEN: NameToken = NameToken("..")
+    }
+}
+
+public suspend fun SiteContext.static(dataSet: DataSet<Binary>, prefix: Name = Name.EMPTY) {
+    dataSet.forEach { (name, data) ->
+        static(prefix + name, data)
+    }
+}
+
+public suspend fun SiteContext.static(dataSet: DataSet<*>, branch: String, prefix: String = branch) {
+    val branchName = branch.parseAsName()
+    val prefixName = prefix.parseAsName()
+    val binaryType = typeOf<Binary>()
+    dataSet.forEach { (name, data) ->
+        @Suppress("UNCHECKED_CAST")
+        if (name.startsWith(branchName) && data.type.isSubtypeOf(binaryType)) {
+            static(prefixName + name, data as Data<Binary>)
+        }
     }
 }
 

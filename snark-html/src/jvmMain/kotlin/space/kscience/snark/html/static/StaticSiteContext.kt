@@ -12,7 +12,6 @@ import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
 import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.FileData
-import space.kscience.dataforge.workspace.Workspace
 import space.kscience.snark.html.*
 import java.nio.file.Path
 import kotlin.contracts.InvocationKind
@@ -30,7 +29,6 @@ internal class StaticSiteContext(
     override val route: Name,
     private val outputPath: Path,
 ) : SiteContext {
-
 
 
 //    @OptIn(ExperimentalPathApi::class)
@@ -91,28 +89,21 @@ internal class StaticSiteContext(
         "${baseUrl.removeSuffix("/")}/$ref"
     }
 
-    inner class StaticPageContext(override val pageMeta: Meta) : PageContext {
+    class StaticPageContext(override val site: StaticSiteContext, override val pageMeta: Meta) : PageContext {
 
         override fun resolveRef(ref: String): String =
-            this@StaticSiteContext.resolveRef(this@StaticSiteContext.baseUrl, ref)
+            site.resolveRef(site.baseUrl, ref)
 
         override fun resolvePageRef(pageName: Name, relative: Boolean): String = resolveRef(
-            (if (relative) this@StaticSiteContext.route + pageName else pageName).toWebPath() + ".html"
+            (if (relative) site.route + pageName else pageName).toWebPath() + ".html"
         )
     }
 
     override suspend fun page(route: Name, data: DataSet<Any>, pageMeta: Meta, htmlPage: HtmlPage) {
 
-        val htmlBuilder = createHTML()
 
         val modifiedPageMeta = pageMeta.toMutableMeta().apply {
             "name" put route.toString()
-        }
-
-        htmlBuilder.html {
-            with(htmlPage) {
-                renderPage(StaticPageContext(Laminate(modifiedPageMeta, siteMeta)), data)
-            }
         }
 
         val newPath = if (route.isEmpty()) {
@@ -122,17 +113,20 @@ internal class StaticSiteContext(
         }
 
         newPath.parent.createDirectories()
-        newPath.writeText(htmlBuilder.finalize())
+
+        val pageContext = StaticPageContext(this, Laminate(modifiedPageMeta, siteMeta))
+        newPath.writeText(HtmlPage.createHtmlString(pageContext,htmlPage, data))
     }
 
     override suspend fun site(route: Name, data: DataSet<Any>, siteMeta: Meta, htmlSite: HtmlSite) {
-        val subSiteContext = StaticSiteContext(
-            siteMeta = Laminate(siteMeta, this.siteMeta),
-            baseUrl = if (baseUrl == "") "" else resolveRef(baseUrl, route.toWebPath()),
-            route = Name.EMPTY,
-            outputPath = outputPath.resolve(route.toWebPath())
-        )
-        htmlSite.renderSite(subSiteContext, data)
+        with(htmlSite) {
+            StaticSiteContext(
+                siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
+                baseUrl = if (baseUrl == "") "" else resolveRef(baseUrl, route.toWebPath()),
+                route = Name.EMPTY,
+                outputPath = outputPath.resolve(route.toWebPath())
+            ).renderSite(data)
+        }
     }
 
 }

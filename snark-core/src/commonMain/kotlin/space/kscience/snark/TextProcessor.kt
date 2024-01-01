@@ -1,12 +1,12 @@
 package space.kscience.snark
 
-import space.kscience.dataforge.misc.DfId
+import space.kscience.dataforge.misc.DfType
 import space.kscience.dataforge.names.NameToken
 
 /**
  * An object that conducts page-based text transformation. Like using link replacement or templating.
  */
-@DfId(TextProcessor.DF_TYPE)
+@DfType(TextProcessor.DF_TYPE)
 public fun interface TextProcessor {
 
     public fun process(text: CharSequence): String

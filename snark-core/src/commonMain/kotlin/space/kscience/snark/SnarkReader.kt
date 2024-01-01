@@ -2,12 +2,12 @@ package space.kscience.snark
 
 import space.kscience.dataforge.io.IOReader
 import space.kscience.dataforge.io.asBinary
-import space.kscience.dataforge.misc.DfId
+import space.kscience.dataforge.misc.DfType
 import space.kscience.snark.SnarkReader.Companion.DEFAULT_PRIORITY
 import space.kscience.snark.SnarkReader.Companion.DF_TYPE
 
-@DfId(DF_TYPE)
-public interface SnarkReader<out T>: IOReader<T> {
+@DfType(DF_TYPE)
+public interface SnarkReader<out T> : IOReader<T> {
     public val types: Set<String>
     public val priority: Int get() = DEFAULT_PRIORITY
     public fun readFrom(source: String): T
@@ -39,5 +39,5 @@ private class SnarkReaderWrapper<out T>(
 public fun <T : Any> SnarkReader(
     reader: IOReader<T>,
     vararg types: String,
-    priority: Int = DEFAULT_PRIORITY
+    priority: Int = DEFAULT_PRIORITY,
 ): SnarkReader<T> = SnarkReaderWrapper(reader, types.toSet(), priority)

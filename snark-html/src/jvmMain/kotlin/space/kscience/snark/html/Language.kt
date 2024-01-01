@@ -75,9 +75,9 @@ public val SiteContext.languagePrefix: Name
     get() = languages[language]?.let { it[Language::prefix.name].string ?: language }?.parseAsName() ?: Name.EMPTY
 
 @SnarkBuilder
-public suspend fun SiteContext.multiLanguageSite(data: DataSet<Any>, languageMap: Map<String, Meta>, site: HtmlSite) {
-    languageMap.forEach { (languageKey, languageMeta) ->
-        val prefix = languageMeta[Language::prefix.name].string ?: languageKey
+public suspend fun SiteContext.multiLanguageSite(data: DataSet<Any>, languageMap: Map<String, Language>, site: HtmlSite) {
+    languageMap.forEach { (languageKey, language) ->
+        val prefix = language.prefix ?: languageKey
         val languageSiteMeta = Meta {
             SITE_LANGUAGE_KEY put languageKey
             SITE_LANGUAGES_KEY put Meta {
