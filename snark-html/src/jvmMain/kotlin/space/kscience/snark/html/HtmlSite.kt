@@ -11,15 +11,16 @@ import space.kscience.dataforge.names.asName
 import space.kscience.dataforge.names.parseAsName
 
 public fun interface HtmlSite {
-    public suspend fun SiteContext.renderSite(data: DataSet<Any>)
+    context(SiteContextWithData)
+    public fun renderSite()
 }
 
 public fun DataSetBuilder<Any>.site(
     name: Name,
     siteMeta: Meta,
-    block: (siteContext: SiteContext, siteData: DataSet<Any>) -> Unit,
+    block: (siteContext: SiteContext, data: DataSet<Any>) -> Unit,
 ) {
-    static(name, HtmlSite(block), siteMeta)
+    static(name, HtmlSite { block(site, siteData) }, siteMeta)
 }
 
 //public fun DataSetBuilder<Any>.site(name: Name, block: DataSetBuilder<Any>.() -> Unit) {

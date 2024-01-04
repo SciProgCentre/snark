@@ -1,6 +1,5 @@
 package space.kscience.snark.html
 
-import kotlinx.html.HTML
 import space.kscience.dataforge.data.*
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.meta.Meta
@@ -35,34 +34,43 @@ public interface SiteContext : SnarkContext {
      * @param route The route name of the static file relative to the site root.
      * @param data The data object containing the binary data for the static file.
      */
-    public suspend fun static(route: Name, data: Data<Binary>)
+    public fun static(route: Name, data: Data<Binary>)
 
 
     /**
-     * Create a single page at given [route]. If route is empty, create an index page at current route.
+     * Create a single page at given [route]. If the route is empty, create an index page the current route.
      *
      * @param pageMeta additional page meta. [PageContext] will use both it and [siteMeta]
      */
     @SnarkBuilder
-    public suspend fun page(
+    public fun page(
         route: Name,
-        data: DataSet<Any>,
+        data: DataSet<*>,
         pageMeta: Meta = Meta.EMPTY,
-        htmlPage: HtmlPage,
+        content: HtmlPage,
     )
 
+    /**
+     * Create a route block with its own data. Does not change base url
+     */
+    @SnarkBuilder
+    public fun route(
+        route: Name,
+        data: DataSet<*>,
+        siteMeta: Meta = Meta.EMPTY,
+        content: HtmlSite,
+    )
 
     /**
      * Creates a sub-site and sets it as site base url
      * @param route mount site at [rootName]
-     * @param dataPrefix prefix path for data used in this site
      */
     @SnarkBuilder
-    public suspend fun site(
+    public fun site(
         route: Name,
-        data: DataSet<Any>,
+        data: DataSet<*>,
         siteMeta: Meta = Meta.EMPTY,
-        htmlSite: HtmlSite,
+        content: HtmlSite,
     )
 
 
@@ -73,13 +81,14 @@ public interface SiteContext : SnarkContext {
     }
 }
 
-public suspend fun SiteContext.static(dataSet: DataSet<Binary>, prefix: Name = Name.EMPTY) {
+public fun SiteContext.static(dataSet: DataSet<Binary>, prefix: Name = Name.EMPTY) {
     dataSet.forEach { (name, data) ->
         static(prefix + name, data)
     }
 }
 
-public suspend fun SiteContext.static(dataSet: DataSet<*>, branch: String, prefix: String = branch) {
+
+public fun SiteContext.static(dataSet: DataSet<*>, branch: String, prefix: String = branch) {
     val branchName = branch.parseAsName()
     val prefixName = prefix.parseAsName()
     val binaryType = typeOf<Binary>()
@@ -91,20 +100,50 @@ public suspend fun SiteContext.static(dataSet: DataSet<*>, branch: String, prefi
     }
 }
 
-@SnarkBuilder
-public suspend fun SiteContext.page(
-    route: Name,
-    data: DataSet<Any>,
-    pageMeta: Meta = Meta.EMPTY,
-    htmlPage: HTML.(page: PageContext, data: DataSet<Any>) -> Unit,
-): Unit = page(route, data, pageMeta, HtmlPage(htmlPage))
+
 
 context(SiteContext)
 public val site: SiteContext
     get() = this@SiteContext
 
 
-public suspend fun SiteContext.renderPages(data: DataSet<Any>): Unit {
+/**
+ * A wrapper for site context that allows convenient site building experience
+ */
+public class SiteContextWithData(private val site: SiteContext, public val siteData: DataSet<*>) : SiteContext by site
+
+
+@SnarkBuilder
+public fun SiteContextWithData.static(branch: String, prefix: String = branch): Unit = static(siteData, branch, prefix)
+
+
+@SnarkBuilder
+public fun SiteContextWithData.page(
+    route: Name = Name.EMPTY,
+    pageMeta: Meta = Meta.EMPTY,
+    content: HtmlPage,
+): Unit = page(route, siteData, pageMeta, content)
+
+@SnarkBuilder
+public suspend fun SiteContextWithData.route(
+    route: String,
+    data: DataSet<*> = siteData,
+    siteMeta: Meta = Meta.EMPTY,
+    content: HtmlSite,
+): Unit = route(route.parseAsName(), data, siteMeta,content)
+
+@SnarkBuilder
+public suspend fun SiteContextWithData.site(
+    route: String,
+    data: DataSet<*> = siteData,
+    siteMeta: Meta = Meta.EMPTY,
+    content: HtmlSite,
+): Unit = site(route.parseAsName(), data, siteMeta,content)
+
+/**
+ * Render all pages and sites found in the data
+ */
+public suspend fun SiteContext.renderPages(data: DataSet<*>): Unit {
 
     // Render all sub-sites
     data.filterByType<HtmlSite>().forEach { siteData: NamedData<HtmlSite> ->

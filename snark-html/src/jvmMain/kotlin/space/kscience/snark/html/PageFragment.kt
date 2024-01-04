@@ -1,6 +1,5 @@
 package space.kscience.snark.html
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.FlowContent
 import space.kscience.dataforge.data.*
@@ -14,15 +13,25 @@ import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.names.startsWith
 import space.kscience.snark.SnarkContext
 
-public fun interface DataFragment {
-    public suspend fun FlowContent.renderFragment(page: PageContext, data: DataSet<*>)
+public fun interface PageFragment {
+
+    context(PageContextWithData)
+    public fun FlowContent.renderFragment()
+}
+
+context(PageContextWithData)
+public fun FlowContent.fragment(fragment: PageFragment): Unit{
+    with(fragment) {
+        renderFragment()
+    }
 }
 
 
-context(PageContext)
-public fun FlowContent.htmlData(data: DataSet<*>, fragment: Data<DataFragment>): Unit = runBlocking(Dispatchers.IO) {
-    with(fragment.await()) { renderFragment(page, data) }
+context(PageContextWithData)
+public fun FlowContent.fragment(data: Data<PageFragment>): Unit = runBlocking {
+    fragment(data.await())
 }
+
 
 context(SnarkContext)
 public val Data<*>.id: String
@@ -45,8 +54,8 @@ public val Data<*>.published: Boolean
  * Resolve a Html builder by its full name
  */
 context(SnarkContext)
-public fun DataSet<*>.resolveHtmlOrNull(name: Name): Data<DataFragment>? {
-    val resolved = (getByType<DataFragment>(name) ?: getByType<DataFragment>(name + SiteContext.INDEX_PAGE_TOKEN))
+public fun DataSet<*>.resolveHtmlOrNull(name: Name): Data<PageFragment>? {
+    val resolved = (getByType<PageFragment>(name) ?: getByType<PageFragment>(name + SiteContext.INDEX_PAGE_TOKEN))
 
     return resolved?.takeIf {
         it.published //TODO add language confirmation
@@ -54,10 +63,10 @@ public fun DataSet<*>.resolveHtmlOrNull(name: Name): Data<DataFragment>? {
 }
 
 context(SnarkContext)
-public fun DataSet<*>.resolveHtmlOrNull(name: String): Data<DataFragment>? = resolveHtmlOrNull(name.parseAsName())
+public fun DataSet<*>.resolveHtmlOrNull(name: String): Data<PageFragment>? = resolveHtmlOrNull(name.parseAsName())
 
 context(SnarkContext)
-public fun DataSet<*>.resolveHtml(name: String): Data<DataFragment> = resolveHtmlOrNull(name)
+public fun DataSet<*>.resolveHtml(name: String): Data<PageFragment> = resolveHtmlOrNull(name)
     ?: error("Html fragment with name $name is not resolved")
 
 /**
@@ -66,7 +75,7 @@ public fun DataSet<*>.resolveHtml(name: String): Data<DataFragment> = resolveHtm
 context(SnarkContext)
 public fun DataSet<*>.resolveAllHtml(
     predicate: (name: Name, meta: Meta) -> Boolean,
-): Map<Name, Data<DataFragment>> = filterByType<DataFragment> { name, meta ->
+): Map<Name, Data<PageFragment>> = filterByType<PageFragment> { name, meta ->
     predicate(name, meta)
             && meta["published"].string != "false"
     //TODO add language confirmation
@@ -76,6 +85,6 @@ context(SnarkContext)
 public fun DataSet<*>.findHtmlByContentType(
     contentType: String,
     baseName: Name = Name.EMPTY,
-): Map<Name, Data<DataFragment>> = resolveAllHtml { name, meta ->
+): Map<Name, Data<PageFragment>> = resolveAllHtml { name, meta ->
     name.startsWith(baseName) && meta["content_type"].string == contentType
 }

@@ -1,13 +1,13 @@
 package space.kscience.snark.html
 
-import kotlinx.html.HTML
-import space.kscience.dataforge.context.Context
-import space.kscience.dataforge.context.ContextAware
-import space.kscience.dataforge.data.*
+import space.kscience.dataforge.data.DataSet
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.names.*
+import space.kscience.dataforge.names.Name
+import space.kscience.dataforge.names.asName
+import space.kscience.dataforge.names.hasIndex
+import space.kscience.dataforge.names.parseAsName
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 
@@ -55,3 +55,6 @@ public fun PageContext.resolvePageRef(pageName: String): String = resolvePageRef
 public val PageContext.homeRef: String get() = resolvePageRef(SiteContext.INDEX_PAGE_TOKEN.asName())
 
 public val PageContext.name: Name? get() = pageMeta["name"].string?.parseAsName()
+
+
+public class PageContextWithData(private val pageContext: PageContext, public val data: DataSet<*>): PageContext by pageContext

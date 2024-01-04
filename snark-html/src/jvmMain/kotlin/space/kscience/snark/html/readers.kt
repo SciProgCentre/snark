@@ -11,25 +11,25 @@ import space.kscience.snark.SnarkReader
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
-public object HtmlReader : SnarkReader<DataFragment> {
+public object HtmlReader : SnarkReader<PageFragment> {
     override val types: Set<String> = setOf("html")
 
-    override fun readFrom(source: String): DataFragment = DataFragment { _, _ ->
+    override fun readFrom(source: String): PageFragment = PageFragment {
         div {
             unsafe { +source }
         }
     }
 
-    override fun readFrom(source: Source): DataFragment = readFrom(source.readString())
-    override val type: KType = typeOf<DataFragment>()
+    override fun readFrom(source: Source): PageFragment = readFrom(source.readString())
+    override val type: KType = typeOf<PageFragment>()
 }
 
-public object MarkdownReader : SnarkReader<DataFragment> {
-    override val type: KType = typeOf<DataFragment>()
+public object MarkdownReader : SnarkReader<PageFragment> {
+    override val type: KType = typeOf<PageFragment>()
 
     override val types: Set<String> = setOf("text/markdown", "md", "markdown")
 
-    override fun readFrom(source: String): DataFragment = DataFragment { _, _ ->
+    override fun readFrom(source: String): PageFragment = PageFragment {
         val parsedTree = markdownParser.buildMarkdownTreeFromString(source)
         val htmlString = HtmlGenerator(source, parsedTree, markdownFlavor).generateHtml()
 
@@ -43,9 +43,9 @@ public object MarkdownReader : SnarkReader<DataFragment> {
     private val markdownFlavor = CommonMarkFlavourDescriptor()
     private val markdownParser = MarkdownParser(markdownFlavor)
 
-    override fun readFrom(source: Source): DataFragment = readFrom(source.readString())
+    override fun readFrom(source: Source): PageFragment = readFrom(source.readString())
 
-    public val snarkReader: SnarkReader<DataFragment> = SnarkReader(this, "text/markdown")
+    public val snarkReader: SnarkReader<PageFragment> = SnarkReader(this, "text/markdown")
 
 }
 

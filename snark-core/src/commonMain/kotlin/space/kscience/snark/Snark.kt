@@ -34,7 +34,7 @@ public class Snark : WorkspacePlugin() {
         context.gather(TextProcessor.DF_TYPE, true)
     }
 
-    public fun textProcessor(transformationMeta: Meta): TextProcessor {
+    public fun preprocessor(transformationMeta: Meta): TextProcessor {
         val transformationName = transformationMeta.string
             ?: transformationMeta["name"].string ?: error("Transformation name not defined in $transformationMeta")
         return textProcessors[transformationName.parseAsName()]

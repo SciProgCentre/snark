@@ -42,12 +42,15 @@ public class WebPageTextProcessor(private val page: PageContext) : TextProcessor
 
 }
 
-public class WebPagePostprocessor<out R>(
+/**
+ * A tag consumer wrapper that wraps existing [TagConsumer] and adds postprocessing.
+ *
+ */
+public class Postprocessor<out R>(
     public val page: PageContext,
     private val consumer: TagConsumer<R>,
+    private val processor: TextProcessor = WebPageTextProcessor(page),
 ) : TagConsumer<R> by consumer {
-
-    private val processor = WebPageTextProcessor(page)
 
     override fun onTagAttributeChange(tag: Tag, attribute: String, value: String?) {
         if (tag is A && attribute == "href" && value != null) {
@@ -73,9 +76,10 @@ public class WebPagePostprocessor<out R>(
     }
 }
 
-public inline fun FlowContent.withSnarkPage(page: PageContext, block: FlowContent.() -> Unit) {
+context(PageContext)
+public inline fun FlowContent.postprocess(block: FlowContent.() -> Unit) {
     val fc = object : FlowContent by this {
-        override val consumer: TagConsumer<*> = WebPagePostprocessor(page, this@withSnarkPage.consumer)
+        override val consumer: TagConsumer<*> = Postprocessor(page, this@postprocess.consumer)
     }
     fc.block()
 }

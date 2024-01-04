@@ -3,13 +3,17 @@ package space.kscience.snark.html
 import space.kscience.dataforge.data.DataSet
 import space.kscience.dataforge.data.branch
 import space.kscience.dataforge.meta.*
-import space.kscience.dataforge.names.*
+import space.kscience.dataforge.names.Name
+import space.kscience.dataforge.names.asName
+import space.kscience.dataforge.names.parseAsName
+import space.kscience.dataforge.names.plus
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGES_KEY
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
 
 
 public class Language : Scheme() {
+
     /**
      * Language key override
      */
@@ -19,6 +23,11 @@ public class Language : Scheme() {
      * Page name prefix
      */
     public var prefix: String? by string()
+
+    /**
+     * An override for data path. By default uses [prefix]
+     */
+    public var dataPath: String? by string()
 
     /**
      * Target page name with a given language key
@@ -33,21 +42,21 @@ public class Language : Scheme() {
 
         public val LANGUAGE_KEY: Name = "language".asName()
 
-        public val LANGUAGES_KEY: Name = "languages".asName()
+        public val LANGUAGE_MAP_KEY: Name = "languageMap".asName()
 
         public val SITE_LANGUAGE_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_KEY
 
-        public val SITE_LANGUAGES_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGES_KEY
+        public val SITE_LANGUAGES_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_MAP_KEY
 
         public const val DEFAULT_LANGUAGE: String = "en"
-//
+
 //        /**
 //         * Automatically build a language map for a data piece with given [name] based on existence of appropriate data nodes.
 //         */
-//        context(SiteContext)
-//        public fun forName(name: Name): Meta = Meta {
+//        context(PageContextWithData)
+//        public fun languageMapFor(name: Name): Meta = Meta {
 //            val currentLanguagePrefix = languages[language]?.get(Language::prefix.name)?.string ?: language
-//            val fullName = (route.removeFirstOrNull(currentLanguagePrefix.asName()) ?: route) + name
+//            val fullName = (site.route.removeFirstOrNull(currentLanguagePrefix.asName()) ?: site.route) + name
 //            languages.forEach { (key, meta) ->
 //                val languagePrefix: String = meta[Language::prefix.name].string ?: key
 //                val nameWithLanguage: Name = if (languagePrefix.isBlank()) {
@@ -55,7 +64,7 @@ public class Language : Scheme() {
 //                } else {
 //                    languagePrefix.asName() + fullName
 //                }
-//                if (resolveData.getItem(name) != null) {
+//                if (data.resolveHtmlOrNull(name) != null) {
 //                    key put meta.asMutableMeta().apply {
 //                        Language::target.name put nameWithLanguage.toString()
 //                    }
@@ -64,6 +73,8 @@ public class Language : Scheme() {
 //        }
     }
 }
+
+public fun Language(prefix: String): Language = Language { this.prefix = prefix }
 
 public val SiteContext.languages: Map<String, Meta>
     get() = siteMeta[SITE_LANGUAGES_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
@@ -74,8 +85,17 @@ public val SiteContext.language: String
 public val SiteContext.languagePrefix: Name
     get() = languages[language]?.let { it[Language::prefix.name].string ?: language }?.parseAsName() ?: Name.EMPTY
 
+/**
+ * Create a multiple sites for different languages. All sites use the same [content], but rely on different data
+ *
+ * @param data a common data root for all sites
+ */
 @SnarkBuilder
-public suspend fun SiteContext.multiLanguageSite(data: DataSet<Any>, languageMap: Map<String, Language>, site: HtmlSite) {
+public fun SiteContext.multiLanguageSite(
+    data: DataSet<*>,
+    languageMap: Map<String, Language>,
+    content: HtmlSite,
+) {
     languageMap.forEach { (languageKey, language) ->
         val prefix = language.prefix ?: languageKey
         val languageSiteMeta = Meta {
@@ -86,7 +106,12 @@ public suspend fun SiteContext.multiLanguageSite(data: DataSet<Any>, languageMap
                 }
             }
         }
-        site(prefix.parseAsName(), data.branch(prefix), siteMeta = Laminate(languageSiteMeta, siteMeta), site)
+        site(
+            prefix.parseAsName(),
+            data.branch(language.dataPath ?: prefix),
+            siteMeta = Laminate(languageSiteMeta, siteMeta),
+            content
+        )
     }
 }
 
@@ -99,11 +124,11 @@ public val PageContext.language: String
 /**
  * Mapping of language keys to other language versions of this page
  */
-public val PageContext.languages: Map<String, Meta>
-    get() = pageMeta[Language.LANGUAGES_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
+public fun PageContext.getLanguageMap(): Map<String, Meta> =
+    pageMeta[Language.LANGUAGE_MAP_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
 
 public fun PageContext.localisedPageRef(pageName: Name, relative: Boolean = false): String {
-    val prefix = languages[language]?.get(Language::prefix.name)?.string?.parseAsName() ?: Name.EMPTY
+    val prefix = getLanguageMap()[language]?.get(Language::prefix.name)?.string?.parseAsName() ?: Name.EMPTY
     return resolvePageRef(prefix + pageName, relative)
 }
 

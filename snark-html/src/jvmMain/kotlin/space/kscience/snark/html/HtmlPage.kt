@@ -10,18 +10,23 @@ import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
 
 public fun interface HtmlPage {
-    public suspend fun HTML.renderPage(page: PageContext, data: DataSet<*>)
 
-    public companion object{
-        public suspend fun createHtmlString(pageContext: PageContext, page: HtmlPage, data: DataSet<*>): String{
-            return createHTML().run {
-                HTML(kotlinx.html.emptyMap, this, null).visitTagAndFinalize(this) {
+    context(PageContextWithData)
+    public fun HTML.renderPage()
+
+    public companion object {
+        public fun createHtmlString(
+            pageContext: PageContext,
+            dataSet: DataSet<*>,
+            page: HtmlPage,
+        ): String = createHTML().run {
+            HTML(kotlinx.html.emptyMap, this, null).visitTagAndFinalize(this) {
+                with(PageContextWithData(pageContext, dataSet)) {
                     with(page) {
-                        renderPage(pageContext, data)
+                        renderPage()
                     }
                 }
             }
-
         }
     }
 }
@@ -29,12 +34,14 @@ public fun interface HtmlPage {
 
 // data builders
 
-public fun DataSetBuilder<Any>.page(name: Name, pageMeta: Meta = Meta.EMPTY, block: HTML.(pageContext: PageContext, pageData: DataSet<Any>) -> Unit) {
+public fun DataSetBuilder<Any>.page(
+    name: Name,
+    pageMeta: Meta = Meta.EMPTY,
+    block: context(PageContextWithData) HTML.() -> Unit,
+) {
     val page = HtmlPage(block)
     static<HtmlPage>(name, page, pageMeta)
 }
-
-
 
 
 //                if (data.type == typeOf<HtmlData>()) {

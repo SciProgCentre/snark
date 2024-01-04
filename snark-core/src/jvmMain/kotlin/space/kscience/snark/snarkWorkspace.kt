@@ -27,15 +27,13 @@ import kotlin.io.path.toPath
 private fun IOPlugin.readResources(
     vararg resources: String,
     classLoader: ClassLoader = Thread.currentThread().contextClassLoader,
-): DataTree<Binary> {
-//    require(resource.isNotBlank()) {"Can't mount root resource tree as data root"}
-    return DataTree {
-        resources.forEach { resource ->
-            val path = classLoader.getResource(resource)?.toURI()?.toPath() ?: error(
-                "Resource with name $resource is not resolved"
-            )
-            node(resource, readRawDirectory(path))
-        }
+): DataTree<Binary> = DataTree {
+    //    require(resource.isNotBlank()) {"Can't mount root resource tree as data root"}
+    resources.forEach { resource ->
+        val path = classLoader.getResource(resource)?.toURI()?.toPath() ?: error(
+            "Resource with name $resource is not resolved"
+        )
+        node(resource, readRawDirectory(path))
     }
 }
 

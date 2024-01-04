@@ -2,7 +2,6 @@ package space.kscience.snark.ktor
 
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
-import io.ktor.server.application.Application
 import io.ktor.server.application.call
 import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
@@ -11,14 +10,12 @@ import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.createRouteFromPath
 import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.context.error
 import space.kscience.dataforge.context.logger
 import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.DataSet
-import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.await
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.toByteArray
@@ -33,8 +30,6 @@ import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.FileData
 import space.kscience.snark.html.*
 import java.nio.file.Path
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
 import kotlin.reflect.typeOf
 
 //public fun CommonAttributeGroupFacade.css(block: CssBuilder.() -> Unit) {
@@ -50,7 +45,7 @@ public class KtorSiteContext(
 ) : SiteContext, ContextAware {
 
 
-    override suspend fun static(route: Name, data: Data<Binary>) {
+    override fun static(route: Name, data: Data<Binary>) {
         data.meta[FileData.FILE_PATH_KEY]?.string?.let {
             val file = try {
                 Path.of(it).toFile()
@@ -111,7 +106,7 @@ public class KtorSiteContext(
         }
     }
 
-    override suspend fun page(route: Name, data: DataSet<Any>, pageMeta: Meta, htmlPage: HtmlPage) {
+    override fun page(route: Name, data: DataSet<*>, pageMeta: Meta, content: HtmlPage) {
         ktorRoute.get(route.toWebPath()) {
             val request = call.request
             //substitute host for url for backwards calls
@@ -128,50 +123,75 @@ public class KtorSiteContext(
             val pageContext =
                 KtorPageContext(this@KtorSiteContext, url.buildString(), Laminate(modifiedPageMeta, siteMeta))
             //render page in suspend environment
-            val html = HtmlPage.createHtmlString(pageContext, htmlPage, data)
+            val html = HtmlPage.createHtmlString(pageContext, data, content)
 
             call.respond(TextContent(html, ContentType.Text.Html.withCharset(Charsets.UTF_8), HttpStatusCode.OK))
         }
     }
 
-    override suspend fun site(route: Name, data: DataSet<Any>, siteMeta: Meta, htmlSite: HtmlSite) {
-        with(htmlSite) {
+    override fun route(route: Name, data: DataSet<*>, siteMeta: Meta, content: HtmlSite) {
+        val siteContext = SiteContextWithData(
+            KtorSiteContext(
+                context,
+                siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
+                baseUrl = baseUrl,
+                route = route,
+                ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
+            ),
+            data
+        )
+        with(content) {
+            with(siteContext) {
+                renderSite()
+            }
+        }
+    }
+
+    override fun site(route: Name, data: DataSet<*>, siteMeta: Meta, content: HtmlSite) {
+        val siteContext = SiteContextWithData(
             KtorSiteContext(
                 context,
                 siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
                 baseUrl = resolveRef(baseUrl, route.toWebPath()),
                 route = Name.EMPTY,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
-            ).renderSite(data)
+            ),
+            data
+        )
+        with(content) {
+            with(siteContext) {
+                renderSite()
+            }
         }
     }
 
 }
 
-private fun Route.site(
+public fun Route.site(
     context: Context,
-    data: DataTree<*>,
+    data: DataSet<*>,
     baseUrl: String = "",
     siteMeta: Meta = data.meta,
-    block: KtorSiteContext.() -> Unit,
+    content: HtmlSite,
 ) {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-    }
-    block(KtorSiteContext(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route))
-}
-
-public fun Application.site(
-    context: Context,
-    data: DataTree<*>,
-    baseUrl: String = "",
-    siteMeta: Meta = data.meta,
-    block: SiteContext.() -> Unit,
-) {
-    contract {
-        callsInPlace(block, InvocationKind.EXACTLY_ONCE)
-    }
-    routing {
-        site(context, data, baseUrl, siteMeta, block)
+    val siteContext = SiteContextWithData(
+        KtorSiteContext(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route),
+        data
+    )
+    with(content) {
+        with(siteContext) {
+            renderSite()
+        }
     }
 }
+//
+//public suspend fun Application.site(
+//    context: Context,
+//    data: DataSet<*>,
+//    baseUrl: String = "",
+//    siteMeta: Meta = data.meta,
+//    content: HtmlSite,
+//) {
+//    routing {}.site(context, data, baseUrl, siteMeta, content)
+//
+//}
