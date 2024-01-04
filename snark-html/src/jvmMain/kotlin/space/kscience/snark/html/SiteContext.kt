@@ -125,7 +125,7 @@ public fun SiteContextWithData.page(
 ): Unit = page(route, siteData, pageMeta, content)
 
 @SnarkBuilder
-public suspend fun SiteContextWithData.route(
+public fun SiteContextWithData.route(
     route: String,
     data: DataSet<*> = siteData,
     siteMeta: Meta = Meta.EMPTY,
@@ -133,7 +133,7 @@ public suspend fun SiteContextWithData.route(
 ): Unit = route(route.parseAsName(), data, siteMeta,content)
 
 @SnarkBuilder
-public suspend fun SiteContextWithData.site(
+public fun SiteContextWithData.site(
     route: String,
     data: DataSet<*> = siteData,
     siteMeta: Meta = Meta.EMPTY,

@@ -5,21 +5,20 @@ package space.kscience.snark.html
 import io.ktor.http.ContentType
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.actions.Action
-import space.kscience.dataforge.context.*
+import space.kscience.dataforge.context.Context
+import space.kscience.dataforge.context.PluginFactory
+import space.kscience.dataforge.context.PluginTag
 import space.kscience.dataforge.data.*
-import space.kscience.dataforge.io.IOPlugin
-import space.kscience.dataforge.io.IOReader
-import space.kscience.dataforge.io.JsonMetaFormat
+import space.kscience.dataforge.io.*
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
 import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.copy
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
 import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.NameToken
 import space.kscience.dataforge.names.asName
-import space.kscience.dataforge.names.replaceLast
 import space.kscience.dataforge.provider.dfId
 import space.kscience.dataforge.workspace.*
 import space.kscience.snark.Snark
@@ -28,6 +27,7 @@ import space.kscience.snark.TextProcessor
 import java.net.URLConnection
 import kotlin.io.path.Path
 import kotlin.io.path.extension
+import kotlin.reflect.typeOf
 
 
 public fun <T : Any, R : Any> DataSet<T>.transform(action: Action<T, R>, meta: Meta = Meta.EMPTY): DataSet<R> =
@@ -53,70 +53,70 @@ public class SnarkHtml : WorkspacePlugin() {
             "markdown".asName() to MarkdownReader,
             "json".asName() to SnarkReader(JsonMetaFormat, ContentType.Application.Json.toString()),
             "yaml".asName() to SnarkReader(YamlMetaFormat, "text/yaml", "yaml"),
-//            "png".asName() to SnarkReader(ImageIOReader, ContentType.Image.PNG.toString()),
-//            "jpg".asName() to SnarkReader(ImageIOReader, ContentType.Image.JPEG.toString()),
-//            "gif".asName() to SnarkReader(ImageIOReader, ContentType.Image.GIF.toString()),
-//            "svg".asName() to SnarkReader(IOReader.binary, ContentType.Image.SVG.toString(), "svg"),
-//            "raw".asName() to SnarkReader(
-//                IOReader.binary,
-//                "css",
-//                "js",
-//                "javascript",
-//                "scss",
-//                "woff",
-//                "woff2",
-//                "ttf",
-//                "eot"
-//            )
         )
 
         else -> super.content(target)
     }
 
-    public val read: TaskReference<String> by task<String>{
-
+    private fun getContentType(name: Name, meta: Meta): String = meta[CONTENT_TYPE_KEY].string ?: run {
+        val filePath = meta[FileData.FILE_PATH_KEY]?.string ?: name.toString()
+        URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
     }
 
+
     public val parse: TaskReference<Any> by task<Any> {
-        from(read).forEach { (dataName, data) ->
-            //remove extensions for data files
-            val filePath = meta[FileData.FILE_PATH_KEY]?.string ?: dataName.toString()
-            val fileType = URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
+        from(allData).forEach { (dataName, data) ->
+            val contentType = getContentType(dataName, data.meta)
             val parser = snark.readers.values.filter { parser ->
-                fileType in parser.types
+                contentType in parser.types
             }.maxByOrNull {
                 it.priority
-            } ?: run {
-                logger.debug { "The parser is not found for file $filePath with meta $meta. Passing data without parsing" }
-                data(dataName, data)
-                return@forEach
-            }
-            val newName = dataName.replaceLast {
-                NameToken(it.body.substringBeforeLast("."), it.index)
-            }
-            val preprocessor = meta[TextProcessor.TEXT_TRANSFORMATION_KEY]?.let{snark.preprocessor(it)}
+            } ?: return@forEach //ignore data for which parser is not found
 
-            data(newName, data.map { string: String ->
-                val preprocessed = preprocessor?.process(string) ?: string
-                parser.readFrom(preprocessed)
-            })
+            val preprocessor = meta[TextProcessor.TEXT_TRANSFORMATION_KEY]?.let { snark.preprocessor(it) }
+
+            val newMeta = data.meta.copy {
+                CONTENT_TYPE_KEY put contentType
+            }
+
+            when (data.type) {
+                typeOf<String>() -> {
+                    data(dataName, data.map { content ->
+                        val string = content as String
+                        val preprocessed = preprocessor?.process(string) ?: string
+                        parser.readFrom(preprocessed)
+                    })
+                }
+
+                typeOf<Binary>() -> {
+                    data(dataName, data.map(meta = newMeta) { content ->
+                        val binary = content as Binary
+                        if (preprocessor == null) {
+                            parser.readFrom(binary)
+                        } else {
+                            //TODO provide encoding
+                            val string = binary.toByteArray().decodeToString()
+                            parser.readFrom(preprocessor.process(string))
+                        }
+                    })
+                }
+                // bypass for non textual-data
+                else -> data(dataName, data.withMeta(newMeta))
+            }
         }
     }
 
 
-//    public val site by task<Any> {
-//
-//    }
-
-//    public val textTransformationAction: Action<String, String> = Action.map<String, String> {
-//        val transformations = actionMeta.getIndexed("transformation").entries.sortedBy {
-//            it.key?.toIntOrNull() ?: 0
-//        }.map { it.value }
-//    }
+    public val site: TaskReference<Any> by task<Any> {
+        fill(from(allData))
+        fill(from(parse))
+    }
 
 
     public companion object : PluginFactory<SnarkHtml> {
         override val tag: PluginTag = PluginTag("snark.html")
+
+        public val CONTENT_TYPE_KEY: Name = "contentType".asName()
 
         override fun build(context: Context, meta: Meta): SnarkHtml = SnarkHtml()
 
