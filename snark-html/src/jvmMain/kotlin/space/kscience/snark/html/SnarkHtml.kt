@@ -3,8 +3,10 @@
 package space.kscience.snark.html
 
 import io.ktor.http.ContentType
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.actions.Action
+import space.kscience.dataforge.actions.mapping
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.PluginFactory
 import space.kscience.dataforge.context.PluginTag
@@ -13,27 +15,27 @@ import space.kscience.dataforge.io.*
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.copy
 import space.kscience.dataforge.meta.get
+import space.kscience.dataforge.meta.set
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.asName
-import space.kscience.dataforge.provider.dfId
+import space.kscience.dataforge.provider.dfType
 import space.kscience.dataforge.workspace.*
+import space.kscience.snark.ReWrapAction
 import space.kscience.snark.Snark
 import space.kscience.snark.SnarkReader
 import space.kscience.snark.TextProcessor
 import java.net.URLConnection
 import kotlin.io.path.Path
 import kotlin.io.path.extension
-import kotlin.reflect.typeOf
 
 
 public fun <T : Any, R : Any> DataSet<T>.transform(action: Action<T, R>, meta: Meta = Meta.EMPTY): DataSet<R> =
     action.execute(this, meta)
 
-public fun <T : Any> TaskResultBuilder<T>.fill(dataSet: DataSet<T>) {
+public fun <T : Any> DataSetBuilder<T>.fill(dataSet: DataSet<T>) {
     node(Name.EMPTY, dataSet)
 }
 
@@ -48,7 +50,7 @@ public class SnarkHtml : WorkspacePlugin() {
     override val tag: PluginTag get() = Companion.tag
 
     override fun content(target: String): Map<Name, Any> = when (target) {
-        SnarkReader::class.dfId -> mapOf(
+        SnarkReader::class.dfType -> mapOf(
             "html".asName() to HtmlReader,
             "markdown".asName() to MarkdownReader,
             "json".asName() to SnarkReader(JsonMetaFormat, ContentType.Application.Json.toString()),
@@ -64,52 +66,55 @@ public class SnarkHtml : WorkspacePlugin() {
     }
 
 
-    public val parse: TaskReference<Any> by task<Any> {
-        from(allData).forEach { (dataName, data) ->
-            val contentType = getContentType(dataName, data.meta)
-            val parser = snark.readers.values.filter { parser ->
-                contentType in parser.types
-            }.maxByOrNull {
-                it.priority
-            } ?: return@forEach //ignore data for which parser is not found
+    public val prepareHeaderAction: Action<Any, Any> = ReWrapAction.removeExtensions("html", "md") { name ->
+        val contentType = getContentType(name, this)
+        set(CONTENT_TYPE_KEY, contentType)
+    }
 
-            val preprocessor = meta[TextProcessor.TEXT_TRANSFORMATION_KEY]?.let { snark.preprocessor(it) }
+    public val parseAction: Action<Any, Any> = Action.mapping {
+        val contentType = getContentType(name, meta)
 
-            val newMeta = data.meta.copy {
-                CONTENT_TYPE_KEY put contentType
-            }
+        val parser = snark.readers.values.filter { parser ->
+            contentType in parser.types
+        }.maxByOrNull {
+            it.priority
+        }
+        //pass data for which parser is not found
+        if (parser == null) {
+            result { it }
+        } else {
 
-            when (data.type) {
-                typeOf<String>() -> {
-                    data(dataName, data.map { content ->
-                        val string = content as String
+            val preprocessor = meta[TextProcessor.TEXT_PREPROCESSOR_KEY]?.let { snark.preprocessor(it) }
+            result {
+
+                when (it) {
+                    is CharSequence -> {
+                        val string = it.toString()
                         val preprocessed = preprocessor?.process(string) ?: string
                         parser.readFrom(preprocessed)
-                    })
-                }
+                    }
 
-                typeOf<Binary>() -> {
-                    data(dataName, data.map(meta = newMeta) { content ->
-                        val binary = content as Binary
+                    is Binary -> {
                         if (preprocessor == null) {
-                            parser.readFrom(binary)
+                            parser.readFrom(it)
                         } else {
                             //TODO provide encoding
-                            val string = binary.toByteArray().decodeToString()
+                            val string = it.toByteArray().decodeToString()
                             parser.readFrom(preprocessor.process(string))
                         }
-                    })
+                    }
+
+                    // bypass for non textual-data
+                    else -> it
                 }
-                // bypass for non textual-data
-                else -> data(dataName, data.withMeta(newMeta))
             }
         }
     }
 
-
-    public val site: TaskReference<Any> by task<Any> {
-        fill(from(allData))
-        fill(from(parse))
+    public val parse: TaskReference<Any> by task<Any>({
+        description = "Parse all data for which reader is resolved"
+    }) {
+        fill(from(allData).transform(parseAction, taskMeta))
     }
 
 
@@ -128,3 +133,18 @@ public class SnarkHtml : WorkspacePlugin() {
 
     }
 }
+
+
+public fun SnarkHtml.readSiteData(
+    binaries: DataSource<Binary>,
+    meta: Meta = Meta.EMPTY,
+): DataSet<Any> = binaries.transform(parseAction, meta)
+
+
+public fun SnarkHtml.readSiteData(
+    coroutineScope: CoroutineScope,
+    meta: Meta = Meta.EMPTY,
+    builder: context(IOPlugin)  DataSourceBuilder<Any>.() -> Unit,
+): DataSet<Any> = DataSource(coroutineScope) { builder(io, this) }
+    .transform(prepareHeaderAction, meta)
+    .transform(parseAction, meta)

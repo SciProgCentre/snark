@@ -14,7 +14,7 @@ allprojects {
     }
 }
 
-val dataforgeVersion by extra("0.7.1")
+val dataforgeVersion by extra("0.8.0-dev-1")
 
 ksciencePublish {
     pom("https://github.com/SciProgCentre/snark") {

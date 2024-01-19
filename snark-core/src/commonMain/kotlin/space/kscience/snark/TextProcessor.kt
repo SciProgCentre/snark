@@ -14,6 +14,7 @@ public fun interface TextProcessor {
     public companion object {
         public const val DF_TYPE: String = "snark.textTransformation"
         public val TEXT_TRANSFORMATION_KEY: NameToken = NameToken("transformation")
+        public val TEXT_PREPROCESSOR_KEY: NameToken = NameToken("preprocessor")
     }
 }
 

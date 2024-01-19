@@ -2,14 +2,12 @@
 
 package space.kscience.snark
 
-import space.kscience.dataforge.data.DataSet
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.node
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.IOPlugin
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.misc.DFExperimental
-import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.workspace.Workspace
 import space.kscience.dataforge.workspace.WorkspaceBuilder
 import space.kscience.dataforge.workspace.readRawDirectory
@@ -39,13 +37,11 @@ private fun IOPlugin.readResources(
 
 public fun Snark.workspace(
     meta: Meta,
-    customData: DataSet<*> = DataSet.EMPTY,
     workspaceBuilder: WorkspaceBuilder.() -> Unit = {},
 ): Workspace = Workspace {
 
 
     data {
-        node(Name.EMPTY, customData)
         meta.getIndexed("directory").forEach { (index, directoryMeta) ->
             val dataDirectory = directoryMeta["path"].string ?: error("Directory path not defined")
             val nodeName = directoryMeta["name"].string ?: directoryMeta.string ?: index ?: ""
