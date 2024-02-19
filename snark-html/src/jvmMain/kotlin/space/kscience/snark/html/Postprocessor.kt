@@ -65,7 +65,7 @@ public class Postprocessor<out R>(
     }
 
     override fun onTagContentUnsafe(block: Unsafe.() -> Unit) {
-        val proxy = object :Unsafe{
+        val proxy = object : Unsafe {
             override fun String.unaryPlus() {
                 consumer.onTagContentUnsafe {
                     processor.process(this@unaryPlus).unaryPlus()
