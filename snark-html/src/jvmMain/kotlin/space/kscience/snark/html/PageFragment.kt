@@ -15,20 +15,19 @@ import space.kscience.snark.SnarkContext
 
 public fun interface PageFragment {
 
-    context(PageContextWithData)
-    public fun FlowContent.renderFragment()
+    context(PageContextWithData, FlowContent) public fun renderFragment()
 }
 
-context(PageContextWithData)
-public fun FlowContent.fragment(fragment: PageFragment): Unit{
+context(PageContextWithData, FlowContent)
+public fun fragment(fragment: PageFragment): Unit {
     with(fragment) {
         renderFragment()
     }
 }
 
 
-context(PageContextWithData)
-public fun FlowContent.fragment(data: Data<PageFragment>): Unit = runBlocking {
+context(PageContextWithData, FlowContent)
+public fun fragment(data: Data<PageFragment>): Unit = runBlocking {
     fragment(data.await())
 }
 
@@ -54,7 +53,7 @@ public val Data<*>.published: Boolean
  * Resolve a Html builder by its full name
  */
 context(SnarkContext)
-public fun DataSet<*>.resolveHtmlOrNull(name: Name): Data<PageFragment>? {
+public fun DataTree<*>.resolveHtmlOrNull(name: Name): Data<PageFragment>? {
     val resolved = (getByType<PageFragment>(name) ?: getByType<PageFragment>(name + SiteContext.INDEX_PAGE_TOKEN))
 
     return resolved?.takeIf {
@@ -63,26 +62,26 @@ public fun DataSet<*>.resolveHtmlOrNull(name: Name): Data<PageFragment>? {
 }
 
 context(SnarkContext)
-public fun DataSet<*>.resolveHtmlOrNull(name: String): Data<PageFragment>? = resolveHtmlOrNull(name.parseAsName())
+public fun DataTree<*>.resolveHtmlOrNull(name: String): Data<PageFragment>? = resolveHtmlOrNull(name.parseAsName())
 
 context(SnarkContext)
-public fun DataSet<*>.resolveHtml(name: String): Data<PageFragment> = resolveHtmlOrNull(name)
+public fun DataTree<*>.resolveHtml(name: String): Data<PageFragment> = resolveHtmlOrNull(name)
     ?: error("Html fragment with name $name is not resolved")
 
 /**
  * Find all Html blocks using given name/meta filter
  */
 context(SnarkContext)
-public fun DataSet<*>.resolveAllHtml(
+public fun DataTree<*>.resolveAllHtml(
     predicate: (name: Name, meta: Meta) -> Boolean,
-): Map<Name, Data<PageFragment>> = filterByType<PageFragment> { name, meta ->
+): Map<Name, Data<PageFragment>> = filterByType<PageFragment> { name, meta, _ ->
     predicate(name, meta)
             && meta["published"].string != "false"
     //TODO add language confirmation
 }.asSequence().associate { it.name to it.data }
 
 context(SnarkContext)
-public fun DataSet<*>.findHtmlByContentType(
+public fun DataTree<*>.findHtmlByContentType(
     contentType: String,
     baseName: Name = Name.EMPTY,
 ): Map<Name, Data<PageFragment>> = resolveAllHtml { name, meta ->

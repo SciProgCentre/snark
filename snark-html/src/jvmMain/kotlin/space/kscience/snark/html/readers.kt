@@ -8,10 +8,11 @@ import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
 import space.kscience.snark.SnarkReader
-import kotlin.reflect.KType
-import kotlin.reflect.typeOf
 
-public object HtmlReader : SnarkReader<PageFragment> {
+
+public interface SnarkHtmlReader: SnarkReader<PageFragment>
+
+public object HtmlReader : SnarkHtmlReader {
     override val types: Set<String> = setOf("html")
 
     override fun readFrom(source: String): PageFragment = PageFragment {
@@ -21,12 +22,9 @@ public object HtmlReader : SnarkReader<PageFragment> {
     }
 
     override fun readFrom(source: Source): PageFragment = readFrom(source.readString())
-    override val type: KType = typeOf<PageFragment>()
 }
 
-public object MarkdownReader : SnarkReader<PageFragment> {
-    override val type: KType = typeOf<PageFragment>()
-
+public object MarkdownReader : SnarkHtmlReader {
     override val types: Set<String> = setOf("text/markdown", "md", "markdown")
 
     override fun readFrom(source: String): PageFragment = PageFragment {

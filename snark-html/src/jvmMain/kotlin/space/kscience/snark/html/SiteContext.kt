@@ -8,8 +8,6 @@ import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.typeOf
 
 
 /**
@@ -45,7 +43,7 @@ public interface SiteContext : SnarkContext {
     @SnarkBuilder
     public fun page(
         route: Name,
-        data: DataSet<*>,
+        data: DataTree<*>?,
         pageMeta: Meta = Meta.EMPTY,
         content: HtmlPage,
     )
@@ -56,7 +54,7 @@ public interface SiteContext : SnarkContext {
     @SnarkBuilder
     public fun route(
         route: Name,
-        data: DataSet<*>,
+        data: DataTree<*>?,
         siteMeta: Meta = Meta.EMPTY,
         content: HtmlSite,
     )
@@ -68,7 +66,7 @@ public interface SiteContext : SnarkContext {
     @SnarkBuilder
     public fun site(
         route: Name,
-        data: DataSet<*>,
+        data: DataTree<*>?,
         siteMeta: Meta = Meta.EMPTY,
         content: HtmlSite,
     )
@@ -81,25 +79,19 @@ public interface SiteContext : SnarkContext {
     }
 }
 
-public fun SiteContext.static(dataSet: DataSet<Binary>, prefix: Name = Name.EMPTY) {
+public fun SiteContext.static(dataSet: DataTree<Binary>, prefix: Name = Name.EMPTY) {
     dataSet.forEach { (name, data) ->
         static(prefix + name, data)
     }
 }
 
-
-public fun SiteContext.static(dataSet: DataSet<*>, branch: String, prefix: String = branch) {
+public fun SiteContext.static(dataSet: DataTree<*>, branch: String, prefix: String = branch) {
     val branchName = branch.parseAsName()
     val prefixName = prefix.parseAsName()
-    val binaryType = typeOf<Binary>()
-    dataSet.forEach { (name, data) ->
-        @Suppress("UNCHECKED_CAST")
-        if (name.startsWith(branchName) && data.type.isSubtypeOf(binaryType)) {
-            static(prefixName + name, data as Data<Binary>)
-        }
+    dataSet.branch(branchName)?.filterByType<Binary>()?.forEach {
+        static(prefixName + it.name, it.data)
     }
 }
-
 
 
 context(SiteContext)
@@ -110,7 +102,7 @@ public val site: SiteContext
 /**
  * A wrapper for site context that allows convenient site building experience
  */
-public class SiteContextWithData(private val site: SiteContext, public val siteData: DataSet<*>) : SiteContext by site
+public class SiteContextWithData(private val site: SiteContext, public val siteData: DataTree<*>) : SiteContext by site
 
 
 @SnarkBuilder
@@ -127,23 +119,23 @@ public fun SiteContextWithData.page(
 @SnarkBuilder
 public fun SiteContextWithData.route(
     route: String,
-    data: DataSet<*> = siteData,
+    data: DataTree<*>? = siteData,
     siteMeta: Meta = Meta.EMPTY,
     content: HtmlSite,
-): Unit = route(route.parseAsName(), data, siteMeta,content)
+): Unit = route(route.parseAsName(), data, siteMeta, content)
 
 @SnarkBuilder
 public fun SiteContextWithData.site(
     route: String,
-    data: DataSet<*> = siteData,
+    data: DataTree<*>? = siteData,
     siteMeta: Meta = Meta.EMPTY,
     content: HtmlSite,
-): Unit = site(route.parseAsName(), data, siteMeta,content)
+): Unit = site(route.parseAsName(), data, siteMeta, content)
 
 /**
  * Render all pages and sites found in the data
  */
-public suspend fun SiteContext.renderPages(data: DataSet<*>): Unit {
+public suspend fun SiteContext.renderPages(data: DataTree<*>): Unit {
 
     // Render all sub-sites
     data.filterByType<HtmlSite>().forEach { siteData: NamedData<HtmlSite> ->
@@ -151,7 +143,7 @@ public suspend fun SiteContext.renderPages(data: DataSet<*>): Unit {
         val dataPrefix = siteData.meta["site.dataPath"].string?.asName() ?: Name.EMPTY
         site(
             route = siteData.meta["site.route"].string?.asName() ?: siteData.name,
-            data.branch(dataPrefix),
+            data.branch(dataPrefix) ?: DataTree.EMPTY,
             siteMeta = siteData.meta,
             siteData.await()
         )
@@ -162,7 +154,7 @@ public suspend fun SiteContext.renderPages(data: DataSet<*>): Unit {
         val dataPrefix = pageData.meta["page.dataPath"].string?.asName() ?: Name.EMPTY
         page(
             route = pageData.meta["page.route"].string?.asName() ?: pageData.name,
-            data.branch(dataPrefix),
+            data.branch(dataPrefix) ?: DataTree.EMPTY,
             pageMeta = pageData.meta,
             pageData.await()
         )

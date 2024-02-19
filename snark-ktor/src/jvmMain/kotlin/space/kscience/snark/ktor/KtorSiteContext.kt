@@ -15,8 +15,9 @@ import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.context.error
 import space.kscience.dataforge.context.logger
 import space.kscience.dataforge.data.Data
-import space.kscience.dataforge.data.DataSet
+import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.await
+import space.kscience.dataforge.data.meta
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.toByteArray
 import space.kscience.dataforge.meta.Laminate
@@ -106,7 +107,7 @@ public class KtorSiteContext(
         }
     }
 
-    override fun page(route: Name, data: DataSet<*>, pageMeta: Meta, content: HtmlPage) {
+    override fun page(route: Name, data: DataTree<*>?, pageMeta: Meta, content: HtmlPage) {
         ktorRoute.get(route.toWebPath()) {
             val request = call.request
             //substitute host for url for backwards calls
@@ -129,7 +130,7 @@ public class KtorSiteContext(
         }
     }
 
-    override fun route(route: Name, data: DataSet<*>, siteMeta: Meta, content: HtmlSite) {
+    override fun route(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
         val siteContext = SiteContextWithData(
             KtorSiteContext(
                 context,
@@ -138,7 +139,7 @@ public class KtorSiteContext(
                 route = route,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
-            data
+            data ?: DataTree.EMPTY
         )
         with(content) {
             with(siteContext) {
@@ -147,7 +148,7 @@ public class KtorSiteContext(
         }
     }
 
-    override fun site(route: Name, data: DataSet<*>, siteMeta: Meta, content: HtmlSite) {
+    override fun site(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
         val siteContext = SiteContextWithData(
             KtorSiteContext(
                 context,
@@ -156,7 +157,7 @@ public class KtorSiteContext(
                 route = Name.EMPTY,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
-            data
+            data?: DataTree.EMPTY
         )
         with(content) {
             with(siteContext) {
@@ -169,14 +170,14 @@ public class KtorSiteContext(
 
 public fun Route.site(
     context: Context,
-    data: DataSet<*>,
+    data: DataTree<*>?,
     baseUrl: String = "",
-    siteMeta: Meta = data.meta,
+    siteMeta: Meta = data?.meta ?: Meta.EMPTY,
     content: HtmlSite,
 ) {
     val siteContext = SiteContextWithData(
         KtorSiteContext(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route),
-        data
+        data?: DataTree.EMPTY
     )
     with(content) {
         with(siteContext) {

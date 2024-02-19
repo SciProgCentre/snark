@@ -1,6 +1,6 @@
 package space.kscience.snark.html
 
-import space.kscience.dataforge.data.DataSet
+import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
@@ -23,7 +23,7 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
  *  A context for building a single page
  */
 @SnarkBuilder
-public interface PageContext :  SnarkContext {
+public interface PageContext : SnarkContext {
 
     public val site: SiteContext
 
@@ -57,4 +57,7 @@ public val PageContext.homeRef: String get() = resolvePageRef(SiteContext.INDEX_
 public val PageContext.name: Name? get() = pageMeta["name"].string?.parseAsName()
 
 
-public class PageContextWithData(private val pageContext: PageContext, public val data: DataSet<*>): PageContext by pageContext
+public class PageContextWithData(
+    private val pageContext: PageContext,
+    public val data: DataTree<*>,
+) : PageContext by pageContext

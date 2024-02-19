@@ -3,9 +3,9 @@ package space.kscience.snark.html
 import kotlinx.html.HTML
 import kotlinx.html.stream.createHTML
 import kotlinx.html.visitTagAndFinalize
-import space.kscience.dataforge.data.DataSet
-import space.kscience.dataforge.data.DataSetBuilder
-import space.kscience.dataforge.data.static
+import space.kscience.dataforge.data.DataSink
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.wrap
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
 
@@ -17,11 +17,11 @@ public fun interface HtmlPage {
     public companion object {
         public fun createHtmlString(
             pageContext: PageContext,
-            dataSet: DataSet<*>,
+            dataSet: DataTree<*>?,
             page: HtmlPage,
         ): String = createHTML().run {
             HTML(kotlinx.html.emptyMap, this, null).visitTagAndFinalize(this) {
-                with(PageContextWithData(pageContext, dataSet)) {
+                with(PageContextWithData(pageContext, dataSet ?: DataTree.EMPTY)) {
                     with(page) {
                         renderPage()
                     }
@@ -34,13 +34,13 @@ public fun interface HtmlPage {
 
 // data builders
 
-public fun DataSetBuilder<Any>.page(
+public fun DataSink<Any>.page(
     name: Name,
     pageMeta: Meta = Meta.EMPTY,
     block: context(PageContextWithData) HTML.() -> Unit,
 ) {
     val page = HtmlPage(block)
-    static<HtmlPage>(name, page, pageMeta)
+    wrap<HtmlPage>(name, page, pageMeta)
 }
 
 

@@ -1,4 +1,5 @@
-import space.kscience.gradle.*
+import space.kscience.gradle.useApache2Licence
+import space.kscience.gradle.useSPCTeam
 
 plugins {
     id("space.kscience.gradle.project")
@@ -14,7 +15,7 @@ allprojects {
     }
 }
 
-val dataforgeVersion by extra("0.8.0-dev-1")
+val dataforgeVersion by extra("0.8.0")
 
 ksciencePublish {
     pom("https://github.com/SciProgCentre/snark") {

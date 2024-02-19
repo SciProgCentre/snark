@@ -100,7 +100,7 @@ internal class StaticSiteContext(
         )
     }
 
-    override fun page(route: Name, data: DataSet<Any>, pageMeta: Meta, content: HtmlPage) {
+    override fun page(route: Name, data: DataTree<*>?, pageMeta: Meta, content: HtmlPage) {
 
 
         val modifiedPageMeta = pageMeta.toMutableMeta().apply {
@@ -119,7 +119,7 @@ internal class StaticSiteContext(
         newPath.writeText(HtmlPage.createHtmlString(pageContext, data, content))
     }
 
-    override fun route(route: Name, data: DataSet<*>, siteMeta: Meta, content: HtmlSite) {
+    override fun route(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
         val siteContextWithData = SiteContextWithData(
             StaticSiteContext(
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
@@ -127,7 +127,7 @@ internal class StaticSiteContext(
                 route = route,
                 outputPath = outputPath.resolve(route.toWebPath())
             ),
-            data
+            data ?: DataTree.EMPTY
         )
         with(content) {
             with(siteContextWithData) {
@@ -136,7 +136,7 @@ internal class StaticSiteContext(
         }
     }
 
-    override fun site(route: Name, data: DataSet<Any>, siteMeta: Meta, content: HtmlSite) {
+    override fun site(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
         val siteContextWithData = SiteContextWithData(
             StaticSiteContext(
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
@@ -144,7 +144,7 @@ internal class StaticSiteContext(
                 route = Name.EMPTY,
                 outputPath = outputPath.resolve(route.toWebPath())
             ),
-            data
+            data ?: DataTree.EMPTY
         )
         with(content) {
             with(siteContextWithData) {
@@ -162,17 +162,17 @@ internal class StaticSiteContext(
  */
 @Suppress("UnusedReceiverParameter")
 public suspend fun SnarkHtml.staticSite(
-    data: DataSet<*>,
+    data: DataTree<*>?,
     outputPath: Path,
     siteUrl: String = outputPath.absolutePathString().replace("\\", "/"),
-    siteMeta: Meta = data.meta,
+    siteMeta: Meta = data?.meta ?: Meta.EMPTY,
     content: HtmlSite,
 ) {
     val siteContextWithData = SiteContextWithData(
         StaticSiteContext(siteMeta, siteUrl, Name.EMPTY, outputPath),
-        data
+        data ?: DataTree.EMPTY
     )
-    with(content){
+    with(content) {
         with(siteContextWithData) {
             renderSite()
         }

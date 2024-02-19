@@ -5,9 +5,7 @@ import space.kscience.dataforge.data.*
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.MutableMeta
 import space.kscience.dataforge.meta.copy
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.NameToken
-import space.kscience.dataforge.names.replaceLast
+import space.kscience.dataforge.names.*
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
@@ -19,20 +17,19 @@ public class ReWrapAction<R : Any>(
     private val newMeta: MutableMeta.(name: Name) -> Unit = {},
     private val newName: (name: Name, meta: Meta?) -> Name,
 ) : AbstractAction<R, R>(type) {
-    override fun DataSetBuilder<R>.generate(data: DataSet<R>, meta: Meta) {
+    override fun DataSink<R>.generate(data: DataTree<R>, meta: Meta) {
         data.forEach { namedData ->
-            data(
+            put(
                 newName(namedData.name, namedData.meta),
                 namedData.data.withMeta(namedData.meta.copy { newMeta(namedData.name) })
             )
         }
     }
 
-    override fun DataSourceBuilder<R>.update(dataSet: DataSet<R>, meta: Meta, updateKey: Name) {
-        val datum = dataSet[updateKey]
-        data(
-            newName(updateKey, datum?.meta),
-            datum?.withMeta(datum.meta.copy { newMeta(updateKey) })
+    override fun DataSink<R>.update(source: DataTree<R>, meta: Meta, namedData: NamedData<R>) {
+        put(
+            newName(namedData.name, namedData.meta),
+            namedData.withMeta(namedData.meta.copy { newMeta(namedData.name) })
         )
     }
 
@@ -50,11 +47,15 @@ public class ReWrapAction<R : Any>(
                 }
             }
         }
+
+        public inline fun <reified R : Any> removeIndex(): ReWrapAction<R> = ReWrapAction<R>(typeOf<R>()) { name, _ ->
+            if (name.endsWith("index")) name.cutLast() else name
+        }
     }
 }
 
 public inline fun <reified R : Any> ReWrapAction(
     noinline newMeta: MutableMeta.(name: Name) -> Unit = {},
-    noinline newName: (Name, Meta?) -> Name
-): ReWrapAction<R> =    ReWrapAction(typeOf<R>(), newMeta, newName)
+    noinline newName: (Name, Meta?) -> Name,
+): ReWrapAction<R> = ReWrapAction(typeOf<R>(), newMeta, newName)
 

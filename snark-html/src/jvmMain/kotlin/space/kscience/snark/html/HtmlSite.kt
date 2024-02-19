@@ -1,8 +1,8 @@
 package space.kscience.snark.html
 
-import space.kscience.dataforge.data.DataSet
-import space.kscience.dataforge.data.DataSetBuilder
-import space.kscience.dataforge.data.static
+import space.kscience.dataforge.data.DataSink
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.wrap
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.getIndexed
 import space.kscience.dataforge.meta.string
@@ -15,23 +15,23 @@ public fun interface HtmlSite {
     public fun renderSite()
 }
 
-public fun DataSetBuilder<Any>.site(
+public fun DataSink<Any>.site(
     name: Name,
     siteMeta: Meta,
-    block: (siteContext: SiteContext, data: DataSet<Any>) -> Unit,
+    block: (siteContext: SiteContext, data: DataTree<*>?) -> Unit,
 ) {
-    static(name, HtmlSite { block(site, siteData) }, siteMeta)
+    wrap(name, HtmlSite { block(site, siteData) }, siteMeta)
 }
 
 //public fun DataSetBuilder<Any>.site(name: Name, block: DataSetBuilder<Any>.() -> Unit) {
 //    node(name, block)
 //}
 
-internal fun DataSetBuilder<Any>.assetsFrom(rootMeta: Meta) {
+internal fun DataSink<Any>.assetsFrom(rootMeta: Meta) {
     rootMeta.getIndexed("file".asName()).forEach { (_, meta) ->
         val webName: String? by meta.string()
         val name by meta.string { error("File path is not provided") }
         val fileName = name.parseAsName()
-        static(fileName, webName?.parseAsName() ?: fileName)
+        wrap(fileName, webName?.parseAsName() ?: fileName)
     }
 }

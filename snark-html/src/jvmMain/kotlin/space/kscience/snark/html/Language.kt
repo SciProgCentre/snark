@@ -1,15 +1,14 @@
 package space.kscience.snark.html
 
-import space.kscience.dataforge.data.DataSet
-import space.kscience.dataforge.data.branch
+import space.kscience.dataforge.actions.AbstractAction
+import space.kscience.dataforge.actions.transform
+import space.kscience.dataforge.data.*
 import space.kscience.dataforge.meta.*
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.asName
-import space.kscience.dataforge.names.parseAsName
-import space.kscience.dataforge.names.plus
+import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGES_KEY
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
+import kotlin.reflect.typeOf
 
 
 public class Language : Scheme() {
@@ -81,9 +80,37 @@ public val SiteContext.languages: Map<String, Meta>
 
 public val SiteContext.language: String
     get() = siteMeta[SITE_LANGUAGE_KEY].string ?: Language.DEFAULT_LANGUAGE
+//
+//public val SiteContext.languagePrefix: Name
+//    get() = languages[language]?.let { it[Language::prefix.name].string ?: language }?.parseAsName() ?: Name.EMPTY
 
-public val SiteContext.languagePrefix: Name
-    get() = languages[language]?.let { it[Language::prefix.name].string ?: language }?.parseAsName() ?: Name.EMPTY
+
+private class LanguageBranchAction(val prefix: Name) : AbstractAction<Any, Any>(typeOf<Any>()) {
+    override fun DataSink<Any>.generate(data: DataTree<Any>, meta: Meta) {
+        data.forEach { (name, item) ->
+            val nameWithoutPrefix = name.removeFirstOrNull(prefix)
+            if (nameWithoutPrefix != null) {
+                // put language item as is
+                put(nameWithoutPrefix, item)
+            } else if (data[name + prefix] == null) {
+                // put if language item is missing
+                put(name, item)
+            }
+        }
+    }
+
+    override fun DataSink<Any>.update(source: DataTree<Any>, meta: Meta, namedData: NamedData<Any>) {
+        val name = namedData.name
+        val nameWithoutPrefix = name.removeFirstOrNull(prefix)
+        if (nameWithoutPrefix != null) {
+            // put language item as is
+            put(nameWithoutPrefix, namedData.data)
+        } else if (source[name + prefix] == null) {
+            // put if language item is missing
+            put(name, namedData.data)
+        }
+    }
+}
 
 /**
  * Create a multiple sites for different languages. All sites use the same [content], but rely on different data
@@ -92,7 +119,7 @@ public val SiteContext.languagePrefix: Name
  */
 @SnarkBuilder
 public fun SiteContext.multiLanguageSite(
-    data: DataSet<*>,
+    data: DataTree<*>,
     languageMap: Map<String, Language>,
     content: HtmlSite,
 ) {
@@ -108,7 +135,7 @@ public fun SiteContext.multiLanguageSite(
         }
         site(
             prefix.parseAsName(),
-            data.branch(language.dataPath ?: prefix),
+            data.filterByType<Any>().transform(LanguageBranchAction(Name.parse(language.dataPath ?: prefix))),
             siteMeta = Laminate(languageSiteMeta, siteMeta),
             content
         )
