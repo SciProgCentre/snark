@@ -121,8 +121,11 @@ public class KtorSiteContext(
                 "name" put route.toString()
                 "url" put url.buildString()
             }
-            val pageContext =
-                KtorPageContext(this@KtorSiteContext, url.buildString(), Laminate(modifiedPageMeta, siteMeta))
+            val pageContext = KtorPageContext(
+                site = this@KtorSiteContext,
+                pageBaseUrl = url.buildString(),
+                pageMeta = Laminate(modifiedPageMeta, siteMeta)
+            )
             //render page in suspend environment
             val html = HtmlPage.createHtmlString(pageContext, data, content)
 
@@ -157,7 +160,7 @@ public class KtorSiteContext(
                 route = Name.EMPTY,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
-            data?: DataTree.EMPTY
+            data ?: DataTree.EMPTY
         )
         with(content) {
             with(siteContext) {
@@ -177,7 +180,7 @@ public fun Route.site(
 ) {
     val siteContext = SiteContextWithData(
         KtorSiteContext(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route),
-        data?: DataTree.EMPTY
+        data ?: DataTree.EMPTY
     )
     with(content) {
         with(siteContext) {

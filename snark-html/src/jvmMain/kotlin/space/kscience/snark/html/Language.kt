@@ -6,8 +6,8 @@ import space.kscience.dataforge.data.*
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
-import space.kscience.snark.html.Language.Companion.SITE_LANGUAGES_KEY
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
+import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_MAP_KEY
 import kotlin.reflect.typeOf
 
 
@@ -45,7 +45,7 @@ public class Language : Scheme() {
 
         public val SITE_LANGUAGE_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_KEY
 
-        public val SITE_LANGUAGES_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_MAP_KEY
+        public val SITE_LANGUAGE_MAP_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_MAP_KEY
 
         public const val DEFAULT_LANGUAGE: String = "en"
 
@@ -75,14 +75,16 @@ public class Language : Scheme() {
 
 public fun Language(prefix: String): Language = Language { this.prefix = prefix }
 
-public val SiteContext.languages: Map<String, Meta>
-    get() = siteMeta[SITE_LANGUAGES_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
+public val SiteContext.languageMap: Map<String, Language>
+    get() = siteMeta[SITE_LANGUAGE_MAP_KEY]?.items?.map {
+        it.key.toStringUnescaped() to Language.read(it.value)
+    }?.toMap() ?: emptyMap()
 
 public val SiteContext.language: String
     get() = siteMeta[SITE_LANGUAGE_KEY].string ?: Language.DEFAULT_LANGUAGE
-//
-//public val SiteContext.languagePrefix: Name
-//    get() = languages[language]?.let { it[Language::prefix.name].string ?: language }?.parseAsName() ?: Name.EMPTY
+
+public val SiteContext.languagePrefix: Name
+    get() = languageMap[language]?.let { it.prefix ?: language }?.parseAsName() ?: Name.EMPTY
 
 
 private class LanguageBranchAction(val prefix: Name) : AbstractAction<Any, Any>(typeOf<Any>()) {
@@ -127,7 +129,7 @@ public fun SiteContext.multiLanguageSite(
         val prefix = language.prefix ?: languageKey
         val languageSiteMeta = Meta {
             SITE_LANGUAGE_KEY put languageKey
-            SITE_LANGUAGES_KEY put Meta {
+            SITE_LANGUAGE_MAP_KEY put Meta {
                 languageMap.forEach {
                     it.key put it.value
                 }
@@ -151,11 +153,11 @@ public val PageContext.language: String
 /**
  * Mapping of language keys to other language versions of this page
  */
-public fun PageContext.getLanguageMap(): Map<String, Meta> =
-    pageMeta[Language.LANGUAGE_MAP_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
+public val PageContext.languageMap: Map<String, Meta>
+    get() = pageMeta[Language.LANGUAGE_MAP_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
 
 public fun PageContext.localisedPageRef(pageName: Name, relative: Boolean = false): String {
-    val prefix = getLanguageMap()[language]?.get(Language::prefix.name)?.string?.parseAsName() ?: Name.EMPTY
+    val prefix = languageMap[language]?.get(Language::prefix.name)?.string?.parseAsName() ?: Name.EMPTY
     return resolvePageRef(prefix + pageName, relative)
 }
 
