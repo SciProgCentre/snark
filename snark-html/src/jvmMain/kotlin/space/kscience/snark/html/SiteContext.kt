@@ -15,11 +15,15 @@ import space.kscience.snark.SnarkContext
  */
 @SnarkBuilder
 public interface SiteContext : SnarkContext {
+    /**
+     * A context path segments for this site
+     */
+    public val path: List<String>
 
     /**
      * Route name of this [SiteContext] relative to the site root
      */
-    public val route: Name
+    public val siteRoute: Name
 
     /**
      * Site configuration
@@ -49,7 +53,7 @@ public interface SiteContext : SnarkContext {
     )
 
     /**
-     * Create a route block with its own data. Does not change base url
+     * Create a route block with its own data. Does not change the context path
      */
     @SnarkBuilder
     public fun route(
@@ -60,7 +64,7 @@ public interface SiteContext : SnarkContext {
     )
 
     /**
-     * Creates a sub-site and sets it as site base url
+     * Creates a sub-site and changes context path to match [name]
      * @param route mount site at [rootName]
      */
     @SnarkBuilder

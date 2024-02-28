@@ -37,10 +37,6 @@ public val Data<*>.id: String
     get() = meta["id"]?.string ?: "block[${hashCode()}]"
 
 context(SnarkContext)
-public val Data<*>.language: String?
-    get() = meta["language"].string?.lowercase()
-
-context(SnarkContext)
 public val Data<*>.order: Int?
     get() = meta["order"]?.int
 

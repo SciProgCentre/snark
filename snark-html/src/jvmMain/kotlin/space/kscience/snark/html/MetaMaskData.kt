@@ -17,4 +17,4 @@ public fun <T> Data<T>.withMeta(newMeta: Meta): Data<T> = if (this is MetaMaskDa
     MetaMaskData(this, newMeta)
 }
 
-public inline fun <T> Data<T>.mapMeta(block: MutableMeta.() -> Unit): Data<T> = withMeta(meta.copy(block))
+public inline fun <T> Data<T>.withMeta(block: MutableMeta.() -> Unit): Data<T> = withMeta(meta.copy(block))

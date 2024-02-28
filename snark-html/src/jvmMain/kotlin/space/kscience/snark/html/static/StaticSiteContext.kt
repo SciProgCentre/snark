@@ -1,5 +1,6 @@
 package space.kscience.snark.html.static
 
+import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
@@ -10,7 +11,6 @@ import space.kscience.dataforge.io.writeBinary
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
-import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.FileData
 import space.kscience.snark.html.*
 import java.nio.file.Path
@@ -23,8 +23,9 @@ import kotlin.reflect.typeOf
  */
 internal class StaticSiteContext(
     override val siteMeta: Meta,
-    private val baseUrl: String,
-    override val route: Name,
+    private val baseUrl: Url,
+    override val path: List<String>,
+    override val siteRoute: Name,
     private val outputPath: Path,
 ) : SiteContext {
 
@@ -82,21 +83,23 @@ internal class StaticSiteContext(
         }
     }
 
-    private fun resolveRef(baseUrl: String, ref: String) = if (baseUrl.isEmpty()) {
-        ref
-    } else if (ref.isEmpty()) {
-        baseUrl
-    } else {
-        "${baseUrl.removeSuffix("/")}/$ref"
-    }
+//    private fun resolveRef(baseUrl: String, ref: String) = if (baseUrl.isEmpty()) {
+//        ref
+//    } else if (ref.isEmpty()) {
+//        baseUrl
+//    } else {
+//        "${baseUrl.removeSuffix("/")}/$ref"
+//    }
 
-    class StaticPageContext(override val site: StaticSiteContext, override val pageMeta: Meta) : PageContext {
+    class StaticPageContext(
+        override val site: StaticSiteContext,
+        override val host: Url,
+        override val pageRoute: Name,
+        override val pageMeta: Meta,
+    ) : PageContext {
 
-        override fun resolveRef(ref: String): String =
-            site.resolveRef(site.baseUrl, ref)
-
-        override fun resolvePageRef(pageName: Name, relative: Boolean): String = resolveRef(
-            (if (relative) site.route + pageName else pageName).toWebPath() + ".html"
+        override fun resolvePageRef(pageName: Name): String = resolveRef(
+            pageName.toWebPath() + ".html"
         )
     }
 
@@ -115,7 +118,7 @@ internal class StaticSiteContext(
 
         newPath.parent.createDirectories()
 
-        val pageContext = StaticPageContext(this, Laminate(modifiedPageMeta, siteMeta))
+        val pageContext = StaticPageContext(this, baseUrl, route, Laminate(modifiedPageMeta, siteMeta))
         newPath.writeText(HtmlPage.createHtmlString(pageContext, data, content))
     }
 
@@ -124,7 +127,8 @@ internal class StaticSiteContext(
             StaticSiteContext(
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
                 baseUrl = baseUrl,
-                route = route,
+                path = emptyList(),
+                siteRoute = route,
                 outputPath = outputPath.resolve(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -140,8 +144,9 @@ internal class StaticSiteContext(
         val siteContextWithData = SiteContextWithData(
             StaticSiteContext(
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
-                baseUrl = if (baseUrl == "") "" else resolveRef(baseUrl, route.toWebPath()),
-                route = Name.EMPTY,
+                baseUrl = baseUrl,
+                path = emptyList(),
+                siteRoute = route,
                 outputPath = outputPath.resolve(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -164,12 +169,12 @@ internal class StaticSiteContext(
 public suspend fun SnarkHtml.staticSite(
     data: DataTree<*>?,
     outputPath: Path,
-    siteUrl: String = outputPath.absolutePathString().replace("\\", "/"),
+    siteUrl: Url = Url(outputPath.absolutePathString()),
     siteMeta: Meta = data?.meta ?: Meta.EMPTY,
     content: HtmlSite,
 ) {
     val siteContextWithData = SiteContextWithData(
-        StaticSiteContext(siteMeta, siteUrl, Name.EMPTY, outputPath),
+        StaticSiteContext(siteMeta, siteUrl, emptyList(), Name.EMPTY, outputPath),
         data ?: DataTree.EMPTY
     )
     with(content) {

@@ -12,7 +12,7 @@ import kotlin.reflect.typeOf
 public class ParseAction(private val snarkHtml: SnarkHtml) :
     AbstractAction<Binary, PageFragment>(typeOf<PageFragment>()) {
 
-    private fun parseOne(data: NamedData<Binary>, actionMeta: Meta): NamedData<PageFragment>? = with(snarkHtml) {
+    private fun parseOne(data: NamedData<Binary>): NamedData<PageFragment>? = with(snarkHtml) {
         val contentType = getContentType(data.name, data.meta)
 
         val parser = snark.readers.values.filterIsInstance<SnarkHtmlReader>().filter { parser ->
@@ -40,11 +40,11 @@ public class ParseAction(private val snarkHtml: SnarkHtml) :
 
     override fun DataSink<PageFragment>.generate(data: DataTree<Binary>, meta: Meta) {
         data.forEach {
-            parseOne(it, meta)?.let { put(it) }
+            parseOne(it)?.let { put(it) }
         }
     }
 
     override fun DataSink<PageFragment>.update(source: DataTree<Binary>, meta: Meta, namedData: NamedData<Binary>) {
-        parseOne(namedData,meta)?.let { put(it) }
+        parseOne(namedData)?.let { put(it) }
     }
 }

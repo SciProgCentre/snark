@@ -20,10 +20,7 @@ import space.kscience.dataforge.data.await
 import space.kscience.dataforge.data.meta
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.toByteArray
-import space.kscience.dataforge.meta.Laminate
-import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.meta.toMutableMeta
+import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.cutLast
 import space.kscience.dataforge.names.endsWith
@@ -37,11 +34,11 @@ import kotlin.reflect.typeOf
 //    style = CssBuilder().block().toString()
 //}
 
-public class KtorSiteContext(
+internal class KtorSiteContext(
     override val context: Context,
     override val siteMeta: Meta,
-    private val baseUrl: String,
-    override val route: Name,
+    override val path: List<String>,
+    override val siteRoute: Name,
     private val ktorRoute: Route,
 ) : SiteContext, ContextAware {
 
@@ -77,32 +74,21 @@ public class KtorSiteContext(
         }
     }
 
-    private fun resolveRef(baseUrl: String, ref: String) = if (baseUrl.isEmpty()) {
-        ref
-    } else if (ref.isEmpty()) {
-        baseUrl
-    } else {
-        "${baseUrl.removeSuffix("/")}/$ref"
-    }
-
 
     private class KtorPageContext(
         override val site: KtorSiteContext,
-        val pageBaseUrl: String,
+        override val host: Url,
+        override val pageRoute: Name,
         override val pageMeta: Meta,
     ) : PageContext {
 
-        override fun resolveRef(ref: String): String = site.resolveRef(pageBaseUrl, ref)
-
         override fun resolvePageRef(
             pageName: Name,
-            relative: Boolean,
         ): String {
-            val fullPageName = if (relative) site.route + pageName else pageName
-            return if (fullPageName.endsWith(SiteContext.INDEX_PAGE_TOKEN)) {
-                resolveRef(fullPageName.cutLast().toWebPath())
+            return if (pageName.endsWith(SiteContext.INDEX_PAGE_TOKEN)) {
+                resolveRef(pageName.cutLast().toWebPath())
             } else {
-                resolveRef(fullPageName.toWebPath())
+                resolveRef(pageName.toWebPath())
             }
         }
     }
@@ -111,19 +97,28 @@ public class KtorSiteContext(
         ktorRoute.get(route.toWebPath()) {
             val request = call.request
             //substitute host for url for backwards calls
-            val url = URLBuilder(baseUrl).apply {
+//            val url = URLBuilder(baseUrl).apply {
+//                protocol = URLProtocol.createOrDefault(request.origin.scheme)
+//                host = request.origin.serverHost
+//                port = request.origin.serverPort
+//            }
+
+            val hostUrl = URLBuilder().apply {
                 protocol = URLProtocol.createOrDefault(request.origin.scheme)
                 host = request.origin.serverHost
                 port = request.origin.serverPort
             }
 
-            val modifiedPageMeta = pageMeta.toMutableMeta().apply {
-                "name" put route.toString()
-                "url" put url.buildString()
+            val modifiedPageMeta = pageMeta.copy {
+                "host" put hostUrl.buildString()
+                "path" put path.map { it.asValue() }.asValue()
+                "route" put (siteRoute + route).toString()
             }
+
             val pageContext = KtorPageContext(
                 site = this@KtorSiteContext,
-                pageBaseUrl = url.buildString(),
+                host = hostUrl.build(),
+                pageRoute = siteRoute + route,
                 pageMeta = Laminate(modifiedPageMeta, siteMeta)
             )
             //render page in suspend environment
@@ -138,8 +133,8 @@ public class KtorSiteContext(
             KtorSiteContext(
                 context,
                 siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
-                baseUrl = baseUrl,
-                route = route,
+                path = path,
+                siteRoute = route,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -156,8 +151,8 @@ public class KtorSiteContext(
             KtorSiteContext(
                 context,
                 siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
-                baseUrl = resolveRef(baseUrl, route.toWebPath()),
-                route = Name.EMPTY,
+                path = path + route.tokens.map { it.toStringUnescaped() },
+                siteRoute = Name.EMPTY,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -174,12 +169,12 @@ public class KtorSiteContext(
 public fun Route.site(
     context: Context,
     data: DataTree<*>?,
-    baseUrl: String = "",
+    path: List<String> = emptyList(),
     siteMeta: Meta = data?.meta ?: Meta.EMPTY,
     content: HtmlSite,
 ) {
     val siteContext = SiteContextWithData(
-        KtorSiteContext(context, siteMeta, baseUrl, route = Name.EMPTY, this@Route),
+        KtorSiteContext(context, siteMeta, path = path, siteRoute = Name.EMPTY, this@Route),
         data ?: DataTree.EMPTY
     )
     with(content) {
