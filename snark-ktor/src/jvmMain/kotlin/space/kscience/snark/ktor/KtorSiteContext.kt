@@ -39,6 +39,7 @@ internal class KtorSiteContext(
     override val siteMeta: Meta,
     override val path: List<String>,
     override val siteRoute: Name,
+    override val parent: SiteContext?,
     private val ktorRoute: Route,
 ) : SiteContext, ContextAware {
 
@@ -84,11 +85,12 @@ internal class KtorSiteContext(
 
         override fun resolvePageRef(
             pageName: Name,
+            targetSite: SiteContext,
         ): String {
             return if (pageName.endsWith(SiteContext.INDEX_PAGE_TOKEN)) {
-                resolveRef(pageName.cutLast().toWebPath())
+                resolveRef(pageName.cutLast().toWebPath(), targetSite)
             } else {
-                resolveRef(pageName.toWebPath())
+                resolveRef(pageName.toWebPath(), targetSite)
             }
         }
     }
@@ -135,6 +137,7 @@ internal class KtorSiteContext(
                 siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
                 path = path,
                 siteRoute = route,
+                parent,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -153,6 +156,7 @@ internal class KtorSiteContext(
                 siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
                 path = path + route.tokens.map { it.toStringUnescaped() },
                 siteRoute = Name.EMPTY,
+                this,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -174,7 +178,7 @@ public fun Route.site(
     content: HtmlSite,
 ) {
     val siteContext = SiteContextWithData(
-        KtorSiteContext(context, siteMeta, path = path, siteRoute = Name.EMPTY, this@Route),
+        KtorSiteContext(context, siteMeta, path = path, siteRoute = Name.EMPTY, null, this@Route),
         data ?: DataTree.EMPTY
     )
     with(content) {

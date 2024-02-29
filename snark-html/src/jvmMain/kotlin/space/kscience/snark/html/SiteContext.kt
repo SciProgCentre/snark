@@ -15,6 +15,9 @@ import space.kscience.snark.SnarkContext
  */
 @SnarkBuilder
 public interface SiteContext : SnarkContext {
+
+    public val parent: SiteContext?
+
     /**
      * A context path segments for this site
      */

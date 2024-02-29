@@ -115,7 +115,7 @@ private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<A
         languageMapCache.forEach { (nodeName, languageMap) ->
             val languageMapMeta = Meta {
                 languageMap.keys.forEach { language ->
-                    set(language.key, (language.route + nodeName).toWebPath())
+                    set(language.key, (language.route + nodeName).toString())
                 }
             }
             languageMap.forEach { (language, node) ->

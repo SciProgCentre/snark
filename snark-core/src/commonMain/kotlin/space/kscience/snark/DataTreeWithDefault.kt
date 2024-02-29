@@ -6,7 +6,7 @@ import space.kscience.dataforge.data.GenericDataTree
 import space.kscience.dataforge.names.NameToken
 import kotlin.reflect.KType
 
-public class DataTreeWithDefault<T>(public val tree: DataTree<T>, val default: DataTree<T>) :
+public class DataTreeWithDefault<T>(public val tree: DataTree<T>, public val default: DataTree<T>) :
     DataTree<T> {
     override val dataType: KType get() = tree.dataType
 

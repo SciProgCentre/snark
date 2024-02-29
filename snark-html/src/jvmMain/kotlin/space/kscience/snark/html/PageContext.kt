@@ -56,7 +56,7 @@ public interface PageContext : SnarkContext {
      *
      * @param relative if true, add [SiteContext] route to the absolute page name
      */
-    public fun resolvePageRef(pageName: Name): String
+    public fun resolvePageRef(pageName: Name, targetSite: SiteContext = site): String
 
     public fun resolveRelativePageRef(pageName: Name): String = resolvePageRef(pageRoute + pageName)
 
@@ -66,8 +66,8 @@ context(PageContext)
 public val page: PageContext
     get() = this@PageContext
 
-public fun PageContext.resolvePageRef(pageName: String): String =
-    resolvePageRef(pageName.parseAsName())
+public fun PageContext.resolvePageRef(pageName: String, targetSite: SiteContext = site): String =
+    resolvePageRef(pageName.parseAsName(), targetSite)
 
 public val PageContext.homeRef: String get() = resolvePageRef(Name.EMPTY)
 

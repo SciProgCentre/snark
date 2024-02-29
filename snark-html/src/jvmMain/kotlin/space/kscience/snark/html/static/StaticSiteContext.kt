@@ -26,6 +26,7 @@ internal class StaticSiteContext(
     private val baseUrl: Url,
     override val path: List<String>,
     override val siteRoute: Name,
+    override val parent: SiteContext?,
     private val outputPath: Path,
 ) : SiteContext {
 
@@ -98,8 +99,9 @@ internal class StaticSiteContext(
         override val pageMeta: Meta,
     ) : PageContext {
 
-        override fun resolvePageRef(pageName: Name): String = resolveRef(
-            pageName.toWebPath() + ".html"
+        override fun resolvePageRef(pageName: Name, targetSite: SiteContext): String = resolveRef(
+            pageName.toWebPath() + ".html",
+            targetSite
         )
     }
 
@@ -129,6 +131,7 @@ internal class StaticSiteContext(
                 baseUrl = baseUrl,
                 path = emptyList(),
                 siteRoute = route,
+                parent = parent,
                 outputPath = outputPath.resolve(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -147,6 +150,7 @@ internal class StaticSiteContext(
                 baseUrl = baseUrl,
                 path = emptyList(),
                 siteRoute = route,
+                parent = this,
                 outputPath = outputPath.resolve(route.toWebPath())
             ),
             data ?: DataTree.EMPTY
@@ -174,7 +178,7 @@ public suspend fun SnarkHtml.staticSite(
     content: HtmlSite,
 ) {
     val siteContextWithData = SiteContextWithData(
-        StaticSiteContext(siteMeta, siteUrl, emptyList(), Name.EMPTY, outputPath),
+        StaticSiteContext(siteMeta, siteUrl, emptyList(), Name.EMPTY, null, outputPath),
         data ?: DataTree.EMPTY
     )
     with(content) {
