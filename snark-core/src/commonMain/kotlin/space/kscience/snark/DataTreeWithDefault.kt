@@ -13,5 +13,22 @@ public class DataTreeWithDefault<T>(public val tree: DataTree<T>, public val def
     override val self: DataTreeWithDefault<T> get() = this
 
     override val data: Data<T>? get() = tree.data ?: default.data
-    override val items: Map<NameToken, GenericDataTree<T, *>> get() = default.items + tree.items
+
+    private fun mergeItems(
+        treeItems: Map<NameToken, DataTree<T>>,
+        defaultItems: Map<NameToken, DataTree<T>>,
+    ): Map<NameToken, DataTree<T>> {
+        val mergedKeys = treeItems.keys + defaultItems.keys
+        return mergedKeys.associateWith {
+            val treeItem = treeItems[it]
+            val defaultItem = defaultItems[it]
+            when {
+                treeItem == null -> defaultItem!!
+                defaultItem == null -> treeItem
+                else -> DataTreeWithDefault(treeItem, defaultItem)
+            }
+        }
+    }
+
+    override val items: Map<NameToken, GenericDataTree<T, *>> get() = mergeItems(tree.items, default.items)
 }
