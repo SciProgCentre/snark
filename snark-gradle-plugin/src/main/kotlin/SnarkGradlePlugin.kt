@@ -2,7 +2,9 @@ package space.kscience.snark.plugin
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-import org.gradle.api.file.FileTree
+import org.gradle.api.distribution.DistributionContainer
+import org.gradle.kotlin.dsl.findByType
+import org.gradle.kotlin.dsl.named
 import org.gradle.kotlin.dsl.withType
 import java.io.File
 import java.time.LocalDateTime
@@ -43,10 +45,16 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
             tasks.getByName("processResources").dependsOn(writeBuildDate)
 
-            extensions.configure<org.gradle.api.tasks.SourceSetContainer>("sourceSets") {
-                getByName("main") {
-                    logger.info("Adding ${snarkExtension.dataDirectory} to resources")
-                    resources.srcDir(snarkExtension.dataDirectory)
+        }
+
+        plugins.withId("org.gradle.application"){
+            extensions.findByType<DistributionContainer>()?.apply{
+                named<org.gradle.api.distribution.Distribution>("main"){
+                    contents {
+                        from(snarkExtension.dataDirectory){
+                            into("data")
+                        }
+                    }
                 }
             }
         }
