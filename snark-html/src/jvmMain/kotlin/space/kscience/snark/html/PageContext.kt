@@ -53,8 +53,6 @@ public interface PageContext : SnarkContext {
 
     /**
      * Resolve absolute url for a page with given [pageName].
-     *
-     * @param relative if true, add [SiteContext] route to the absolute page name
      */
     public fun resolvePageRef(pageName: Name, targetSite: SiteContext = site): String
 
@@ -65,6 +63,10 @@ public interface PageContext : SnarkContext {
 context(PageContext)
 public val page: PageContext
     get() = this@PageContext
+
+context(PageContextWithData)
+public val page: PageContextWithData
+    get() = this@PageContextWithData
 
 public fun PageContext.resolvePageRef(pageName: String, targetSite: SiteContext = site): String =
     resolvePageRef(pageName.parseAsName(), targetSite)

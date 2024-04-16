@@ -71,8 +71,7 @@ context(SnarkContext)
 public fun DataTree<*>.resolveAllHtml(
     predicate: (name: Name, meta: Meta) -> Boolean,
 ): Map<Name, Data<PageFragment>> = filterByType<PageFragment> { name, meta, _ ->
-    predicate(name, meta)
-            && meta["published"].string != "false"
+    predicate(name, meta) && meta["published"].string != "false"
     //TODO add language confirmation
 }.asSequence().associate { it.name to it.data }
 

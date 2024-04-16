@@ -84,7 +84,7 @@ public object MarkdownReader : SnarkHtmlReader {
 
     }
 
-    private val markdownFlavor = SnarkFlavorDescriptor//SFMFlavourDescriptor(false)
+    private val markdownFlavor = SnarkFlavorDescriptor
     private val markdownParser = MarkdownParser(markdownFlavor)
 
     override fun readFrom(source: Source): PageFragment = readFrom(source.readString())

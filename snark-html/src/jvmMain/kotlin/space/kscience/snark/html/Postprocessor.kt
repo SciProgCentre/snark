@@ -36,15 +36,22 @@ public class WebPageTextProcessor(private val page: PageContext) : TextProcessor
                 page.pageMeta[nameString.parseAsName()].string ?: "@null"
             }
 
+            "siteMeta.get" -> {
+                val nameString = match.groups["name"]?.value
+                    ?: error("resolvePageRef requires a string (quoted) argument")
+                page.site.siteMeta[nameString.parseAsName()].string ?: "@null"
+            }
+
             else -> match.value
         }
-    }.replace(attributeRegex){ match->
+    }.replace(attributeRegex) { match ->
         val uri = URI(match.groups["uri"]!!.value)
-        val snarkUrl = when(uri.authority){
-            "homeRef"->page.homeRef
+        val snarkUrl = when (uri.authority) {
+            "homeRef" -> page.homeRef
             "ref" -> page.resolveRef(uri.path)
             "page" -> page.localisedPageRef(uri.path.parseAsName())
-            "meta" -> page.pageMeta[uri.path.parseAsName()].string ?: "@null"
+            "pageMeta" -> page.pageMeta[uri.path.parseAsName()].string ?: "@null"
+            "siteMeta" -> page.site.siteMeta[uri.path.parseAsName()].string ?: "@null"
             else -> match.value
         }
         "=\"$snarkUrl\""

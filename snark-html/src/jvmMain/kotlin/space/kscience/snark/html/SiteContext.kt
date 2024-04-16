@@ -105,6 +105,9 @@ context(SiteContext)
 public val site: SiteContext
     get() = this@SiteContext
 
+context(SiteContextWithData)
+public val site: SiteContextWithData
+    get() = this@SiteContextWithData
 
 /**
  * A wrapper for site context that allows convenient site building experience

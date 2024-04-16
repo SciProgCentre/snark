@@ -41,5 +41,6 @@ include(
     ":snark-core",
     ":snark-html",
     ":snark-ktor",
-    ":snark-pandoc"
+    ":snark-pandoc",
+    ":examples:document"
 )
