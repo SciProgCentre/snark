@@ -1,5 +1,9 @@
+---
+type: markdown
+order: 3
+---
 
-# Chapter ${section}
+## Chapter ${section(1)}
 
 Vestibulum mauris urna, sagittis in nibh placerat, vehicula suscipit leo. Maecenas lacinia varius tellus vel laoreet. Vestibulum sollicitudin nibh et nibh ullamcorper, at pretium orci molestie. Donec vulputate, nibh tempus maximus pretium, urna arcu consequat metus, vel ullamcorper est lectus id purus. Aliquam rutrum eu arcu nec convallis. Cras nec nisl ut massa tempus fringilla. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam non augue vel nisi commodo blandit a a augue. Sed aliquet semper ipsum nec maximus. Aliquam elementum tellus eu lectus tempus eleifend. Donec sapien nisi, maximus vitae ante nec, dictum vestibulum justo. Nam at ex est. Pellentesque nisi lacus, congue non felis posuere, pulvinar cursus justo. Fusce tincidunt dui vel pharetra fringilla.
 

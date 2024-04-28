@@ -18,6 +18,7 @@ import space.kscience.dataforge.io.JsonMetaFormat
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
 import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.set
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
@@ -28,6 +29,7 @@ import space.kscience.dataforge.workspace.*
 import space.kscience.snark.ReWrapAction
 import space.kscience.snark.Snark
 import space.kscience.snark.SnarkReader
+import space.kscience.snark.TextProcessor
 import java.net.URLConnection
 import kotlin.io.path.Path
 import kotlin.io.path.extension
@@ -62,11 +64,30 @@ public class SnarkHtml : WorkspacePlugin() {
         URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
     }
 
-
     public val prepareHeaderAction: ReWrapAction<Any> = ReWrapAction.removeExtensions<Any>("html", "md") { name ->
         val contentType = getContentType(name, this)
         set(CONTENT_TYPE_KEY, contentType)
     }
+
+    public fun parse(name: Name, markup: String, meta: Meta): PageFragment {
+        val contentType = getContentType(name, meta)
+
+        val parser = snark.readers.values.filterIsInstance<SnarkHtmlReader>().filter { parser ->
+            contentType in parser.types
+        }.maxByOrNull {
+            it.priority
+        } ?: error("Parser for name $name and meta $meta not found")
+
+        //ignore data for which parser is not found
+
+        val preprocessor = meta[TextProcessor.TEXT_PREPROCESSOR_KEY]?.let { snark.preprocessor(it) }
+        return if (preprocessor == null) {
+            parser.readFrom(markup)
+        } else {
+            parser.readFrom(preprocessor.process(markup))
+        }
+    }
+
 
     public val removeIndexAction: ReWrapAction<Any> = ReWrapAction.removeIndex<Any>()
 

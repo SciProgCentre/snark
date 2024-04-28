@@ -17,7 +17,9 @@ kscience{
 
         api("io.ktor:ktor-http:$ktorVersion")
         api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
-        api("org.jetbrains:markdown:0.6.1")
+        api("org.jetbrains:markdown:0.7.0")
+        api("org.freemarker:freemarker:2.3.32")
+
     }
 
 }

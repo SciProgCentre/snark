@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.buffered
+import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.data.*
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.writeBinary
@@ -22,6 +23,7 @@ import kotlin.reflect.typeOf
  * An implementation of [SiteContext] to render site as a static directory [outputPath]
  */
 internal class StaticSiteContext(
+    override val context: Context,
     override val siteMeta: Meta,
     private val baseUrl: Url,
     override val path: List<String>,
@@ -127,6 +129,7 @@ internal class StaticSiteContext(
     override fun route(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
         val siteContextWithData = SiteContextWithData(
             StaticSiteContext(
+                context = context,
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
                 baseUrl = baseUrl,
                 path = emptyList(),
@@ -146,6 +149,7 @@ internal class StaticSiteContext(
     override fun site(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
         val siteContextWithData = SiteContextWithData(
             StaticSiteContext(
+                context = context,
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
                 baseUrl = baseUrl,
                 path = emptyList(),
@@ -165,11 +169,10 @@ internal class StaticSiteContext(
 }
 
 /**
- * Create a static site using given [SnarkEnvironment] in provided [outputPath].
+ * Create a static site using given [content] in provided [outputPath].
  * Use [siteUrl] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
  *
  */
-@Suppress("UnusedReceiverParameter")
 public suspend fun SnarkHtml.staticSite(
     data: DataTree<*>?,
     outputPath: Path,
@@ -178,7 +181,7 @@ public suspend fun SnarkHtml.staticSite(
     content: HtmlSite,
 ) {
     val siteContextWithData = SiteContextWithData(
-        StaticSiteContext(siteMeta, siteUrl, emptyList(), Name.EMPTY, null, outputPath),
+        StaticSiteContext(context, siteMeta, siteUrl, emptyList(), Name.EMPTY, null, outputPath),
         data ?: DataTree.EMPTY
     )
     with(content) {

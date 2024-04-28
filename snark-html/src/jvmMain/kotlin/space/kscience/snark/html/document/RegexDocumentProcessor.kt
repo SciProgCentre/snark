@@ -6,7 +6,7 @@ import space.kscience.dataforge.names.*
 import space.kscience.snark.TextProcessor
 import java.net.URI
 
-public class DocumentTextProcessor(public val document: DocumentBuilder) : TextProcessor {
+public class RegexDocumentProcessor(public val document: DocumentBuilder) : TextProcessor {
 
     private val counters = mutableMapOf<String, Int>()
 
@@ -67,7 +67,7 @@ public class DocumentTextProcessor(public val document: DocumentBuilder) : TextP
             }
 
             "documentMeta.get" -> {
-                val nameString = match.groups["name"]?.value
+                val nameString = match.groups["arg1"]?.value
                     ?: error("resolvePageRef requires a string (quoted) argument")
                 document.documentMeta[nameString.parseAsName()].string ?: "@null"
             }

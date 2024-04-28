@@ -1,5 +1,7 @@
 package space.kscience.snark.html
 
+import space.kscience.dataforge.context.Context
+import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.*
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.meta.Meta
@@ -14,7 +16,7 @@ import space.kscience.snark.SnarkContext
  * An abstraction, which is used to render sites to the different rendering engines
  */
 @SnarkBuilder
-public interface SiteContext : SnarkContext {
+public interface SiteContext : SnarkContext, ContextAware {
 
     public val parent: SiteContext?
 

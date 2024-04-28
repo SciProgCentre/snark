@@ -3,11 +3,16 @@ package space.kscience.snark.html
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
 import io.ktor.http.appendPathSegments
+import space.kscience.dataforge.context.Context
+import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.names.*
+import space.kscience.dataforge.names.Name
+import space.kscience.dataforge.names.hasIndex
+import space.kscience.dataforge.names.parseAsName
+import space.kscience.dataforge.names.plus
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 
@@ -23,9 +28,12 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
  *  A context for building a single page
  */
 @SnarkBuilder
-public interface PageContext : SnarkContext {
+public interface PageContext : SnarkContext, ContextAware {
 
     public val site: SiteContext
+
+    override val context: Context get() = site.context
+
 
     public val host: Url
 
