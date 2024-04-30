@@ -1,19 +1,46 @@
 package space.kscience.snark.html.document
 
-import kotlinx.io.files.Path
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
 
-public sealed interface DocumentFragment{
+@Serializable
+public sealed interface DocumentFragment {
     public val meta: Meta
 }
 
-public class MarkupDocumentFragment(public val text: String, override val meta: Meta) : DocumentFragment
+@Serializable
+@SerialName("markup")
+public class MarkupDocumentFragment(
+    public val text: String,
+    override val meta: Meta = Meta.EMPTY,
+) : DocumentFragment
 
-public class ImageDocumentFragment(public val image: Path, override val meta: Meta) : DocumentFragment
+@Serializable
+@SerialName("image")
+public class ImageDocumentFragment(
+    public val path: String,
+    override val meta: Meta = Meta.EMPTY,
+) : DocumentFragment
 
-public class DataDocumentFragment(public val dataName: Name, override val meta: Meta) : DocumentFragment
+@Serializable
+@SerialName("data")
+public class DataDocumentFragment(
+    public val name: Name,
+    override val meta: Meta = Meta.EMPTY,
+) : DocumentFragment
 
-public class ListDocumentFragment(public val fragments: List<DocumentFragment>, override val meta: Meta) : DocumentFragment
+@Serializable
+@SerialName("list")
+public class ListDocumentFragment(
+    public val fragments: List<DocumentFragment>,
+    override val meta: Meta = Meta.EMPTY,
+) : DocumentFragment
 
-public class LayoutDocumentFragment(public val fragments: Map<String,DocumentFragment>, override val meta: Meta) : DocumentFragment
+@Serializable
+@SerialName("layout")
+public class LayoutDocumentFragment(
+    public val fragments: Map<String, DocumentFragment>,
+    override val meta: Meta = Meta.EMPTY,
+) : DocumentFragment

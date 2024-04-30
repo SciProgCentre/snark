@@ -22,8 +22,7 @@ import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.set
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.asName
+import space.kscience.dataforge.names.*
 import space.kscience.dataforge.provider.dfType
 import space.kscience.dataforge.workspace.*
 import space.kscience.snark.ReWrapAction
@@ -33,6 +32,7 @@ import space.kscience.snark.TextProcessor
 import java.net.URLConnection
 import kotlin.io.path.Path
 import kotlin.io.path.extension
+import kotlin.reflect.typeOf
 
 
 public fun <T : Any, R : Any> DataTree<T>.transform(action: Action<T, R>, meta: Meta = Meta.EMPTY): DataTree<R> =
@@ -52,8 +52,8 @@ public class SnarkHtml : WorkspacePlugin() {
         SnarkReader::class.dfType -> mapOf(
             "html".asName() to HtmlReader,
             "markdown".asName() to MarkdownReader,
-            "json".asName() to SnarkReader(JsonMetaFormat, ContentType.Application.Json.toString()),
-            "yaml".asName() to SnarkReader(YamlMetaFormat, "text/yaml", "yaml"),
+            "json".asName() to SnarkReader<Meta>(JsonMetaFormat, ContentType.Application.Json.toString()),
+            "yaml".asName() to SnarkReader<Meta>(YamlMetaFormat, "text/yaml", "yaml"),
         )
 
         else -> super.content(target)
@@ -64,16 +64,33 @@ public class SnarkHtml : WorkspacePlugin() {
         URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
     }
 
-    public val prepareHeaderAction: ReWrapAction<Any> = ReWrapAction.removeExtensions<Any>("html", "md") { name ->
-        val contentType = getContentType(name, this)
-        set(CONTENT_TYPE_KEY, contentType)
+    internal val prepareHeaderAction: ReWrapAction<Any> = ReWrapAction(
+        type = typeOf<Any>(),
+        newMeta = { name ->
+            val contentType = getContentType(name, this)
+            set(FILE_NAME_KEY, name.last().toStringUnescaped())
+            set(CONTENT_TYPE_KEY, contentType)
+        }
+    ) { name, _, type ->
+        name.replaceLast { token ->
+            val extension = token.body.substringAfterLast('.')
+            if (type != typeOf<Binary>()) {
+                NameToken(token.body.removeSuffix(".$extension"))
+            } else {
+                token
+            }
+        }
     }
 
-    public fun parse(name: Name, markup: String, meta: Meta): PageFragment {
+    public val removeIndexAction: ReWrapAction<Any> = ReWrapAction(typeOf<Any>()) { name, _, _ ->
+        if (name.endsWith("index")) name.cutLast() else name
+    }
+
+    public fun parseMarkup(name: Name, markup: String, meta: Meta): PageFragment {
         val contentType = getContentType(name, meta)
 
         val parser = snark.readers.values.filterIsInstance<SnarkHtmlReader>().filter { parser ->
-            contentType in parser.types
+            contentType in parser.inputContentTypes
         }.maxByOrNull {
             it.priority
         } ?: error("Parser for name $name and meta $meta not found")
@@ -88,10 +105,8 @@ public class SnarkHtml : WorkspacePlugin() {
         }
     }
 
+    public val parseAction: Action<Binary, Any> = ParseAction(this)
 
-    public val removeIndexAction: ReWrapAction<Any> = ReWrapAction.removeIndex<Any>()
-
-    public val parseAction: Action<Binary, PageFragment> = ParseAction(this)
     private val allDataNotNull: DataSelector<Any>
         get() = DataSelector { workspace, _ -> workspace.data.filterByType() }
 
@@ -107,6 +122,8 @@ public class SnarkHtml : WorkspacePlugin() {
 
     public companion object : PluginFactory<SnarkHtml> {
         override val tag: PluginTag = PluginTag("snark.html")
+
+        public val FILE_NAME_KEY: Name = "contentType".asName()
 
         public val CONTENT_TYPE_KEY: Name = "contentType".asName()
 

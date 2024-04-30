@@ -5,10 +5,13 @@ import space.kscience.dataforge.io.asBinary
 import space.kscience.dataforge.misc.DfType
 import space.kscience.snark.SnarkReader.Companion.DEFAULT_PRIORITY
 import space.kscience.snark.SnarkReader.Companion.DF_TYPE
+import kotlin.reflect.KType
+import kotlin.reflect.typeOf
 
 @DfType(DF_TYPE)
 public interface SnarkReader<out T> : IOReader<T> {
-    public val types: Set<String>
+    public val outputType: KType
+    public val inputContentTypes: Set<String>
     public val priority: Int get() = DEFAULT_PRIORITY
     public fun readFrom(source: String): T
 
@@ -23,13 +26,14 @@ public interface SnarkReader<out T> : IOReader<T> {
  *
  * @param T The type of data to be read by the IOReader.
  * @property reader The underlying IOReader instance used for reading data.
- * @property types The set of supported types that can be read by the SnarkIOReader.
+ * @property inputContentTypes The set of supported types that can be read by the SnarkIOReader.
  * @property priority The priority of the SnarkIOReader. Higher priority SnarkIOReader instances will be preferred over lower priority ones.
  */
 
 private class SnarkReaderWrapper<out T>(
     private val reader: IOReader<T>,
-    override val types: Set<String>,
+    override val outputType: KType,
+    override val inputContentTypes: Set<String>,
     override val priority: Int = DEFAULT_PRIORITY,
 ) : IOReader<T> by reader, SnarkReader<T> {
 
@@ -38,6 +42,14 @@ private class SnarkReaderWrapper<out T>(
 
 public fun <T : Any> SnarkReader(
     reader: IOReader<T>,
-    vararg types: String,
+    outputType: KType,
+    vararg inputContentTypes: String,
     priority: Int = DEFAULT_PRIORITY,
-): SnarkReader<T> = SnarkReaderWrapper(reader, types.toSet(), priority)
+): SnarkReader<T> = SnarkReaderWrapper(reader, outputType, inputContentTypes.toSet(), priority)
+
+
+public inline fun <reified T : Any> SnarkReader(
+    reader: IOReader<T>,
+    vararg inputContentTypes: String,
+    priority: Int = DEFAULT_PRIORITY,
+): SnarkReader<T> = SnarkReader(reader, typeOf<T>(), inputContentTypes = inputContentTypes, priority)

@@ -1,0 +1,14 @@
+route: lorem.ipsum
+title: Lorem Ipsum
+authors:
+  - name: Alexander Nozik
+    affiliation: MIPT
+fragments:
+  - name: chapter1
+    type: data
+  - name: chapter2
+    type: data
+  - name: chapter3
+    type: data
+documentMeta:
+  metaValue: Hello world!

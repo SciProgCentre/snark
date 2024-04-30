@@ -1,9 +1,8 @@
 ---
-type: markdown
-order: 1
+contentType: markdown
 ---
 
-# ${documentName}
+Document name: ${documentName}
 
 ${documentMeta.metaValue}
 

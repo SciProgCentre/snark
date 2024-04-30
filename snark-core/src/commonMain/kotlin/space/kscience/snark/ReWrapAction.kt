@@ -15,12 +15,12 @@ import kotlin.reflect.typeOf
 public class ReWrapAction<R : Any>(
     type: KType,
     private val newMeta: MutableMeta.(name: Name) -> Unit = {},
-    private val newName: (name: Name, meta: Meta?) -> Name,
+    private val newName: (name: Name, meta: Meta?, type: KType) -> Name,
 ) : AbstractAction<R, R>(type) {
     override fun DataSink<R>.generate(data: DataTree<R>, meta: Meta) {
         data.forEach { namedData ->
             put(
-                newName(namedData.name, namedData.meta),
+                newName(namedData.name, namedData.meta, namedData.type),
                 namedData.data.withMeta(namedData.meta.copy { newMeta(namedData.name) })
             )
         }
@@ -28,34 +28,19 @@ public class ReWrapAction<R : Any>(
 
     override fun DataSink<R>.update(source: DataTree<R>, meta: Meta, namedData: NamedData<R>) {
         put(
-            newName(namedData.name, namedData.meta),
+            newName(namedData.name, namedData.meta, namedData.type),
             namedData.withMeta(namedData.meta.copy { newMeta(namedData.name) })
         )
     }
 
     public companion object {
-        public inline fun <reified R : Any> removeExtensions(
-            vararg bypassExtensions: String,
-            noinline newMeta: MutableMeta.(name: Name) -> Unit = {},
-        ): ReWrapAction<R> = ReWrapAction(typeOf<R>(), newMeta = newMeta) { name, _ ->
-            name.replaceLast { token ->
-                val extension = token.body.substringAfterLast('.')
-                if (extension in bypassExtensions) {
-                    NameToken(token.body.removeSuffix(".$extension"))
-                } else {
-                    token
-                }
-            }
-        }
 
-        public inline fun <reified R : Any> removeIndex(): ReWrapAction<R> = ReWrapAction<R>(typeOf<R>()) { name, _ ->
-            if (name.endsWith("index")) name.cutLast() else name
-        }
+
     }
 }
 
 public inline fun <reified R : Any> ReWrapAction(
     noinline newMeta: MutableMeta.(name: Name) -> Unit = {},
-    noinline newName: (Name, Meta?) -> Name,
+    noinline newName: (Name, Meta?, type: KType) -> Name,
 ): ReWrapAction<R> = ReWrapAction(typeOf<R>(), newMeta, newName)
 

@@ -1,5 +1,6 @@
 import io.ktor.server.application.Application
 import io.ktor.server.application.log
+import io.ktor.server.http.content.staticResources
 import io.ktor.server.routing.routing
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextBuilder
@@ -42,6 +43,7 @@ fun Application.snarkApplication(contextBuilder: ContextBuilder.() -> Unit = {},
     }
 
     routing {
+        staticResources("/css","css")
         site(context, siteData, content = site)
     }
 }

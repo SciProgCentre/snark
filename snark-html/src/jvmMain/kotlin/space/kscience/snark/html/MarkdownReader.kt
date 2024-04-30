@@ -71,7 +71,7 @@ public object SnarkFlavorDescriptor : GFMFlavourDescriptor(false) {
 }
 
 public object MarkdownReader : SnarkHtmlReader {
-    override val types: Set<String> = setOf("text/markdown", "md", "markdown")
+    override val inputContentTypes: Set<String> = setOf("text/markdown", "md", "markdown")
 
     override fun readFrom(source: String): PageFragment = PageFragment {
         val parsedTree = markdownParser.parse(IElementType("ROOT"), source)
@@ -88,7 +88,4 @@ public object MarkdownReader : SnarkHtmlReader {
     private val markdownParser = MarkdownParser(markdownFlavor)
 
     override fun readFrom(source: Source): PageFragment = readFrom(source.readString())
-
-    public val snarkReader: SnarkReader<PageFragment> = SnarkReader(this, "text/markdown")
-
 }
