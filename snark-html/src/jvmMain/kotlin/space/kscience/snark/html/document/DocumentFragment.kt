@@ -20,7 +20,7 @@ public class MarkupDocumentFragment(
 @Serializable
 @SerialName("image")
 public class ImageDocumentFragment(
-    public val path: String,
+    public val ref: String,
     override val meta: Meta = Meta.EMPTY,
 ) : DocumentFragment
 

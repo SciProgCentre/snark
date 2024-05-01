@@ -42,7 +42,7 @@ public class RegexDocumentProcessor(public val document: DocumentBuilder) : Text
         when (match.groups["function"]?.value) {
 
             "documentName" -> {
-                document.documentName.toStringUnescaped()
+                document.route.toStringUnescaped()
             }
 
             "label" -> {
@@ -77,7 +77,7 @@ public class RegexDocumentProcessor(public val document: DocumentBuilder) : Text
     }.replace(attributeRegex) { match ->
         val uri = URI(match.groups["uri"]!!.value)
         val snarkUrl = when (uri.authority) {
-            "documentName" -> document.documentName.toStringUnescaped()
+            "documentName" -> document.route.toStringUnescaped()
 //            "ref" -> page.resolveRef(uri.path)
             "meta" -> document.documentMeta[uri.path.parseAsName()].string ?: "@null"
             else -> match.value

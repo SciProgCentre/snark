@@ -6,6 +6,7 @@ import io.ktor.http.ContentType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.actions.Action
+import space.kscience.dataforge.actions.mapping
 import space.kscience.dataforge.actions.transform
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.PluginFactory
@@ -106,6 +107,10 @@ public class SnarkHtml : WorkspacePlugin() {
     }
 
     public val parseAction: Action<Binary, Any> = ParseAction(this)
+
+    public val layoutAction: Action<Any, Any> = Action.mapping {
+
+    }
 
     private val allDataNotNull: DataSelector<Any>
         get() = DataSelector { workspace, _ -> workspace.data.filterByType() }

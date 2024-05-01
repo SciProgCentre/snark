@@ -35,7 +35,6 @@ fun Application.renderAllDocuments() = snarkApplication {
 
 
 fun main() {
-
     embeddedServer(CIO) {
         renderAllDocuments()
     }.start(true)

@@ -59,7 +59,7 @@ public class FtlDocumentProcessor(
     }
 
     private val data = mapOf(
-        "documentName" to document.documentName.toStringUnescaped(),
+        "documentName" to document.route.toStringUnescaped(),
 
         "label" to TemplateMethodModelEx { args: List<Any?> ->
             val counter = args.getOrNull(0)?.toString() ?: "@default"

@@ -7,14 +7,12 @@ import space.kscience.dataforge.context.info
 import space.kscience.dataforge.context.logger
 import space.kscience.dataforge.context.request
 import space.kscience.dataforge.data.*
+import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.meta.Laminate
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.cutLast
-import space.kscience.dataforge.names.endsWith
-import space.kscience.dataforge.names.parseAsName
+import space.kscience.dataforge.names.*
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 import space.kscience.snark.html.*
@@ -26,7 +24,7 @@ import kotlin.reflect.typeOf
 @SnarkBuilder
 public interface DocumentBuilder : SnarkContext {
 
-    public val documentName: Name
+    public val route: Name
 
     public val documentMeta: Meta
 
@@ -51,7 +49,7 @@ private class PageBasedDocumentBuilder(
     val page: PageContextWithData,
     private val dataRootName: Name,
 ) : DocumentBuilder {
-    override val documentName: Name get() = page.pageRoute
+    override val route: Name get() = page.pageRoute
     override val documentMeta: Meta get() = page.pageMeta
     override val data: DataTree<*> = page.data.branch(dataRootName) ?: DataTree.EMPTY
 
@@ -63,11 +61,10 @@ private class PageBasedDocumentBuilder(
 
     override suspend fun fragment(fragment: DocumentFragment, overrideMeta: Meta?) {
         when (fragment) {
-
             is ImageDocumentFragment -> fragment {
                 figure("snark-figure") {
                     img(classes = "snark-image") {
-                        src = fragment.path
+                        src = resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
                         alt = fragment.meta["alt"].string ?: ""
                     }
                     fragment.meta["caption"].string?.let { caption ->
@@ -115,53 +112,41 @@ private class PageBasedDocumentBuilder(
 }
 
 public fun SiteContextWithData.document(
-    documentName: Name,
-    documentMeta: Meta = Meta.EMPTY,
-    headers: MetaDataContent.() -> Unit = {},
-    block: suspend DocumentBuilder.() -> Unit,
-): Unit = page(documentName, documentMeta) {
-    val documentBuilder = runBlocking { PageBasedDocumentBuilder(page, documentName).apply { block() } }
-    head {
-        title(documentMeta["title"].string ?: "Snark document")
-        headers()
-    }
-    body {
-        postprocess(FtlDocumentProcessor(this@document.context, documentBuilder)) {
-            documentBuilder.fragments.forEach {
-                fragment(it)
-            }
-        }
-    }
-}
-
-public fun SiteContextWithData.document(
-    route: Name,
     dataName: Name,
-    descriptor: DocumentDescriptor,
+    descriptor: DocumentDescriptor = DocumentDescriptor.empty(),
+    route: Name = dataName,
     headers: MetaDataContent.() -> Unit = {},
-): Unit = page(route, descriptor.documentMeta ?: Meta.EMPTY) {
-    val documentBuilder = runBlocking {
-        PageBasedDocumentBuilder(page, dataName).apply {
-            descriptor.fragments.forEach {
-                fragment(it)
+    documentBlock: DocumentBuilder.() -> Unit = {},
+): Unit {
+    siteData.branch(dataName)?.filterByType<Binary>()?.forEach {
+        static(route + it.name.last(), it.data)
+    }
+    page(route, descriptor.documentMeta ?: Meta.EMPTY) {
+        //TODO think about avoiding blocking
+        val documentBuilder = runBlocking {
+            PageBasedDocumentBuilder(page, dataName).apply {
+                descriptor.fragments.forEach {
+                    fragment(it)
+                }
+                documentBlock()
             }
         }
-    }
-    head {
-        title(descriptor.title ?: "Snark document")
-        headers()
-    }
-    body {
-        h1("title") { +(descriptor.title ?: dataName.toString()) }
-        descriptor.authors.forEach {
-            div("author") {
-                div("author-name") { +it.name }
-                it.affiliation?.let { affiliation -> div("author-affiliation") { +affiliation } }
-            }
+        head {
+            title(descriptor.title ?: "Snark document")
+            headers()
         }
-        postprocess(FtlDocumentProcessor(this@document.context, documentBuilder)) {
-            documentBuilder.fragments.forEach {
-                fragment(it)
+        body {
+            h1("title") { +(descriptor.title ?: dataName.toString()) }
+            descriptor.authors.forEach {
+                div("author") {
+                    div("author-name") { +it.name }
+                    it.affiliation?.let { affiliation -> div("author-affiliation") { +affiliation } }
+                }
+            }
+            postprocess(FtlDocumentProcessor(this@document.context, documentBuilder)) {
+                documentBuilder.fragments.forEach {
+                    fragment(it)
+                }
             }
         }
     }
@@ -178,9 +163,9 @@ public fun SiteContextWithData.allDocuments(
                 val route = descriptor.route?.parseAsName(false) ?: directory
                 context.logger.info { "Loading document $route" }
                 document(
-                    route = route,
                     dataName = directory,
                     descriptor = descriptor,
+                    route = route,
                     headers = headers
                 )
             }

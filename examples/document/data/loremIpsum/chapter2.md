@@ -1,6 +1,5 @@
 ---
-type: markdown
-order: 2
+contentType: markdown
 ---
 
 ## Chapter ${section(1)}
