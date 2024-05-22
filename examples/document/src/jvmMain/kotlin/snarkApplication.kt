@@ -43,7 +43,7 @@ fun Application.snarkApplication(contextBuilder: ContextBuilder.() -> Unit = {},
     }
 
     routing {
-        staticResources("/css","css")
+        staticResources("/", "assets")
         site(context, siteData, content = site)
     }
 }

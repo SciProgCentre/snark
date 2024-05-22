@@ -1,0 +1,248 @@
+@import https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&amp;display=fallback
+
+*, *:before, *:after {
+    box-sizing: inherit
+}
+
+* {
+    max-height: 1000000px
+}
+
+body {
+    color: #19191C;
+    background: #fff;
+    font-family: "Arial", "Helvetica Neue", "Helvetica", sans-serif;
+    min-width: 320px;
+    font-size: 16px;
+    line-height: 1.5
+}
+
+.snark-image, .snark-figure-caption {
+    max-width: 100%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 50%;
+}
+
+
+h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6, .h {
+    font-family: "Arial", "Helvetica Neue", "Helvetica", sans-serif;
+    font-weight: 530;
+    margin: 0 0 0.5em;
+    color: #19191C
+}
+
+h1, .h1 {
+    font-size: 35px
+}
+
+h2, .h2 {
+    font-size: 28px
+}
+
+h3, .h3 {
+    font-size: 20px
+}
+
+h4, .h4 {
+    font-size: 17px
+}
+
+h5, .h5 {
+    font-size: 14px
+}
+
+h6, .h6 {
+    font-size: 16px
+}
+
+p {
+    margin: 0 0 1em
+}
+
+a {
+    color: #19191C
+}
+
+.snark-main {
+    flex-grow: 1
+
+}
+
+.snark-main__inner {
+    display: flex;
+    height: 100%;
+    margin-top: 11.5rem
+}
+
+.snark-grid {
+    margin-left: auto;
+    margin-right: auto;
+    max-width: 80rem
+}
+
+.snark-nav__item {
+    pointer-events: none
+}
+
+.snark-sidebar {
+    align-self: flex-start;
+    flex-shrink: 0;
+    padding: 1.2rem 0;
+    position: sticky;
+    top: 2.4rem;
+    width: 12.1rem
+}
+
+@media print {
+    .snark-sidebar {
+        display: none
+    }
+}
+
+@media screen and (max-width: 76.234375em) {
+    [dir=ltr] .snark-sidebar--primary {
+        left:-12.1rem
+    }
+
+    [dir=rtl] .snark-sidebar--primary {
+        right: -12.1rem
+    }
+
+    .snark-sidebar--primary {
+        background-color: #fff;
+        display: block;
+        height: 100%;
+        position: fixed;
+        top: 0;
+        transform: translateX(0);
+        transition: transform .25s cubic-bezier(.4,0,.2,1),box-shadow .25s;
+        width: 12.1rem;
+        z-index: 5
+    }
+
+    .snark-sidebar--primary .snark-sidebar__scrollwrap {
+        bottom: 0;
+        left: 0;
+        margin: 0;
+        overflow: hidden;
+        position: absolute;
+        right: 0;
+        scroll-snap-type: none;
+        top: 0
+    }
+}
+
+@media screen and (min-width: 76.25em) {
+    .snark-sidebar {
+        height:0
+    }
+
+    .snark-header--lifted~.snark-container .snark-sidebar {
+        top: 4.8rem
+    }
+}
+
+.snark-sidebar--secondary {
+    display: none;
+    order: 2
+}
+
+@media screen and (min-width: 60em) {
+    .snark-sidebar--secondary {
+        height:0
+    }
+
+    .no-js .snark-sidebar--secondary {
+        height: auto
+    }
+
+    .snark-sidebar--secondary:not([hidden]) {
+        display: block
+    }
+
+    .snark-sidebar--secondary .snark-sidebar__scrollwrap {
+        touch-action: pan-y
+    }
+}
+
+.snark-sidebar__scrollwrap {
+    scrollbar-gutter: stable;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    margin: 0 .2rem;
+    overflow-y: auto;
+    scrollbar-color: #19191C;
+    scrollbar-width: thin
+}
+
+.snark-sidebar__scrollwrap::-webkit-scrollbar {
+    height: .2rem;
+    width: .2rem
+}
+
+.snark-sidebar__scrollwrap:focus-within,.snark-sidebar__scrollwrap:hover {
+    scrollbar-color: #19191C
+}
+
+.snark-sidebar__scrollwrap:focus-within::-webkit-scrollbar-thumb,.snark-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb {
+    background-color: #fff
+}
+
+.snark-sidebar__scrollwrap:focus-within::-webkit-scrollbar-thumb:hover,.snark-sidebar__scrollwrap:hover::-webkit-scrollbar-thumb:hover {
+    background-color: #fff
+}
+
+
+.snark-content {
+    flex-grow: 1;
+    min-width: 0;
+    margin: 0 .8rem 1.2rem;
+    padding-top: .6rem;
+
+}
+
+.snark-content p {
+    display: block;
+    margin-block-start: 1em;
+    margin-block-end: 1em;
+    margin-inline-start: 0px;
+    margin-inline-end: 0px;
+    unicode-bidi: isolate;
+    background-color: #F2F3F7;
+    padding: 10px;
+    padding-right: 5px;
+    border-radius: 15px;
+}
+
+.snark-nav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0
+}
+
+.snark-nav__title {
+    color: #19191C;
+    display: block;
+    font-weight: 700;
+    overflow: hidden;
+    padding: 0 .6rem;
+    text-overflow: ellipsis
+}
+
+.snark-ellipsis {
+    overflow: hidden;
+    text-overflow: ellipsis
+}
+
+.snark-nav__link .snark-ellipsis {
+    position: relative
+}
+
+.snark-nav__link .snark-ellipsis code {
+    word-break: normal
+}
+
+
+

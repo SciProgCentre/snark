@@ -5,6 +5,7 @@ import kotlinx.html.ScriptCrossorigin
 import kotlinx.html.link
 import kotlinx.html.script
 import space.kscience.snark.html.document.allDocuments
+import space.kscience.snark.html.*
 
 @Suppress("unused")
 fun Application.renderAllDocuments() = snarkApplication {
@@ -28,6 +29,15 @@ fun Application.renderAllDocuments() = snarkApplication {
                 integrity = "sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
                 crossorigin = ScriptCrossorigin.anonymous
                 attributes["onload"] = "renderMathInElement(document.body);"
+            }
+            link {
+                rel = "stylesheet"
+                type = "text/css"
+                href = "main.css"
+            }
+            link {
+                rel = "stylesheet"
+                href = "https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback"
             }
         }
     )

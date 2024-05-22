@@ -14,6 +14,14 @@ Cras finibus vel leo id mattis. Nulla tellus augue, bibendum in ipsum vitae, ali
 
 Quisque ut ultricies nisi, eget vehicula ipsum. Quisque tortor mauris, sagittis vitae consectetur in, fermentum quis dui. Maecenas nec risus eu ipsum eleifend ornare. Nam tempus interdum mi, eget tincidunt enim interdum et. Nam a ultricies libero. Cras vehicula, quam a egestas semper, ipsum est cursus nunc, ac mollis est velit at enim. Sed nec nibh ut leo fermentum interdum. Donec aliquam elementum metus, non fermentum eros bibendum eu. Suspendisse ut odio vel dolor blandit condimentum. Vivamus malesuada accumsan magna, a suscipit tellus vehicula ut. Duis et orci arcu. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae;
 
+### Section ${section(3)}
+
+Maecenas at iaculis ipsum. Praesent maximus tristique magna eu faucibus. In tincidunt elementum pharetra. Nam scelerisque eros mattis, suscipit odio sit amet, efficitur mi. Etiam eleifend pulvinar erat a aliquet. Cras pellentesque tincidunt mi eget scelerisque. Proin eget ipsum a velit lobortis commodo. Nulla facilisi. Donec id pretium leo. Ut nec tortor sapien. Praesent vehicula dolor ut laoreet commodo. Pellentesque convallis, sapien et placerat luctus, tortor magna sodales sem, non tristique eros sem vel ipsum. Nulla vulputate accumsan nulla. Duis tempor, mi nec pharetra suscipit, sem odio sagittis mi, ut dignissim odio erat a dolor.
+
+### Section ${section(3)}
+
+In a quam nec turpis venenatis vehicula at ut lorem. Vestibulum tincidunt at velit laoreet sodales. Fusce fermentum enim sed lacinia fringilla. Nam et augue vitae felis sagittis consectetur in eget mauris. Fusce eget auctor turpis. Quisque at tristique nibh, id fringilla arcu. Cras sed finibus sapien.
+
 ```snark
 type: image
 path: myImage.png
