@@ -1,25 +1,23 @@
 plugins {
     id("space.kscience.gradle.mpp")
-    application
+    alias(spclibs.plugins.ktor)
 }
-
-val snarkVersion: String by extra
-val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
 kscience {
     jvm{
         withJava()
     }
     useContextReceivers()
+    useKtor()
 
     jvmMain {
         implementation(projects.snarkKtor)
-        implementation("io.ktor:ktor-server-cio:$ktorVersion")
+        implementation("io.ktor:ktor-server-cio")
         implementation(spclibs.logback.classic)
     }
 
-    jvmTest{
-        implementation("io.ktor:ktor-server-tests:$ktorVersion")
+    jvmTest {
+        implementation("io.ktor:ktor-server-tests")
     }
 }
 
@@ -28,7 +26,7 @@ kotlin {
 }
 
 application {
-    mainClass.set("center.sciprog.snark.documents.Mainkt")
+    mainClass.set("center.sciprog.snark.documents.MainKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment", "-Xmx200M")
