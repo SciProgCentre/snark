@@ -46,8 +46,8 @@ public class Snark : WorkspacePlugin() {
 
         override fun build(context: Context, meta: Meta): Snark = Snark()
 
-        private val byteArrayIOReader = IOReader {
-            readByteArray()
+        private val byteArrayIOReader: IOReader<ByteArray> = IOReader { source ->
+            source.readByteArray()
         }
 
         internal val byteArraySnarkParser = SnarkReader(byteArrayIOReader)

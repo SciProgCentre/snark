@@ -25,10 +25,22 @@ Context("Optional context name"){
 }
 ```
 
-* Get the loaded plugin instance via `context.request(SnarkHtml)`
+* Get the loaded plugin instance via `val snarkHtml = context.request(SnarkHtml)`
+
+* Use plugin like
+
+```kotlin
+val siteData = snarkHtml.readSiteData(context) {
+    directory(snark.io, Name.EMPTY, dataDirectory)
+}
+
+```
 
 ## SNARK-html
 
 SNARK-HTML module defines tools to work with HTML output format.
+
+### Postprocessing
+
 
 ${modules}

@@ -1,3 +1,5 @@
+package center.sciprog.snark.documents
+
 import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -5,6 +7,7 @@ import kotlinx.html.ScriptCrossorigin
 import kotlinx.html.link
 import kotlinx.html.script
 import space.kscience.snark.html.document.allDocuments
+import space.kscience.snark.ktor.snarkApplication
 
 @Suppress("unused")
 fun Application.renderAllDocuments() = snarkApplication {
@@ -35,7 +38,5 @@ fun Application.renderAllDocuments() = snarkApplication {
 
 
 fun main() {
-    embeddedServer(CIO) {
-        renderAllDocuments()
-    }.start(true)
+    embeddedServer(CIO, module = Application::renderAllDocuments).start(true)
 }

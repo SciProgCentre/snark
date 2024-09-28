@@ -12,6 +12,12 @@ ${documentMeta.get('metaValue')}
 
 Curabitur hendrerit hendrerit rutrum. Nullam elementum libero a nisi viverra aliquet. Sed ut urna a sem bibendum dictum. Cras non elit sit amet ex ultrices iaculis. Fusce lobortis lacinia fermentum. Fusce in metus id massa mollis consequat. Quisque non dolor quis orci gravida vulputate. Vivamus sed pellentesque orci. Sed aliquet malesuada rhoncus. Mauris id aliquet lorem.
 
+Paragraph
+
+$$
+  \int_a^b {f(x)} = const
+$$
+
 ### Section ${section(2)}
 
 Maecenas at iaculis ipsum. Praesent maximus tristique magna eu faucibus. In tincidunt elementum pharetra. Nam scelerisque eros mattis, suscipit odio sit amet, efficitur mi. Etiam eleifend pulvinar erat a aliquet. Cras pellentesque tincidunt mi eget scelerisque. Proin eget ipsum a velit lobortis commodo. Nulla facilisi. Donec id pretium leo. Ut nec tortor sapien. Praesent vehicula dolor ut laoreet commodo. Pellentesque convallis, sapien et placerat luctus, tortor magna sodales sem, non tristique eros sem vel ipsum. Nulla vulputate accumsan nulla. Duis tempor, mi nec pharetra suscipit, sem odio sagittis mi, ut dignissim odio erat a dolor.

@@ -134,8 +134,8 @@ public class SnarkHtml : WorkspacePlugin() {
 
         override fun build(context: Context, meta: Meta): SnarkHtml = SnarkHtml()
 
-        private val byteArrayIOReader = IOReader {
-            readByteArray()
+        private val byteArrayIOReader = IOReader { source->
+            source.readByteArray()
         }
 
         internal val byteArraySnarkParser = SnarkReader(byteArrayIOReader)
@@ -158,5 +158,6 @@ public fun SnarkHtml.readSiteData(
 public fun SnarkHtml.readSiteData(
     coroutineScope: CoroutineScope,
     meta: Meta = Meta.EMPTY,
+    //TODO add IO plugin as a context parameter
     builder: DataSink<Binary>.() -> Unit,
 ): DataTree<Any> = readSiteData(ObservableDataTree(coroutineScope) { builder() }, meta)
