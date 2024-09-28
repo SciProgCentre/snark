@@ -6,6 +6,7 @@ import io.ktor.server.engine.embeddedServer
 import kotlinx.html.ScriptCrossorigin
 import kotlinx.html.link
 import kotlinx.html.script
+import kotlinx.html.unsafe
 import space.kscience.snark.html.document.allDocuments
 import space.kscience.snark.ktor.snarkApplication
 
@@ -31,6 +32,22 @@ fun Application.renderAllDocuments() = snarkApplication {
                 integrity = "sha384-43gviWU0YVjaDtb/GhzOouOXtZMP/7XUzwPTstBeZFe/+rCMvRwr4yROQP43s0Xk"
                 crossorigin = ScriptCrossorigin.anonymous
                 attributes["onload"] = "renderMathInElement(document.body);"
+            }
+            script {
+                unsafe {
+                    +"""
+                        document.addEventListener("DOMContentLoaded", function() {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                ],
+                                throwOnError : false
+                            });
+                        });
+
+                    """.trimIndent()
+                }
             }
         }
     )

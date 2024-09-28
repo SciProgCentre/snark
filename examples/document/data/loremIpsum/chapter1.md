@@ -14,9 +14,7 @@ Curabitur hendrerit hendrerit rutrum. Nullam elementum libero a nisi viverra ali
 
 Paragraph
 
-$$
-  \int_a^b {f(x)} = const
-$$
+$  \int_a^b {f(x)} = const $
 
 ### Section ${section(2)}
 
