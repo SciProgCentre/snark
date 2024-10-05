@@ -51,7 +51,7 @@ public class SnarkHtml : WorkspacePlugin() {
 
     override fun content(target: String): Map<Name, Any> = when (target) {
         SnarkReader::class.dfType -> mapOf(
-            "html".asName() to HtmlReader,
+            "html".asName() to RawHtmlReader,
             "markdown".asName() to MarkdownReader,
             "json".asName() to SnarkReader<Meta>(JsonMetaFormat, ContentType.Application.Json.toString()),
             "yaml".asName() to SnarkReader<Meta>(YamlMetaFormat, "text/yaml", "yaml"),
