@@ -1,11 +1,8 @@
 package space.kscience.snark.html
 
-import kotlinx.css.html
 import kotlinx.html.HTML
-import kotlinx.html.dom.append
-import kotlinx.html.dom.document
-import kotlinx.html.dom.serialize
 import kotlinx.html.html
+import kotlinx.html.stream.createHTML
 import space.kscience.dataforge.data.DataSink
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.wrap
@@ -19,19 +16,21 @@ public fun interface HtmlPage {
 
     public companion object {
 
+        private const val HTML_HEADER = "<!DOCTYPE html>\n"
+
         public fun createHtmlString(
             pageContext: PageContext,
             dataSet: DataTree<*>?,
             page: HtmlPage,
-        ): String = document {
-            append.html {
+        ): String = HTML_HEADER + createHTML(true).run {
+            html {
                 with(PageContextWithData(pageContext, dataSet ?: DataTree.EMPTY)) {
                     with(page) {
                         renderPage()
                     }
                 }
             }
-        }.serialize(true)
+        }
     }
 
 }
