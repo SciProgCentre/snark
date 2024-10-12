@@ -58,5 +58,14 @@ Postprocessors are functions that transform fragments of HTML wrapped in them ac
 
 Other details on HTML rendering could be found in [snark-html](./snark-html) module
 
+## Examples
+
+### Scientific document builder
+
+The idea of [the project](examples/document) is to produce a tree of scientific documents or papers. It does that in following steps:
+
+1. Read data tree from `data` directory (data path could be overridden by either ktor configuration or manually).
+2. Search all directories for a files called `document.yaml` or any other format that could be treated as value-tree (for example `document.json`). Use that file as a document descriptor that defines linear document structure.
+3. 
 
 ${modules}

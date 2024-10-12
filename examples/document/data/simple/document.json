@@ -1,0 +1,9 @@
+{
+  "title": "A simple document",
+  "fragments": [
+    {
+      "type": "data",
+      "name": "body"
+    }
+  ]
+}

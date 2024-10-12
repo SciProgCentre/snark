@@ -1,8 +1,12 @@
 package center.sciprog.snark.documents
 
 import io.ktor.server.application.Application
+import io.ktor.server.application.call
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.response.respondRedirect
+import io.ktor.server.routing.get
+import io.ktor.server.routing.routing
 import kotlinx.html.ScriptCrossorigin
 import kotlinx.html.link
 import kotlinx.html.script
@@ -14,6 +18,7 @@ import space.kscience.snark.ktor.snarkApplication
 fun Application.renderAllDocuments() = snarkApplication {
     allDocuments(
         headers = {
+            //add katex headers
             link {
                 rel = "stylesheet"
                 href = "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"
@@ -33,6 +38,7 @@ fun Application.renderAllDocuments() = snarkApplication {
                 crossorigin = ScriptCrossorigin.anonymous
                 attributes["onload"] = "renderMathInElement(document.body);"
             }
+            // Auto-render latex expressions with katex
             script {
                 unsafe {
                     +"""
@@ -51,6 +57,12 @@ fun Application.renderAllDocuments() = snarkApplication {
             }
         }
     )
+
+    routing {
+        get("/"){
+            call.respondRedirect("lorem/ipsum")
+        }
+    }
 }
 
 
