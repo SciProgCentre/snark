@@ -4,6 +4,10 @@
     {
       "type": "data",
       "name": "body"
+    },
+    {
+      "type": "data",
+      "name": "footer"
     }
   ]
 }
