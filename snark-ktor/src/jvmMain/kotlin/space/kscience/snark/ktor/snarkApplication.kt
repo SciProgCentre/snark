@@ -15,7 +15,7 @@ import space.kscience.dataforge.workspace.FileData
 import space.kscience.dataforge.workspace.directory
 import space.kscience.snark.html.HtmlSite
 import space.kscience.snark.html.SnarkHtml
-import space.kscience.snark.html.readSiteData
+import space.kscience.snark.html.parseDataTree
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 
@@ -47,7 +47,7 @@ public fun Route.site(
         error("Data directory at $dataDirectory is not resolved")
     }
 
-    val siteData = snark.readSiteData(context) {
+    val siteData = snark.parseDataTree {
         directory(snark.io, Name.EMPTY, dataDirectory)
     }
 

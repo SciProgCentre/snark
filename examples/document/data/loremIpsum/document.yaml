@@ -2,7 +2,7 @@ route: lorem.ipsum
 title: Lorem Ipsum
 authors:
   - name: Alexander Nozik
-    affiliation: MIPT
+    affiliation: SPC
 fragments:
   - type: image
     ref: SPC-logo.png

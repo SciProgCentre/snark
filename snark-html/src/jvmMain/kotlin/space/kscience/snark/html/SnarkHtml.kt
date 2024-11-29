@@ -3,7 +3,6 @@
 package space.kscience.snark.html
 
 import io.ktor.http.ContentType
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.actions.Action
 import space.kscience.dataforge.actions.mapping
@@ -11,11 +10,11 @@ import space.kscience.dataforge.actions.transform
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.PluginFactory
 import space.kscience.dataforge.context.PluginTag
-import space.kscience.dataforge.data.*
-import space.kscience.dataforge.io.Binary
-import space.kscience.dataforge.io.IOPlugin
-import space.kscience.dataforge.io.IOReader
-import space.kscience.dataforge.io.JsonMetaFormat
+import space.kscience.dataforge.data.DataSink
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.filterByType
+import space.kscience.dataforge.data.putAll
+import space.kscience.dataforge.io.*
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
 import space.kscience.dataforge.meta.Meta
@@ -106,7 +105,34 @@ public class SnarkHtml : WorkspacePlugin() {
         }
     }
 
-    public val parseAction: Action<Binary, Any> = ParseAction(this)
+    public val parseAction: Action<Binary, Any> = Action.mapping {
+        val contentType = getContentType(name, meta)
+
+        val parser: SnarkReader<Any>? = snark.readers.values.filter { parser ->
+            contentType in parser.inputContentTypes
+        }.maxByOrNull {
+            it.priority
+        }
+
+        result(parser?.outputType ?: typeOf<Binary>()) { data ->
+
+            //ignore data for which parser is not found
+            if (parser != null) {
+                val preprocessor =
+                    meta[TextProcessor.TEXT_PREPROCESSOR_KEY]?.let { snark.preprocessor(it) }
+                if (preprocessor == null) {
+                    parser.readFrom(data)
+                } else {
+                    //TODO provide encoding
+                    val string = data.toByteArray().decodeToString()
+                    parser.readFrom(preprocessor.process(string))
+                }
+            } else {
+                data
+            }
+        }
+
+    }
 
     public val layoutAction: Action<Any, Any> = Action.mapping {
 
@@ -134,7 +160,7 @@ public class SnarkHtml : WorkspacePlugin() {
 
         override fun build(context: Context, meta: Meta): SnarkHtml = SnarkHtml()
 
-        private val byteArrayIOReader = IOReader { source->
+        private val byteArrayIOReader = IOReader { source ->
             source.readByteArray()
         }
 
@@ -143,21 +169,24 @@ public class SnarkHtml : WorkspacePlugin() {
     }
 }
 
-
-public fun SnarkHtml.readSiteData(
+/**
+ * Parse raw data tree into html primitives
+ */
+public fun SnarkHtml.parseDataTree(
     binaries: DataTree<Binary>,
     meta: Meta = Meta.EMPTY,
-): DataTree<Any> = ObservableDataTree(context) {
+): DataTree<Any> = DataTree {
     //put all binaries
     putAll(binaries)
     //override ones which could be parsed
     putAll(binaries.transform(parseAction, meta))
 }.transform(prepareHeaderAction, meta).transform(removeIndexAction, meta)
 
-
-public fun SnarkHtml.readSiteData(
-    coroutineScope: CoroutineScope,
+/**
+ * Read the parsed data tree by providing [builder] for raw binary data tree
+ */
+public fun SnarkHtml.parseDataTree(
     meta: Meta = Meta.EMPTY,
     //TODO add IO plugin as a context parameter
     builder: DataSink<Binary>.() -> Unit,
-): DataTree<Any> = readSiteData(ObservableDataTree(coroutineScope) { builder() }, meta)
+): DataTree<Any> = parseDataTree(DataTree { builder() }, meta)
