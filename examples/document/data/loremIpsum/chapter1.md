@@ -2,7 +2,7 @@
 contentType: markdown
 ---
 
-Document name: ${documentName}
+# ${documentName}
 
 ${documentMeta.metaValue}
 
@@ -11,6 +11,13 @@ ${documentMeta.get('metaValue')}
 ## Chapter ${section(1)}
 
 Curabitur hendrerit hendrerit rutrum. Nullam elementum libero a nisi viverra aliquet. Sed ut urna a sem bibendum dictum. Cras non elit sit amet ex ultrices iaculis. Fusce lobortis lacinia fermentum. Fusce in metus id massa mollis consequat. Quisque non dolor quis orci gravida vulputate. Vivamus sed pellentesque orci. Sed aliquet malesuada rhoncus. Mauris id aliquet lorem.
+
+Paragraph
+
+$$
+\int_a^b {f(x)} = const
+$$
+
 
 ### Section ${section(2)}
 

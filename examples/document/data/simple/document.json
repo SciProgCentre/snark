@@ -1,0 +1,13 @@
+{
+  "title": "A simple document",
+  "fragments": [
+    {
+      "type": "data",
+      "name": "body"
+    },
+    {
+      "type": "data",
+      "name": "footer"
+    }
+  ]
+}

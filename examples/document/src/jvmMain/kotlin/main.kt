@@ -1,15 +1,21 @@
+package center.sciprog.snark.documents
+
 import io.ktor.server.application.Application
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.routing.routing
 import kotlinx.html.ScriptCrossorigin
 import kotlinx.html.link
 import kotlinx.html.script
+import kotlinx.html.unsafe
 import space.kscience.snark.html.document.allDocuments
+import space.kscience.snark.ktor.snarkApplication
 
 @Suppress("unused")
 fun Application.renderAllDocuments() = snarkApplication {
     allDocuments(
         headers = {
+            //add katex headers
             link {
                 rel = "stylesheet"
                 href = "https://cdn.jsdelivr.net/npm/katex@0.16.10/dist/katex.min.css"
@@ -29,13 +35,34 @@ fun Application.renderAllDocuments() = snarkApplication {
                 crossorigin = ScriptCrossorigin.anonymous
                 attributes["onload"] = "renderMathInElement(document.body);"
             }
+            // Auto-render latex expressions with katex
+            script {
+                unsafe {
+                    +"""
+                        document.addEventListener("DOMContentLoaded", function() {
+                            renderMathInElement(document.body, {
+                                delimiters: [
+                                    {left: '$$', right: '$$', display: true},
+                                    {left: '$', right: '$', display: false},
+                                ],
+                                throwOnError : false
+                            });
+                        });
+
+                    """.trimIndent()
+                }
+            }
         }
     )
+
+    routing {
+        get("/"){
+            call.respondRedirect("lorem/ipsum")
+        }
+    }
 }
 
 
 fun main() {
-    embeddedServer(CIO) {
-        renderAllDocuments()
-    }.start(true)
+    embeddedServer(CIO, module = Application::renderAllDocuments).start(true)
 }

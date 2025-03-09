@@ -22,6 +22,10 @@ ksciencePublish {
         useApache2Licence()
         useSPCTeam()
     }
-    repository("spc","https://maven.sciprog.center/kscience")
+    repository("spc", "https://maven.sciprog.center/kscience")
 //    sonatype()
+}
+
+readme {
+    this.useDefaultReadmeTemplate
 }

@@ -18,6 +18,7 @@ private const val BUILD_DATE_FILE = "/buildDate"
  *
  * @return true if cache is valid and false if it is reset
  */
+@Deprecated("To be removed")
 fun Application.prepareSnarkDataCacheDirectory(dataPath: Path): Boolean {
 
     // Clear data directory if it is outdated

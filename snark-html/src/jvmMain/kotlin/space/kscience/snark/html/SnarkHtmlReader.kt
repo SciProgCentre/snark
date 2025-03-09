@@ -13,8 +13,8 @@ public interface SnarkHtmlReader : SnarkReader<PageFragment>{
     override val outputType: KType get() = typeOf<PageFragment>()
 }
 
-public object HtmlReader : SnarkHtmlReader {
-    override val inputContentTypes: Set<String> = setOf("html")
+public object RawHtmlReader : SnarkHtmlReader {
+    override val inputContentTypes: Set<String> = setOf("text/html", "html")
 
     override fun readFrom(source: String): PageFragment = PageFragment {
         div {
