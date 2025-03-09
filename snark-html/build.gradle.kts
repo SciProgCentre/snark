@@ -1,22 +1,30 @@
 plugins {
-    id("space.kscience.gradle.jvm")
+    id("space.kscience.gradle.mpp")
     `maven-publish`
 }
 
 val dataforgeVersion: String by rootProject.extra
 val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
-dependencies {
-    api(projects.snarkCore)
+kscience{
+    jvm()
+    useSerialization()
+    useContextReceivers()
+    commonMain{
+        api(projects.snarkCore)
 
-    api("org.jetbrains.kotlinx:kotlinx-html:0.8.0")
-    api("org.jetbrains.kotlin-wrappers:kotlin-css")
+        api(spclibs.kotlinx.html)
+        api("org.jetbrains.kotlin-wrappers:kotlin-css")
 
-    api("io.ktor:ktor-utils:$ktorVersion")
+        api("io.ktor:ktor-http:$ktorVersion")
+        api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
+        api("org.jetbrains:markdown:0.7.0")
+        api("org.freemarker:freemarker:2.3.32")
 
-    api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
-    api("org.jetbrains:markdown:0.3.5")
+    }
+
 }
+
 
 readme {
     maturity = space.kscience.gradle.Maturity.EXPERIMENTAL

@@ -1,21 +1,23 @@
 plugins {
-    id("space.kscience.gradle.jvm")
+    id("space.kscience.gradle.mpp")
     `maven-publish`
 }
 
 val dataforgeVersion: String by rootProject.extra
 val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
-dependencies {
-    api(projects.snarkHtml)
+kscience{
+    jvm()
+    useContextReceivers()
 
-    api("io.ktor:ktor-server-core:$ktorVersion")
-    api("io.ktor:ktor-server-html-builder:$ktorVersion")
-    api("io.ktor:ktor-server-host-common:$ktorVersion")
-    implementation("io.ktor:ktor-server-netty:2.3.0")
-    implementation(project(":snark-storage-driver"))
-    implementation("io.ktor:ktor-server-partial-content:$ktorVersion")
-    implementation("io.ktor:ktor-server-auto-head-response:$ktorVersion")
+    jvmMain{
+        api(projects.snarkHtml)
 
-    testApi("io.ktor:ktor-server-tests:$ktorVersion")
+        api("io.ktor:ktor-server-core:$ktorVersion")
+        api("io.ktor:ktor-server-html-builder:$ktorVersion")
+        api("io.ktor:ktor-server-host-common:$ktorVersion")
+    }
+    jvmTest{
+        api("io.ktor:ktor-server-tests:$ktorVersion")
+    }
 }

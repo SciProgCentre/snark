@@ -10,8 +10,8 @@ repositories{
 }
 
 dependencies{
-    implementation(npmlibs.kotlin.gradle)
-    implementation("com.github.mwiede:jsch:0.2.1")
+    implementation(spclibs.kotlin.gradle)
+    implementation("com.github.mwiede:jsch:0.2.17")
 }
 
 gradlePlugin{

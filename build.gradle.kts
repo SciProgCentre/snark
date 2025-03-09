@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import space.kscience.gradle.useApache2Licence
+import space.kscience.gradle.useSPCTeam
 
 plugins {
     id("space.kscience.gradle.project")
@@ -6,21 +7,25 @@ plugins {
 
 allprojects {
     group = "space.kscience"
-    version = "0.1.0-dev-1"
+    version = "0.2.0-dev-1"
 
-    if (name != "snark-gradle-plugin") {
-        tasks.withType<KotlinCompile> {
-            kotlinOptions {
-                freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
-            }
-        }
+    repositories {
+        mavenCentral()
+        mavenLocal()
     }
 }
 
-val dataforgeVersion by extra("0.6.0-dev-15")
+val dataforgeVersion by extra("0.8.0")
 
 ksciencePublish {
-    github("SciProgCentre", "snark")
-    space("https://maven.pkg.jetbrains.space/mipt-npm/p/sci/maven")
+    pom("https://github.com/SciProgCentre/snark") {
+        useApache2Licence()
+        useSPCTeam()
+    }
+    repository("spc", "https://maven.sciprog.center/kscience")
 //    sonatype()
+}
+
+readme {
+    this.useDefaultReadmeTemplate
 }

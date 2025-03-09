@@ -1,0 +1,22 @@
+route: lorem.ipsum
+title: Lorem Ipsum
+authors:
+  - name: Alexander Nozik
+    affiliation: SPC
+fragments:
+  - type: image
+    ref: SPC-logo.png
+    meta:
+      caption: SPC logo
+  - type: data
+    name: chapter1
+  - type: data
+    name: chapter2
+  - type: image
+    ref: SPC-logo.png
+    meta:
+      caption: Another SPC logo
+  - type: data
+    name: chapter3
+documentMeta:
+  metaValue: Hello world!
