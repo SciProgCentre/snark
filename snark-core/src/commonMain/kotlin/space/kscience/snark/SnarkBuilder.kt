@@ -1,4 +1,4 @@
 package space.kscience.snark
 
-@DslMarker
+//@DslMarker
 public annotation class SnarkBuilder

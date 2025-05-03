@@ -11,8 +11,8 @@ import space.kscience.dataforge.names.Name
 
 public fun interface HtmlPage {
 
-    context(PageContextWithData, HTML)
-    public fun renderPage()
+    context(page: PageContextWithData)
+    public fun HTML.renderPage()
 
     public companion object {
 

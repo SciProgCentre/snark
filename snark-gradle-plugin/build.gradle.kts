@@ -10,8 +10,8 @@ repositories{
 }
 
 dependencies{
-    implementation(spclibs.kotlin.gradle)
-    implementation("com.github.mwiede:jsch:0.2.17")
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${spclibs.versions.kotlin.asProvider().get()}")
+    implementation("com.github.mwiede:jsch:0.2.26")
 }
 
 gradlePlugin{

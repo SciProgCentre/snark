@@ -8,7 +8,6 @@ import org.intellij.markdown.ast.ASTNode
 import org.intellij.markdown.ast.findChildOfType
 import org.intellij.markdown.ast.getTextInNode
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
-import org.intellij.markdown.flavours.gfm.GFMFlavourDescriptor
 import org.intellij.markdown.html.*
 import org.intellij.markdown.parser.LinkMap
 import org.intellij.markdown.parser.MarkdownParser
@@ -77,7 +76,7 @@ public object MarkdownReader : SnarkHtmlReader {
 //        markdownParser.buildMarkdownTreeFromString(source)
         val htmlString = HtmlGenerator(source, parsedTree, markdownFlavor).generateHtml()
 
-        consumer.onTagContentUnsafe {
+        this.consumer.onTagContentUnsafe {
             +htmlString
         }
 

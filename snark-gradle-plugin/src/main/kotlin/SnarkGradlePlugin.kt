@@ -61,7 +61,7 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
         tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
             kotlinOptions {
-                freeCompilerArgs = freeCompilerArgs + "-Xcontext-receivers"
+                freeCompilerArgs = freeCompilerArgs + "-Xcontext-parameters"
             }
         }
     }

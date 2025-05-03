@@ -6,7 +6,6 @@ import space.kscience.dataforge.data.*
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.*
 import space.kscience.snark.DataTreeWithDefault
-import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
 import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_MAP_KEY
 import kotlin.reflect.typeOf
@@ -76,8 +75,9 @@ public fun Language(
 internal val Data<*>.language: String?
     get() = meta[Language.LANGUAGE_KEY].string?.lowercase()
 
-public val SiteContext.languageMap: Map<String, Language>
-    get() = siteMeta[SITE_LANGUAGE_MAP_KEY]?.items?.map {
+context(site: SiteContext)
+public val languageMap: Map<String, Language>
+    get() = site.siteMeta[SITE_LANGUAGE_MAP_KEY]?.items?.map {
         it.key.toStringUnescaped() to Language.read(it.value)
     }?.toMap() ?: emptyMap()
 
@@ -143,8 +143,8 @@ private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<A
 /**
  * Create a multiple sites for different languages. All sites use the same [content], but rely on different data
  */
-@SnarkBuilder
-public fun SiteContextWithData.multiLanguageSite(
+context(site: SiteContextWithData)
+public fun multiLanguageSite(
     defaultLanguage: Language,
     vararg languages: Language,
     content: HtmlSite,
@@ -170,10 +170,10 @@ public fun SiteContextWithData.multiLanguageSite(
             languageMappedData.branch(defaultLanguage.dataPath)!!
         )
 
-        site(
+        site.site(
             language.route,
             overlayData,
-            siteMeta = Laminate(languageSiteMeta, siteMeta),
+            siteMeta = Laminate(languageSiteMeta, site.siteMeta),
             content
         )
     }
@@ -188,8 +188,9 @@ public val PageContext.language: String
 /**
  * Mapping of language keys to other language versions of this page
  */
-public val PageContext.languageMap: Map<String, Meta>
-    get() = pageMeta[Language.LANGUAGE_MAP_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
+context(page: PageContext)
+public val languageMap: Map<String, Meta>
+    get() = page.pageMeta[Language.LANGUAGE_MAP_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
 
 public fun PageContext.localisedPageRef(pageName: Name): String {
     val prefix = languageMap[language]?.get(Language::dataPath.name)?.string?.parseAsName() ?: Name.EMPTY

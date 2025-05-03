@@ -3,21 +3,23 @@ plugins {
     `maven-publish`
 }
 
-val dataforgeVersion: String by rootProject.extra
-val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
 kscience{
     jvm()
     useContextReceivers()
 
+    commonMain{
+        api(project.dependencies.platform(spclibs.ktor.bom))
+    }
+
     jvmMain{
         api(projects.snarkHtml)
 
-        api("io.ktor:ktor-server-core:$ktorVersion")
-        api("io.ktor:ktor-server-html-builder:$ktorVersion")
-        api("io.ktor:ktor-server-host-common:$ktorVersion")
+        api("io.ktor:ktor-server-core")
+        api("io.ktor:ktor-server-html-builder")
+        api("io.ktor:ktor-server-host-common")
     }
     jvmTest{
-        api("io.ktor:ktor-server-tests:$ktorVersion")
+        api("io.ktor:ktor-server-test-host")
     }
 }

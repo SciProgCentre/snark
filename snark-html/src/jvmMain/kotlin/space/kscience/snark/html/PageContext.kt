@@ -68,16 +68,31 @@ public interface PageContext : SnarkContext, ContextAware {
 
 }
 
-context(PageContext)
-public val page: PageContext
-    get() = this@PageContext
+context(pageContext: PageContext)
+public val pageContext: PageContext get() = pageContext
 
-context(PageContextWithData)
-public val page: PageContextWithData
-    get() = this@PageContextWithData
+context(pageContext: PageContext)
+public fun resolveRef(
+    ref: String,
+    targetSite: SiteContext = pageContext.site
+): String = pageContext.resolveRef(ref, targetSite)
 
-public fun PageContext.resolvePageRef(pageName: String, targetSite: SiteContext = site): String =
-    resolvePageRef(pageName.parseAsName(), targetSite)
+context(pageContext: PageContextWithData)
+public val pageContextWithData: PageContextWithData get() = pageContext
+
+context(pageContext: PageContextWithData)
+public val data: DataTree<*> get() = pageContext.data
+
+context(pageContext: PageContextWithData)
+public val pageMeta: Meta get() = pageContext.pageMeta
+
+context(pageContext: PageContext)
+public fun resolvePageRef(pageName: Name, targetSite: SiteContext = pageContext.site): String =
+    pageContext.resolvePageRef(pageName, targetSite)
+
+context(pageContext: PageContext)
+public fun resolvePageRef(pageName: String, targetSite: SiteContext = pageContext.site): String =
+    pageContext.resolvePageRef(pageName.parseAsName(), targetSite)
 
 public val PageContext.homeRef: String get() = resolvePageRef(Name.EMPTY)
 

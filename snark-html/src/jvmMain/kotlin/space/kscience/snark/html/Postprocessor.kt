@@ -99,13 +99,14 @@ public class Postprocessor<out R>(
     }
 }
 
-context(PageContext)
+context(page: PageContext)
 public inline fun FlowContent.postprocess(
     processor: TextProcessor = WebPageTextProcessor(page),
-    block: FlowContent.() -> Unit,
+    block: context(PageContext, FlowContent) () -> Unit,
 ) {
     val fc = object : FlowContent by this {
         override val consumer: TagConsumer<*> = Postprocessor(page, this@postprocess.consumer, processor)
     }
-    fc.block()
+
+    block(page, fc)
 }

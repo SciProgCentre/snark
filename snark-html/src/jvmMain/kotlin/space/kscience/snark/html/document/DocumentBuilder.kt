@@ -13,7 +13,6 @@ import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
-import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 import space.kscience.snark.html.*
 import kotlin.reflect.typeOf
@@ -21,7 +20,6 @@ import kotlin.reflect.typeOf
 /**
  *  A context for building a single document
  */
-@SnarkBuilder
 public interface DocumentBuilder : SnarkContext {
 
     public val route: Name
@@ -35,14 +33,14 @@ public interface DocumentBuilder : SnarkContext {
     public suspend fun fragment(fragment: DocumentFragment, overrideMeta: Meta? = null)
 }
 
-context(SiteContextWithData)
+context(site: SiteContextWithData)
 public suspend fun DocumentBuilder.fragment(fragmentName: Name) {
-    fragment(site.siteData[fragmentName] ?: error("Can't find data fragment for $fragmentName in site data."))
+    this.fragment(site.siteData[fragmentName] ?: error("Can't find data fragment for $fragmentName in site data."))
 }
 
-context(SiteContextWithData)
+context(site: SiteContextWithData)
 public suspend fun DocumentBuilder.fragment(fragmentName: String) {
-    fragment(site.siteData[fragmentName] ?: error("Can't find data fragment for $fragmentName in site data."))
+    this.fragment(site.siteData[fragmentName] ?: error("Can't find data fragment for $fragmentName in site data."))
 }
 
 private class PageBasedDocumentBuilder(
@@ -62,9 +60,10 @@ private class PageBasedDocumentBuilder(
     override suspend fun fragment(fragment: DocumentFragment, overrideMeta: Meta?) {
         when (fragment) {
             is ImageDocumentFragment -> fragment {
+                val page =
                 figure("snark-figure") {
                     img(classes = "snark-image") {
-                        src = resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
+                        src = pageContextWithData.resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
                         alt = fragment.meta["alt"].string ?: ""
                     }
                     fragment.meta["caption"].string?.let { caption ->
@@ -124,7 +123,7 @@ public fun SiteContextWithData.document(
     page(route, descriptor.documentMeta ?: Meta.EMPTY) {
         //TODO think about avoiding blocking
         val documentBuilder = runBlocking {
-            PageBasedDocumentBuilder(page, dataName).apply {
+            PageBasedDocumentBuilder(pageContextWithData, dataName).apply {
                 descriptor.fragments.forEach {
                     fragment(it)
                 }
@@ -143,6 +142,7 @@ public fun SiteContextWithData.document(
                     it.affiliation?.let { affiliation -> div("author-affiliation") { +affiliation } }
                 }
             }
+            @Suppress("DSL_SCOPE_VIOLATION")
             postprocess(FtlDocumentProcessor(this@document.context, documentBuilder)) {
                 documentBuilder.fragments.forEach {
                     fragment(it)

@@ -11,7 +11,7 @@ import space.kscience.dataforge.names.asName
 import space.kscience.dataforge.names.parseAsName
 
 public fun interface HtmlSite {
-    context(SiteContextWithData)
+    context(siteContext: SiteContextWithData)
     public fun renderSite()
 }
 
@@ -20,7 +20,7 @@ public fun DataSink<Any>.site(
     siteMeta: Meta,
     block: (siteContext: SiteContext, data: DataTree<*>?) -> Unit,
 ) {
-    wrap(name, HtmlSite { block(site, siteData) }, siteMeta)
+    wrap(name, HtmlSite { block(siteContextWithData.site, siteContextWithData.siteData) }, siteMeta)
 }
 
 //public fun DataSetBuilder<Any>.site(name: Name, block: DataSetBuilder<Any>.() -> Unit) {

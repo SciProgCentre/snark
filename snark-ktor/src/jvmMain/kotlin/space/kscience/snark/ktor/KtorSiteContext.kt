@@ -2,7 +2,6 @@ package space.kscience.snark.ktor
 
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
-import io.ktor.server.application.call
 import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.respond
@@ -178,7 +177,7 @@ public fun Route.site(
     content: HtmlSite,
 ) {
     val siteContext = SiteContextWithData(
-        KtorSiteContext(context, siteMeta, path = path, siteRoute = Name.EMPTY, null, this@Route),
+        KtorSiteContext(context, siteMeta, path = path, siteRoute = Name.EMPTY, null, this),
         data ?: DataTree.EMPTY
     )
     with(content) {

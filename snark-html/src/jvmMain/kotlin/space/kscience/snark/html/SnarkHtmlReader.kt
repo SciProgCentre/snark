@@ -17,7 +17,7 @@ public object RawHtmlReader : SnarkHtmlReader {
     override val inputContentTypes: Set<String> = setOf("text/html", "html")
 
     override fun readFrom(source: String): PageFragment = PageFragment {
-        div {
+        this.div {
             unsafe { +source }
         }
     }
