@@ -131,6 +131,13 @@ public fun page(
 ): Unit = siteContext.page(route, siteData, pageMeta, content)
 
 context(siteContext: SiteContextWithData)
+public fun page(
+    route: String,
+    pageMeta: Meta = Meta.EMPTY,
+    content: HtmlPage,
+): Unit = siteContext.page(route.parseAsName(), siteData, pageMeta, content)
+
+context(siteContext: SiteContextWithData)
 public fun route(
     route: Name,
     data: DataTree<*>? = siteData,
