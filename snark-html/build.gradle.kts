@@ -9,7 +9,7 @@ val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 kscience{
     jvm()
     useSerialization()
-    useContextReceivers()
+    useContextParameters()
     commonMain{
         api(projects.snarkCore)
 

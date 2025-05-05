@@ -100,7 +100,7 @@ public class Postprocessor<out R>(
 }
 
 context(page: PageContext)
-public fun FlowContent.postprocess(
+public inline fun FlowContent.postprocess(
     processor: TextProcessor = WebPageTextProcessor(page),
     block: context(PageContext) FlowContent.() -> Unit,
 ) {

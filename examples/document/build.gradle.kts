@@ -15,7 +15,7 @@ kscience {
         }
     }
 
-    useContextReceivers()
+    useContextParameters()
 
     jvmMain {
         implementation(projects.snarkKtor)
