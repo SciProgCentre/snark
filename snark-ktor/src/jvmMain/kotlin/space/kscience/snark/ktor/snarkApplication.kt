@@ -10,9 +10,8 @@ import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextBuilder
 import space.kscience.dataforge.context.request
 import space.kscience.dataforge.data.forEach
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.workspace.FileData
-import space.kscience.dataforge.workspace.directory
+import space.kscience.dataforge.workspace.FileDataTree
+import space.kscience.dataforge.workspace.readDirectory
 import space.kscience.snark.html.HtmlSite
 import space.kscience.snark.html.SnarkHtml
 import space.kscience.snark.html.parseDataTree
@@ -47,17 +46,19 @@ public fun Route.site(
         error("Data directory at $dataDirectory is not resolved")
     }
 
-    val siteData = snark.parseDataTree {
-        directory(snark.io, Name.EMPTY, dataDirectory)
+    val siteData = with(snark) {
+        parseDataTree(io.readDirectory(dataDirectory, monitor = true, includeExtensions = true))
     }
 
     siteData.forEach { namedData ->
-        application.log.debug("Loading data {} from {}", namedData.name, namedData.meta[FileData.FILE_PATH_KEY])
+        application.log.debug("Loading data {} from {}", namedData.name, namedData.meta[FileDataTree.FILE_PATH_KEY])
     }
+
+
+    debugDataTree("@data", siteData)
 
     staticResources("/css", "css")
     site(context, siteData, content = site)
-
 }
 
 /**

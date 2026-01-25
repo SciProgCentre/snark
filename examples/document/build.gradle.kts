@@ -1,6 +1,6 @@
 plugins {
     id("space.kscience.gradle.mpp")
-    alias(spclibs.plugins.ktor)
+//    alias(spclibs.plugins.ktor)
 }
 
 kscience {
@@ -15,7 +15,7 @@ kscience {
         }
     }
 
-    useContextReceivers()
+    useContextParameters()
 
     jvmMain {
         implementation(projects.snarkKtor)

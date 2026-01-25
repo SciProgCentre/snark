@@ -6,20 +6,21 @@ plugins {
 val dataforgeVersion: String by rootProject.extra
 val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
-kscience{
+kscience {
     jvm()
     useSerialization()
-    useContextReceivers()
-    commonMain{
+    useContextParameters()
+    commonMain {
         api(projects.snarkCore)
 
         api(spclibs.kotlinx.html)
-        api("org.jetbrains.kotlin-wrappers:kotlin-css")
+
+//        api("org.jetbrains.kotlin-wrappers:kotlin-css")
 
         api("io.ktor:ktor-http:$ktorVersion")
         api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
-        api("org.jetbrains:markdown:0.7.0")
-        api("org.freemarker:freemarker:2.3.32")
+        api("org.jetbrains:markdown:0.7.3")
+        api("org.freemarker:freemarker:2.3.34")
 
     }
 

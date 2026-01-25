@@ -4,6 +4,7 @@ import kotlinx.html.*
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.parseAsName
 import space.kscience.snark.TextProcessor
+import space.kscience.snark.html.language.localisedPageRef
 import java.net.URI
 
 public class WebPageTextProcessor(private val page: PageContext) : TextProcessor {

@@ -5,7 +5,6 @@ import org.gradle.api.Project
 import org.gradle.api.distribution.DistributionContainer
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
-import org.gradle.kotlin.dsl.withType
 import java.io.File
 import java.time.LocalDateTime
 
@@ -59,10 +58,5 @@ public class SnarkGradlePlugin : Plugin<Project> {
             }
         }
 
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-            kotlinOptions {
-                freeCompilerArgs = freeCompilerArgs + "-Xcontext-parameters"
-            }
-        }
     }
 }

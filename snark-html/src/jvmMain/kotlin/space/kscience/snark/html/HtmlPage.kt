@@ -5,7 +5,7 @@ import kotlinx.html.html
 import kotlinx.html.stream.createHTML
 import space.kscience.dataforge.data.DataSink
 import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.data.wrap
+import space.kscience.dataforge.data.writeValue
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
 
@@ -32,19 +32,19 @@ public fun interface HtmlPage {
             }
         }
     }
-
 }
+
 
 
 // data builders
 
-public fun DataSink<Any>.page(
+public suspend fun DataSink<Any>.page(
     name: Name,
     pageMeta: Meta = Meta.EMPTY,
     block: context(PageContextWithData) HTML.() -> Unit,
 ) {
     val page = HtmlPage(block)
-    wrap<HtmlPage>(name, page, pageMeta)
+    writeValue<HtmlPage>(name, page, pageMeta)
 }
 
 

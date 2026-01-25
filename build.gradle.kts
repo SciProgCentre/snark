@@ -7,23 +7,24 @@ plugins {
 
 allprojects {
     group = "space.kscience"
-    version = "0.3.0-dev-1"
+    version = "0.3.0-dev-2"
 
     repositories {
-        mavenCentral()
+        maven("https://repo.kotlin.link")
         mavenLocal()
+        mavenCentral()
     }
 }
 
-val dataforgeVersion by extra("0.8.0")
+val dataforgeVersion by extra("0.11.0-dev-1")
 
-ksciencePublish {
+kscienceProject {
     pom("https://github.com/SciProgCentre/snark") {
         useApache2Licence()
         useSPCTeam()
     }
-    repository("spc", "https://maven.sciprog.center/kscience")
-//    sonatype()
+    publishTo("spc", "https://maven.sciprog.center/kscience")
+    publishToCentral()
 }
 
 readme {
