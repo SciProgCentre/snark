@@ -4,7 +4,12 @@ import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
 import space.kscience.snark.html.PageContext
 
+/**
+ * Represents a string that can be localized based on the language or the context of a page.
+ * The actual value of the string is determined by the implementing classes of this interface.
+ */
 public interface LocalizedString {
+
     context(page: PageContext)
     public fun value(): String
 
