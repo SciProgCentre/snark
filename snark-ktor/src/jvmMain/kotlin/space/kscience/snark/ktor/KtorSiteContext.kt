@@ -24,7 +24,7 @@ import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.cutLast
 import space.kscience.dataforge.names.endsWith
 import space.kscience.dataforge.names.plus
-import space.kscience.dataforge.workspace.FileData
+import space.kscience.dataforge.workspace.FileDataTree
 import space.kscience.snark.html.*
 import java.nio.file.Path
 import kotlin.reflect.typeOf
@@ -44,7 +44,7 @@ internal class KtorSiteContext(
 
 
     override fun static(route: Name, data: Data<Binary>) {
-        data.meta[FileData.FILE_PATH_KEY]?.string?.let {
+        data.meta[FileDataTree.FILE_PATH_KEY]?.string?.let {
             val file = try {
                 Path.of(it).toFile()
             } catch (ex: Exception) {
@@ -62,7 +62,7 @@ internal class KtorSiteContext(
         if (data.type != typeOf<Binary>()) error("Can't directly serve file of type ${data.type}")
         ktorRoute.get(route.toWebPath()) {
             val binary = data.await()
-            val extension = data.meta[FileData.FILE_EXTENSION_KEY]?.string?.let { ".$it" } ?: ""
+            val extension = data.meta[FileDataTree.FILE_EXTENSION_KEY]?.string?.let { ".$it" } ?: ""
             val contentType: ContentType = extension
                 .let(ContentType::fromFileExtension)
                 .firstOrNull()

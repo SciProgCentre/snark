@@ -1,13 +1,18 @@
-package space.kscience.snark.html
+package space.kscience.snark.html.language
 
 import space.kscience.dataforge.actions.AbstractAction
 import space.kscience.dataforge.actions.transform
-import space.kscience.dataforge.data.*
+import space.kscience.dataforge.data.Data
+import space.kscience.dataforge.data.DataBuilderScope
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.branch
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.*
+import space.kscience.dataforge.workspace.filterByType
 import space.kscience.snark.DataTreeWithDefault
-import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_KEY
-import space.kscience.snark.html.Language.Companion.SITE_LANGUAGE_MAP_KEY
+import space.kscience.snark.html.*
+import space.kscience.snark.html.language.Language.Companion.SITE_LANGUAGE_KEY
+import space.kscience.snark.html.language.Language.Companion.SITE_LANGUAGE_MAP_KEY
 import kotlin.reflect.typeOf
 
 
@@ -54,9 +59,9 @@ public class Language : Scheme() {
 
         public val LANGUAGE_MAP_KEY: Name = "languageMap".asName()
 
-        public val SITE_LANGUAGE_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_KEY
+        public val SITE_LANGUAGE_KEY: Name = SiteContext.Companion.SITE_META_KEY + LANGUAGE_KEY
 
-        public val SITE_LANGUAGE_MAP_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_MAP_KEY
+        public val SITE_LANGUAGE_MAP_KEY: Name = SiteContext.Companion.SITE_META_KEY + LANGUAGE_MAP_KEY
 
         public const val DEFAULT_LANGUAGE: String = "en"
     }
@@ -87,9 +92,9 @@ public val SiteContext.language: String
 /**
  * Walk the data tree depth-first
  */
-private fun <T, TR : GenericDataTree<T, TR>> TR.walk(
+private fun <T> DataTree<T>.walk(
     namePrefix: Name = Name.EMPTY,
-): Sequence<Pair<Name, TR>> = sequence {
+): Sequence<Pair<Name, DataTree<T>>> = sequence {
     yield(namePrefix to this@walk)
     items.forEach { (token, tree) ->
         yieldAll(tree.walk(namePrefix + token))
@@ -97,10 +102,14 @@ private fun <T, TR : GenericDataTree<T, TR>> TR.walk(
 }
 
 private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<Any, Any>(typeOf<Any>()) {
-    override fun DataSink<Any>.generate(data: DataTree<Any>, meta: Meta) {
+
+    override fun DataBuilderScope<Any>.generate(
+        source: DataTree<Any>,
+        meta: Meta
+    ): Map<Name, Data<Any>> = buildMap {
         val languageMapCache = mutableMapOf<Name, MutableMap<Language, DataTree<Any>>>()
 
-        data.walk().forEach { (name, node) ->
+        source.walk().forEach { (name, node) ->
             val language = node.data?.language?.let { itemLanguage -> languages.find { it.key == itemLanguage } }
             if (language == null) {
                 // put data without a language into all buckets
@@ -127,16 +136,17 @@ private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<A
                         nodeData.withMeta { set(Language.LANGUAGE_MAP_KEY, languageMapMeta) }
                     )
                 } else {
-                    wrap(languagePrefix + nodeName, Unit, Meta { set(Language.LANGUAGE_MAP_KEY, languageMapMeta) })
+                    put(
+                        languagePrefix + nodeName,
+                        Data.wrapValue(Unit, Meta { set(Language.LANGUAGE_MAP_KEY, languageMapMeta) })
+                    )
                 }
             }
         }
 
     }
 
-    override fun DataSink<Any>.update(source: DataTree<Any>, meta: Meta, namedData: NamedData<Any>) {
-        TODO("Not yet implemented")
-    }
+
 }
 
 
@@ -183,7 +193,7 @@ public fun multiLanguageSite(
  * The language key of this page
  */
 public val PageContext.language: String
-    get() = pageMeta[Language.LANGUAGE_KEY]?.string ?: pageMeta[SITE_LANGUAGE_KEY]?.string ?: Language.DEFAULT_LANGUAGE
+    get() = pageMeta[Language.LANGUAGE_KEY]?.string ?: pageMeta[SITE_LANGUAGE_KEY]?.string ?: site.language
 
 /**
  * Mapping of language keys to other language versions of this page

@@ -8,6 +8,7 @@ pluginManagement {
 
     repositories {
         maven("https://repo.kotlin.link")
+        mavenLocal()
         mavenCentral()
         gradlePluginPortal()
     }
@@ -29,6 +30,7 @@ dependencyResolutionManagement {
 
     repositories {
         maven("https://repo.kotlin.link")
+        mavenLocal()
         mavenCentral()
     }
 

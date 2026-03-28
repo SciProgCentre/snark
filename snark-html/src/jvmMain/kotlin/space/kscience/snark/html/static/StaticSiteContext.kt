@@ -6,13 +6,19 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.buffered
 import space.kscience.dataforge.context.Context
-import space.kscience.dataforge.data.*
+import space.kscience.dataforge.data.Data
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.await
+import space.kscience.dataforge.data.meta
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.writeBinary
-import space.kscience.dataforge.meta.*
+import space.kscience.dataforge.meta.Laminate
+import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.string
+import space.kscience.dataforge.meta.toMutableMeta
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.isEmpty
-import space.kscience.dataforge.workspace.FileData
+import space.kscience.dataforge.workspace.FileDataTree
 import space.kscience.snark.html.*
 import java.nio.file.Path
 import kotlin.io.path.*
@@ -67,7 +73,7 @@ internal class StaticSiteContext(
     @OptIn(ExperimentalPathApi::class)
     override fun static(route: Name, data: Data<Binary>) {
         //if data is a file, copy it
-        data.meta[FileData.FILE_PATH_KEY]?.string?.let {
+        data.meta[FileDataTree.FILE_PATH_KEY]?.string?.let {
             val file = Path.of(it)
             val targetPath = outputPath.resolve(route.toWebPath())
             targetPath.parent.createDirectories()

@@ -13,6 +13,7 @@ import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
+import space.kscience.dataforge.workspace.filterByType
 import space.kscience.snark.SnarkContext
 import space.kscience.snark.html.*
 import kotlin.reflect.typeOf
@@ -110,7 +111,8 @@ private class PageBasedDocumentBuilder(
     }
 }
 
-public fun SiteContextWithData.document(
+context(site: SiteContextWithData)
+public fun document(
     dataName: Name,
     descriptor: DocumentDescriptor = DocumentDescriptor.empty(),
     route: Name = dataName,
@@ -118,7 +120,7 @@ public fun SiteContextWithData.document(
     documentBlock: DocumentBuilder.() -> Unit = {},
 ): Unit {
     siteData.branch(dataName)?.filterByType<Binary>()?.forEach {
-        static(route + it.name.last(), it.data)
+        site.static(route + it.name.last(), it)
     }
     page(route, descriptor.documentMeta ?: Meta.EMPTY) {
         //TODO think about avoiding blocking
@@ -142,8 +144,8 @@ public fun SiteContextWithData.document(
                     it.affiliation?.let { affiliation -> div("author-affiliation") { +affiliation } }
                 }
             }
-            @Suppress("DSL_SCOPE_VIOLATION")
-            postprocess(FtlDocumentProcessor(this@document.context, documentBuilder)) {
+
+            postprocess(FtlDocumentProcessor(site.context, documentBuilder)) {
                 documentBuilder.fragments.forEach {
                     fragment(it)
                 }
@@ -152,16 +154,17 @@ public fun SiteContextWithData.document(
     }
 }
 
-public fun SiteContextWithData.allDocuments(
+context(site: SiteContextWithData)
+public fun allDocuments(
     headers: MetaDataContent.() -> Unit = {},
 ) {
     siteData.forEach { documentData ->
         if (documentData.type == typeOf<Meta>() && documentData.name.endsWith("document")) {
-            context.launch {
-                val descriptor = DocumentDescriptor.read(documentData.data.await() as Meta)
+            site.context.launch {
+                val descriptor = DocumentDescriptor.read(documentData.await() as Meta)
                 val directory = documentData.name.cutLast()
                 val route = descriptor.route?.parseAsName(false) ?: directory
-                context.logger.info { "Loading document $route" }
+                site.context.logger.info { "Loading document $route" }
                 document(
                     dataName = directory,
                     descriptor = descriptor,

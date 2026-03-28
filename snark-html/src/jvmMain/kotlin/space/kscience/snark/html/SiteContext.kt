@@ -7,6 +7,7 @@ import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
+import space.kscience.dataforge.workspace.filterByType
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 
@@ -86,29 +87,31 @@ public interface SiteContext : SnarkContext, ContextAware {
     }
 }
 
-public fun SiteContext.static(dataSet: DataTree<Binary>, prefix: Name = Name.EMPTY) {
-    dataSet.forEach { (name, data) ->
-        static(prefix + name, data)
+context(site: SiteContext)
+public fun static(dataSet: DataTree<Binary>, prefix: Name = Name.EMPTY) {
+    dataSet.forEach {
+        site.static(prefix + it.name, it)
     }
 }
 
-public fun SiteContext.static(dataSet: DataTree<*>, branch: String, prefix: String = branch) {
+context(site: SiteContext)
+public fun static(dataSet: DataTree<*>, branch: String, prefix: String = branch) {
     val branchName = branch.parseAsName()
     val prefixName = prefix.parseAsName()
     dataSet.branch(branchName)?.filterByType<Binary>()?.forEach {
-        static(prefixName + it.name, it.data)
+        site.static(prefixName + it.name, it)
     }
 }
 
 
-context(siteContext: SiteContext)
-public val siteContext: SiteContext get() = siteContext
+context(site: SiteContext)
+public val siteContext: SiteContext get() = site
 
-context(siteContext: SiteContextWithData)
-public val siteContextWithData: SiteContextWithData get() = siteContext
+context(site: SiteContextWithData)
+public val siteContextWithData: SiteContextWithData get() = site
 
-context(siteContext: SiteContextWithData)
-public val siteData: DataTree<*> get() = siteContext.siteData
+context(site: SiteContextWithData)
+public val siteData: DataTree<*> get() = site.siteData
 
 /**
  * A wrapper for site context that allows convenient site building experience
@@ -116,11 +119,11 @@ public val siteData: DataTree<*> get() = siteContext.siteData
 public class SiteContextWithData(public val site: SiteContext, public val siteData: DataTree<*>) : SiteContext by site
 
 
-context(siteContext: SiteContextWithData)
+context(site: SiteContextWithData)
 public fun static(
     branch: String,
     prefix: String = branch
-): Unit = siteContext.static(siteContext.siteData, branch, prefix)
+): Unit = static(site.siteData, branch, prefix)
 
 
 context(siteContext: SiteContextWithData)

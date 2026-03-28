@@ -1,16 +1,20 @@
 package space.kscience.snark
 
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.merge
 import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.data.GenericDataTree
+import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.NameToken
 import kotlin.reflect.KType
 
-public class DataTreeWithDefault<T>(public val tree: DataTree<T>, public val default: DataTree<T>) :
-    DataTree<T> {
+public class DataTreeWithDefault<T>(
+    public val tree: DataTree<T>,
+    public val default: DataTree<T>
+) : DataTree<T> {
     override val dataType: KType get() = tree.dataType
 
-    override val self: DataTreeWithDefault<T> get() = this
+    override val updates: Flow<Name> = merge(tree.updates, default.updates)
 
     override val data: Data<T>? get() = tree.data ?: default.data
 
@@ -30,5 +34,5 @@ public class DataTreeWithDefault<T>(public val tree: DataTree<T>, public val def
         }
     }
 
-    override val items: Map<NameToken, GenericDataTree<T, *>> get() = mergeItems(tree.items, default.items)
+    override val items: Map<NameToken, DataTree<T>> get() = mergeItems(tree.items, default.items)
 }

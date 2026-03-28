@@ -2,6 +2,6 @@
 build/
 .kotlin/
 .idea/
-/logs/
+logs/
 
 !gradle/wrapper/gradle-wrapper.jar

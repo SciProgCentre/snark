@@ -2,7 +2,10 @@ package space.kscience.snark.html
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.FlowContent
-import space.kscience.dataforge.data.*
+import space.kscience.dataforge.data.Data
+import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.asSequence
+import space.kscience.dataforge.data.await
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.int
@@ -11,6 +14,8 @@ import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.parseAsName
 import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.names.startsWith
+import space.kscience.dataforge.workspace.filterByType
+import space.kscience.dataforge.workspace.getByType
 import space.kscience.snark.SnarkContext
 
 public fun interface PageFragment {
@@ -24,6 +29,16 @@ public fun FlowContent.fragment(fragment: PageFragment): Unit {
     }
 }
 
+/**
+ * A bridge method to call fragment directly in page scope
+ */
+context(page: PageContextWithData, root: FlowContent)
+public operator fun PageFragment.invoke(){
+    with(root){
+        renderFragment()
+    }
+}
+
 
 context(page: PageContextWithData)
 public fun FlowContent.fragment(data: Data<PageFragment>): Unit = runBlocking {
@@ -33,7 +48,7 @@ public fun FlowContent.fragment(data: Data<PageFragment>): Unit = runBlocking {
 
 context(snark: SnarkContext)
 public val Data<*>.id: String
-    get() = meta["id"]?.string ?: "block[${hashCode()}]"
+    get() = meta["id"]?.string ?: "block[${this.hashCode()}]"
 
 context(snark: SnarkContext)
 public val Data<*>.order: Int?
@@ -68,11 +83,11 @@ public fun DataTree<*>.resolveHtml(name: String): Data<PageFragment> = resolveHt
  */
 context(snark: SnarkContext)
 public fun DataTree<*>.resolveAllHtml(
-    predicate: (name: Name, meta: Meta) -> Boolean,
+    predicate: (name: Name, meta: Meta?) -> Boolean,
 ): Map<Name, Data<PageFragment>> = filterByType<PageFragment> { name, meta, _ ->
     predicate(name, meta) && meta["published"].string != "false"
     //TODO add language confirmation
-}.asSequence().associate { it.name to it.data }
+}.asSequence().associateBy { it.name }
 
 context(snark: SnarkContext)
 public fun DataTree<*>.findHtmlByContentType(

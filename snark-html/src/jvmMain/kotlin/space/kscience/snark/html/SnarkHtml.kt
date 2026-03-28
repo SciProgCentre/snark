@@ -3,6 +3,8 @@
 package space.kscience.snark.html
 
 import io.ktor.http.ContentType
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import kotlinx.io.readByteArray
 import space.kscience.dataforge.actions.Action
 import space.kscience.dataforge.actions.mapping
@@ -10,10 +12,7 @@ import space.kscience.dataforge.actions.transform
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.PluginFactory
 import space.kscience.dataforge.context.PluginTag
-import space.kscience.dataforge.data.DataSink
-import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.data.filterByType
-import space.kscience.dataforge.data.putAll
+import space.kscience.dataforge.data.*
 import space.kscience.dataforge.io.*
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
@@ -22,21 +21,19 @@ import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.set
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
+import space.kscience.dataforge.misc.UnsafeKType
 import space.kscience.dataforge.names.*
 import space.kscience.dataforge.provider.dfType
 import space.kscience.dataforge.workspace.*
-import space.kscience.snark.ReWrapAction
-import space.kscience.snark.Snark
-import space.kscience.snark.SnarkReader
-import space.kscience.snark.TextProcessor
+import space.kscience.snark.*
 import java.net.URLConnection
 import kotlin.io.path.Path
 import kotlin.io.path.extension
 import kotlin.reflect.typeOf
 
-
+context(snark: SnarkHtml)
 public fun <T : Any, R : Any> DataTree<T>.transform(action: Action<T, R>, meta: Meta = Meta.EMPTY): DataTree<R> =
-    action.execute(this, meta)
+    action.execute(this, meta, snark.context)
 
 /**
  * A plugin used for rendering a [DataTree] as HTML
@@ -60,7 +57,7 @@ public class SnarkHtml : WorkspacePlugin() {
     }
 
     internal fun getContentType(name: Name, meta: Meta): String = meta[CONTENT_TYPE_KEY].string ?: run {
-        val filePath = meta[FileData.FILE_PATH_KEY]?.string ?: name.toString()
+        val filePath = meta[FileDataTree.FILE_PATH_KEY]?.string ?: name.toString()
         URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
     }
 
@@ -105,6 +102,13 @@ public class SnarkHtml : WorkspacePlugin() {
         }
     }
 
+    /**
+     * Determines the content type for each item and searches for best suitable [SnarkReader] in the context to read the data.
+     *
+     * Of preprocessor node with key [TextProcessor.TEXT_PREPROCESSOR_KEY] id defined in meta, interpret data as text and preprocess it.
+     *
+     * Data without parsers is returned as raw [Binary].
+     */
     public val parseAction: Action<Binary, Any> = Action.mapping {
         val contentType = getContentType(name, meta)
 
@@ -114,40 +118,45 @@ public class SnarkHtml : WorkspacePlugin() {
             it.priority
         }
 
+        @OptIn(UnsafeKType::class)
         result(parser?.outputType ?: typeOf<Binary>()) { data ->
 
             //ignore data for which parser is not found
-            if (parser != null) {
-                val preprocessor =
-                    meta[TextProcessor.TEXT_PREPROCESSOR_KEY]?.let { snark.preprocessor(it) }
+            if (parser == null) {
+                data
+            } else {
+                //apply text preprocessor if needed
+                val preprocessor = meta[TextProcessor.TEXT_PREPROCESSOR_KEY]?.let {
+                    snark.preprocessor(it)
+                }
+                //parse without preprocessing if no preprocessor is defined
                 if (preprocessor == null) {
                     parser.readFrom(data)
                 } else {
+                    //if preprocessor is defined, read data as string and process it
                     //TODO provide encoding
                     val string = data.toByteArray().decodeToString()
                     parser.readFrom(preprocessor.process(string))
                 }
-            } else {
-                data
             }
         }
 
     }
-
-    public val layoutAction: Action<Any, Any> = Action.mapping {
-
-    }
+//
+//    public val layoutAction: Action<Any, Any> = Action.mapping {
+//
+//    }
 
     private val allDataNotNull: DataSelector<Any>
         get() = DataSelector { workspace, _ -> workspace.data.filterByType() }
 
+    /**
+     * A task wrapping [parseAction].
+     */
     public val parse: TaskReference<Any> by task<Any>({
         description = "Parse all data for which reader is resolved"
     }) {
-        //put all data
-        putAll(from(allDataNotNull))
-        //override parsed data
-        putAll(from(allDataNotNull).filterByType<Binary>().transform(parseAction))
+        from(allDataNotNull).filterByType<Binary>().transform(parseAction, updateScope = context)
     }
 
 
@@ -169,24 +178,71 @@ public class SnarkHtml : WorkspacePlugin() {
     }
 }
 
+
+/**
+ * Temporary function until DataForge 0.10.3
+ */
+context(snark: SnarkHtml)
+private suspend fun <T : Any> DataSink<T>.launchWriteFrom(
+    source: DataTree<T>,
+    prefix: Name = Name.EMPTY,
+): Job {
+    writeAll(source, prefix)
+    return snark.context.launch {
+        source.updates.collect {
+            write(prefix + it, source.read(it))
+        }
+    }
+}
+
 /**
  * Parse raw data tree into html primitives
  */
-public fun SnarkHtml.parseDataTree(
+context(snark: SnarkHtml)
+public fun parseDataTree(
     binaries: DataTree<Binary>,
     meta: Meta = Meta.EMPTY,
-): DataTree<Any> = DataTree {
+    observe: Boolean = true,
+): DataTree<Any> = DataTree<Any> {
     //put all binaries
-    putAll(binaries)
+    node(Name.EMPTY, binaries)
     //override ones which could be parsed
-    putAll(binaries.transform(parseAction, meta))
-}.transform(prepareHeaderAction, meta).transform(removeIndexAction, meta)
+    if (observe) {
+        observeNode(Name.EMPTY, snark.context, binaries.transform(snark.parseAction, meta))
+    } else {
+        node(Name.EMPTY, binaries.transform(snark.parseAction, meta))
+    }
+}.transform(snark.prepareHeaderAction, meta).transform(snark.removeIndexAction, meta)
+
+///**
+// * Read directory
+// */
+//context(snark: SnarkHtml)
+//public suspend fun DataSink<Binary>.directory(path: Path, prefix: Name = Name.EMPTY, monitor: Boolean = true) {
+//    if(monitor) {
+//        launchWriteFrom(snark.io.readDirectory(path, true), prefix = prefix)
+//    } else{
+//        writeAll(prefix, snark.io.readDirectory(path, false))
+//    }
+//}
 
 /**
  * Read the parsed data tree by providing [builder] for raw binary data tree
  */
-public fun SnarkHtml.parseDataTree(
+context(snark: SnarkHtml)
+public fun buildDataTree(
     meta: Meta = Meta.EMPTY,
-    //TODO add IO plugin as a context parameter
-    builder: DataSink<Binary>.() -> Unit,
-): DataTree<Any> = parseDataTree(DataTree { builder() }, meta)
+    builder: DataTreeBuilder<Binary>.() -> Unit,
+): DataTree<Any> = parseDataTree(DataTree<Binary>{ builder() }, meta)
+
+
+context(snark: SnarkHtml)
+public fun DataTreeBuilder<Binary>.resourceDirectory(
+    resource: String,
+    name: Name = resource.replace("/", ".").parseAsName(),
+    classLoader: ClassLoader = Thread.currentThread().contextClassLoader,
+) {
+    snark.context.launch {
+        node(name, snark.io.readResourceDirectory(resource, classLoader))
+    }
+}

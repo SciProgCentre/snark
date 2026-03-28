@@ -1,6 +1,6 @@
 plugins {
     id("space.kscience.gradle.mpp")
-    //alias(spclibs.plugins.ktor) // have conflicts with application plugin
+    alias(spclibs.plugins.ktor)
 }
 
 kscience {
@@ -15,12 +15,11 @@ kscience {
         }
     }
 
-    //useContextReceivers()
+    useContextReceivers()
 
     jvmMain {
         implementation(projects.snarkKtor)
         implementation("io.ktor:ktor-server-cio")
-        implementation("io.ktor:ktor-server-core")
         implementation(spclibs.logback.classic)
     }
 
