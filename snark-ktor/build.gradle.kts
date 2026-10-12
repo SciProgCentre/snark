@@ -6,7 +6,6 @@ plugins {
 
 kscience{
     jvm()
-    useContextReceivers()
 
     commonMain{
         api(project.dependencies.platform(spclibs.ktor.bom))

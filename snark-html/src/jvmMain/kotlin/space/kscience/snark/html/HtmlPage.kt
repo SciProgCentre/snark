@@ -46,26 +46,3 @@ public suspend fun DataSink<Any>.page(
     val page = HtmlPage(block)
     writeValue<HtmlPage>(name, page, pageMeta)
 }
-
-
-//                if (data.type == typeOf<HtmlData>()) {
-//                    val languageMeta: Meta = Language.forName(name)
-//
-//                    val dataMeta: Meta = if (languageMeta.isEmpty()) {
-//                        data.meta
-//                    } else {
-//                        data.meta.toMutableMeta().apply {
-//                            "languages" put languageMeta
-//                        }
-//                    }
-//
-//                    page(name, dataMeta) { pageContext->
-//                        head {
-//                            title = dataMeta["title"].string ?: "Untitled page"
-//                        }
-//                        body {
-//                            @Suppress("UNCHECKED_CAST")
-//                            htmlData(pageContext, data as HtmlData)
-//                        }
-//                    }
-//                }

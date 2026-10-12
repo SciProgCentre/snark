@@ -8,7 +8,6 @@ val dataforgeVersion: String by rootProject.extra
 kscience {
     jvm()
     js()
-    useContextParameters()
     dependencies {
         api("space.kscience:dataforge-workspace:$dataforgeVersion")
     }
