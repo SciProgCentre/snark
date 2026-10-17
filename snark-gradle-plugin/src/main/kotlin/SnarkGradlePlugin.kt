@@ -1,14 +1,10 @@
 package space.kscience.snark.plugin
 
-import org.gradle.api.Action
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.distribution.DistributionContainer
-import org.gradle.api.tasks.JavaExec
-import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
-import space.kscience.snark.plugin.mcp.SnarkMcpExtension
 import java.io.File
 import java.time.LocalDateTime
 
@@ -20,16 +16,6 @@ public class SnarkExtension(private val project: Project) {
         set(value) {
             _dataDirectory = value
         }
-
-    public val mcp: SnarkMcpExtension = SnarkMcpExtension()
-
-    public fun mcp(action: Action<SnarkMcpExtension>) {
-        action.execute(mcp)
-    }
-
-    public fun mcp(action: SnarkMcpExtension.() -> Unit) {
-        mcp.action()
-    }
 
     public companion object {
         public const val DEFAULT_DATA_PATH: String = "data"
@@ -78,46 +64,6 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
             tasks.getByName("processResources").dependsOn(writeBuildDate)
 
-            tasks.register("snarkMcpServer", JavaExec::class.java) {
-                group = "snark"
-                description = "Starts the Snark MCP server on STDIO."
-                mainClass.set("space.kscience.snark.ktor.mcp.SnarkMcpServer")
-                val sourceSets = project.extensions.findByType(SourceSetContainer::class.java)
-                val mainSourceSet = sourceSets?.findByName("main")
-                if (mainSourceSet != null) {
-                    classpath = mainSourceSet.runtimeClasspath
-                }
-                standardInput = System.`in`
-                doFirst {
-                    val dataDir = snarkExtension.mcp.dataDirectory ?: snarkExtension.dataDirectory
-                    args = listOf(
-                        "--data", dataDir.absolutePath,
-                        "--transport", snarkExtension.mcp.transport.name,
-                        "--port", snarkExtension.mcp.port.toString(),
-                        "--watch", snarkExtension.mcp.watch.toString()
-                    )
-                }
-            }
-
-            tasks.register("snarkMcpServerDaemon", JavaExec::class.java) {
-                group = "snark"
-                description = "Runs the Snark MCP server in background HTTP mode."
-                mainClass.set("space.kscience.snark.ktor.mcp.SnarkMcpServer")
-                val sourceSets = project.extensions.findByType(SourceSetContainer::class.java)
-                val mainSourceSet = sourceSets?.findByName("main")
-                if (mainSourceSet != null) {
-                    classpath = mainSourceSet.runtimeClasspath
-                }
-                doFirst {
-                    val dataDir = snarkExtension.mcp.dataDirectory ?: snarkExtension.dataDirectory
-                    args = listOf(
-                        "--data", dataDir.absolutePath,
-                        "--transport", "HTTP",
-                        "--port", snarkExtension.mcp.port.toString(),
-                        "--watch", snarkExtension.mcp.watch.toString()
-                    )
-                }
-            }
         }
 
         plugins.withId("org.gradle.application") {
