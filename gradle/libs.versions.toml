@@ -1,0 +1,14 @@
+[versions]
+
+dataforge = "0.11.0"
+
+[libraries]
+
+dataforge-workspace = { module = "space.kscience:dataforge-workspace", version.ref = "dataforge" }
+dataforge-io-yaml = { module = "space.kscience:dataforge-io-yaml", version.ref = "dataforge" }
+
+jsch = "com.github.mwiede:jsch:2.28.8"
+
+markdown = "org.jetbrains:markdown:0.7.18"
+
+freemarker = "org.freemarker:freemarker:2.3.35"

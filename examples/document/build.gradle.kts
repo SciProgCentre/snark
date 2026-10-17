@@ -17,7 +17,7 @@ kscience {
 
 
     jvmMain {
-        implementation(projects.snarkKtor)
+        implementation(projects.snarkDocuments)
         implementation("io.ktor:ktor-server-cio")
         implementation(spclibs.logback.classic)
     }

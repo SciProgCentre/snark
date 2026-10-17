@@ -17,7 +17,6 @@ import space.kscience.dataforge.io.*
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.set
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
@@ -47,10 +46,10 @@ public class SnarkHtml : WorkspacePlugin() {
 
     override fun content(target: String): Map<Name, Any> = when (target) {
         SnarkReader::class.dfType -> mapOf(
-            "html".asName() to RawHtmlReader,
-            "markdown".asName() to MarkdownReader,
-            "json".asName() to SnarkReader<Meta>(JsonMetaFormat, ContentType.Application.Json.toString()),
-            "yaml".asName() to SnarkReader<Meta>(YamlMetaFormat, "text/yaml", "yaml"),
+            Name.of("html") to RawHtmlReader,
+            Name.of("markdown") to MarkdownReader,
+            Name.of("json") to SnarkReader<Meta>(JsonMetaFormat, ContentType.Application.Json.toString()),
+            Name.of("yaml") to SnarkReader<Meta>(YamlMetaFormat, "text/yaml", "yaml"),
         )
 
         else -> super.content(target)
@@ -163,9 +162,9 @@ public class SnarkHtml : WorkspacePlugin() {
     public companion object : PluginFactory<SnarkHtml> {
         override val tag: PluginTag = PluginTag("snark.html")
 
-        public val FILE_NAME_KEY: Name = "contentType".asName()
+        public val FILE_NAME_KEY: Name = Name.of("contentType")
 
-        public val CONTENT_TYPE_KEY: Name = "contentType".asName()
+        public val CONTENT_TYPE_KEY: Name = Name.of("contentType")
 
         override fun build(context: Context, meta: Meta): SnarkHtml = SnarkHtml()
 

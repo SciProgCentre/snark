@@ -6,7 +6,10 @@ import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.names.*
+import space.kscience.dataforge.names.Name
+import space.kscience.dataforge.names.NameToken
+import space.kscience.dataforge.names.parseAsName
+import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.filterByType
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
@@ -81,7 +84,7 @@ public interface SiteContext : SnarkContext, ContextAware {
 
 
     public companion object {
-        public val SITE_META_KEY: Name = "site".asName()
+        public val SITE_META_KEY: Name = Name.of("site")
         public val INDEX_PAGE_TOKEN: NameToken = NameToken("index")
         public val UP_PAGE_TOKEN: NameToken = NameToken("..")
     }
@@ -173,9 +176,9 @@ public suspend fun renderPages(data: DataTree<*>): Unit {
     // Render all sub-sites
     data.filterByType<HtmlSite>().forEach { siteData: NamedData<HtmlSite> ->
         // generate a sub-site context and render the data in sub-site context
-        val dataPrefix = siteData.meta["site.dataPath"].string?.asName() ?: Name.EMPTY
+        val dataPrefix = siteData.meta["site.dataPath"].string?.let { Name.of(it) } ?: Name.EMPTY
         siteContext.site(
-            route = siteData.meta["site.route"].string?.asName() ?: siteData.name,
+            route = siteData.meta["site.route"].string?.let { Name.of(it) } ?: siteData.name,
             data.branch(dataPrefix) ?: DataTree.EMPTY,
             siteMeta = siteData.meta,
             siteData.await()
@@ -184,9 +187,9 @@ public suspend fun renderPages(data: DataTree<*>): Unit {
 
     // Render all stand-alone pages in default site
     data.filterByType<HtmlPage>().forEach { pageData: NamedData<HtmlPage> ->
-        val dataPrefix = pageData.meta["page.dataPath"].string?.asName() ?: Name.EMPTY
+        val dataPrefix = pageData.meta["page.dataPath"].string?.let { Name.of(it) } ?: Name.EMPTY
         siteContext.page(
-            route = pageData.meta["page.route"].string?.asName() ?: pageData.name,
+            route = pageData.meta["page.route"].string?.let { Name.of(it) } ?: pageData.name,
             data.branch(dataPrefix) ?: DataTree.EMPTY,
             pageMeta = pageData.meta,
             pageData.await()

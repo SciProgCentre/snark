@@ -9,7 +9,7 @@ kscience {
     jvm()
     js()
     dependencies {
-        api("space.kscience:dataforge-workspace:$dataforgeVersion")
+        api(libs.dataforge.workspace)
     }
 
     jsMain {

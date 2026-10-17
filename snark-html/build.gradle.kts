@@ -3,13 +3,11 @@ plugins {
     `maven-publish`
 }
 
-val dataforgeVersion: String by rootProject.extra
 val ktorVersion = space.kscience.gradle.KScienceVersions.ktorVersion
 
 kscience {
     jvm()
     useSerialization()
-    useContextParameters()
     commonMain {
         api(projects.snarkCore)
 
@@ -18,9 +16,9 @@ kscience {
 //        api("org.jetbrains.kotlin-wrappers:kotlin-css")
 
         api("io.ktor:ktor-http:$ktorVersion")
-        api("space.kscience:dataforge-io-yaml:$dataforgeVersion")
-        api("org.jetbrains:markdown:0.7.3")
-        api("org.freemarker:freemarker:2.3.34")
+        api(libs.dataforge.io.yaml)
+        api(libs.markdown)
+        api(libs.freemarker)
 
     }
 

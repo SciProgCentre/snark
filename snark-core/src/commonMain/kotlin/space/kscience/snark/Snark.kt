@@ -27,8 +27,6 @@ public class Snark : WorkspacePlugin() {
 
     /**
      * A lazy-initialized map of `TextProcessor` instances used for page-based text transformation.
-     *
-     * @property textProcessors The `TextProcessor` instances accessible by their names.
      */
     public val textProcessors: Map<Name, TextProcessor> by lazy {
         context.gather(TextProcessor.DF_TYPE, true)

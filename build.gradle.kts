@@ -16,8 +16,6 @@ allprojects {
     }
 }
 
-val dataforgeVersion by extra("0.11.0-dev-2")
-
 kscienceProject {
     pom("https://github.com/SciProgCentre/snark") {
         useApache2Licence()

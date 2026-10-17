@@ -55,9 +55,9 @@ public class Language : Scheme() {
 
     public companion object : SchemeSpec<Language>(::Language) {
 
-        public val LANGUAGE_KEY: Name = "language".asName()
+        public val LANGUAGE_KEY: Name = Name.of("language")
 
-        public val LANGUAGE_MAP_KEY: Name = "languageMap".asName()
+        public val LANGUAGE_MAP_KEY: Name = Name.of("languageMap")
 
         public val SITE_LANGUAGE_KEY: Name = SiteContext.Companion.SITE_META_KEY + LANGUAGE_KEY
 

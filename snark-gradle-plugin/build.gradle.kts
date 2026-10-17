@@ -11,7 +11,8 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${spclibs.versions.kotlin.asProvider().get()}")
-    implementation("com.github.mwiede:jsch:0.2.26")
+    implementation(libs.jsch)
+    implementation(projects.snarkKtor)
 }
 
 gradlePlugin {
