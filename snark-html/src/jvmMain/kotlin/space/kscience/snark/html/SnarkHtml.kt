@@ -17,6 +17,7 @@ import space.kscience.dataforge.io.*
 import space.kscience.dataforge.io.yaml.YamlMetaFormat
 import space.kscience.dataforge.io.yaml.YamlPlugin
 import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.set
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.misc.DFExperimental
@@ -82,6 +83,15 @@ public class SnarkHtml : WorkspacePlugin() {
         if (name.endsWith("index")) name.cutLast() else name
     }
 
+    /**
+     * Parses the provided markup string and returns the parsed result as a [PageFragment].
+     *
+     * @param name The name associated with the markup being parsed, used for metadata context.
+     * @param markup The string containing the markup to be parsed.
+     * @param meta The metadata associated with the parsing process, providing additional context and configuration.
+     * @return A [PageFragment] that represents the parsed content of the markup.
+     * @throws IllegalArgumentException if no appropriate parser is found for the given name and metadata.
+     */
     public fun parseMarkup(name: Name, markup: String, meta: Meta): PageFragment {
         val contentType = getContentType(name, meta)
 
@@ -110,6 +120,8 @@ public class SnarkHtml : WorkspacePlugin() {
      */
     public val parseAction: Action<Binary, Any> = Action.mapping {
         val contentType = getContentType(name, meta)
+
+        meta[CONTENT_TYPE_KEY] = contentType
 
         val parser: SnarkReader<Any>? = snark.readers.values.filter { parser ->
             contentType in parser.inputContentTypes
@@ -232,7 +244,7 @@ context(snark: SnarkHtml)
 public fun buildDataTree(
     meta: Meta = Meta.EMPTY,
     builder: DataTreeBuilder<Binary>.() -> Unit,
-): DataTree<Any> = parseDataTree(DataTree<Binary>{ builder() }, meta)
+): DataTree<Any> = parseDataTree(DataTree<Binary> { builder() }, meta)
 
 
 context(snark: SnarkHtml)

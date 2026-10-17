@@ -9,6 +9,7 @@ import org.intellij.markdown.ast.findChildOfType
 import org.intellij.markdown.ast.getTextInNode
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.*
+import org.intellij.markdown.parser.CancellationToken
 import org.intellij.markdown.parser.LinkMap
 import org.intellij.markdown.parser.MarkdownParser
 
@@ -72,7 +73,7 @@ public object MarkdownReader : SnarkHtmlReader {
     override val inputContentTypes: Set<String> = setOf("text/markdown", "md", "markdown")
 
     override fun readFrom(source: String): PageFragment = PageFragment {
-        val parsedTree = markdownParser.parse(IElementType("ROOT"), source)
+        val parsedTree = markdownParser.parse(IElementType("ROOT"), source as CharSequence)
 //        markdownParser.buildMarkdownTreeFromString(source)
         val htmlString = HtmlGenerator(source, parsedTree, markdownFlavor).generateHtml()
 
@@ -83,7 +84,7 @@ public object MarkdownReader : SnarkHtmlReader {
     }
 
     private val markdownFlavor = SnarkFlavorDescriptor
-    private val markdownParser = MarkdownParser(markdownFlavor)
+    private val markdownParser = MarkdownParser(markdownFlavor, cancellationToken = CancellationToken.NonCancellable)
 
     override fun readFrom(source: Source): PageFragment = readFrom(source.readString())
 }

@@ -13,6 +13,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:${spclibs.versions.kotlin.asProvider().get()}")
     implementation(libs.jsch)
     implementation(projects.snarkKtor)
+    implementation("io.ktor:ktor-server-cio")
 }
 
 gradlePlugin {

@@ -50,5 +50,7 @@ public class Snark : WorkspacePlugin() {
 
         internal val byteArraySnarkParser = SnarkReader(byteArrayIOReader)
 
+        public const val SNARK_NAME_TOKEN: String = "@snark"
+
     }
 }

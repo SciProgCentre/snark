@@ -3,12 +3,11 @@ plugins {
     `maven-publish`
 }
 
-val dataforgeVersion: String by rootProject.extra
-
 kscience {
     jvm()
     js()
-    dependencies {
+
+    commonMain {
         api(libs.dataforge.workspace)
     }
 
