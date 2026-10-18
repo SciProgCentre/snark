@@ -27,7 +27,7 @@ import space.kscience.dataforge.provider.dfType
 import space.kscience.dataforge.workspace.*
 import space.kscience.snark.*
 import java.net.URLConnection
-import kotlin.io.path.Path
+import java.nio.file.Path
 import kotlin.io.path.extension
 import kotlin.reflect.typeOf
 
@@ -61,7 +61,7 @@ public class SnarkHtml : WorkspacePlugin() {
      */
     public fun getContentType(name: Name, meta: Meta): String = meta[CONTENT_TYPE_KEY].string ?: run {
         val filePath = meta[FileDataTree.FILE_PATH_KEY]?.string ?: name.toString()
-        URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
+        URLConnection.guessContentTypeFromName(filePath) ?: Path.of(filePath).extension
     }
 
     internal val prepareHeaderAction: ReWrapAction<Any> = ReWrapAction(
@@ -212,8 +212,7 @@ private suspend fun <T : Any> DataSink<T>.launchWriteFrom(
 /**
  * Parse raw data tree into html primitives
  */
-context(snark: SnarkHtml)
-public fun parseDataTree(
+public fun SnarkHtml.parseDataTree(
     binaries: DataTree<Binary>,
     meta: Meta = Meta.EMPTY,
     observe: Boolean = true,
@@ -222,11 +221,24 @@ public fun parseDataTree(
     node(Name.EMPTY, binaries)
     //override ones which could be parsed
     if (observe) {
-        observeNode(Name.EMPTY, snark.context, binaries.transform(snark.parseAction, meta))
+        observeNode(Name.EMPTY, context, binaries.transform(parseAction, meta))
     } else {
-        node(Name.EMPTY, binaries.transform(snark.parseAction, meta))
+        node(Name.EMPTY, binaries.transform(parseAction, meta))
     }
-}.transform(snark.prepareHeaderAction, meta).transform(snark.removeIndexAction, meta)
+}.transform(prepareHeaderAction, meta).transform(removeIndexAction, meta)
+
+
+/**
+ * Parse a raw data directory tree into html primitives
+ */
+public fun SnarkHtml.parseDirectory(
+    path: Path,
+    observe: Boolean = false
+): DataTree<Any>{
+    val rawDataTree = io.readDirectory(path, monitor = observe, includeExtensions = true)
+
+    return parseDataTree(rawDataTree)
+}
 
 ///**
 // * Read directory
@@ -243,8 +255,7 @@ public fun parseDataTree(
 /**
  * Read the parsed data tree by providing [builder] for raw binary data tree
  */
-context(snark: SnarkHtml)
-public fun buildDataTree(
+public fun SnarkHtml.buildDataTree(
     meta: Meta = Meta.EMPTY,
     builder: DataTreeBuilder<Binary>.() -> Unit,
 ): DataTree<Any> = parseDataTree(DataTree<Binary> { builder() }, meta)

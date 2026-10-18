@@ -8,7 +8,9 @@ import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.getIndexedList
 import space.kscience.dataforge.names.parseAsName
+import space.kscience.snark.SnarkBuilder
 
+@SnarkBuilder
 public fun interface HtmlSite {
     context(siteContext: SiteContextWithData)
     public fun renderSite()

@@ -6,6 +6,7 @@ import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.createRouteFromPath
 import io.ktor.server.routing.get
@@ -126,6 +127,12 @@ internal class KtorSiteContext(
             val html = HtmlPage.createHtmlString(pageContext, data, content)
 
             call.respond(TextContent(html, ContentType.Text.Html.withCharset(Charsets.UTF_8), HttpStatusCode.OK))
+        }
+    }
+
+    public fun alias(route: Name, target: Name) {
+        ktorRoute.get(route.toWebPath()) {
+            call.respondRedirect(target.toWebPath())
         }
     }
 

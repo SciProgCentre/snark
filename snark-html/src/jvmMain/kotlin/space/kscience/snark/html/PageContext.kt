@@ -63,6 +63,10 @@ public interface PageContext : SnarkContext, ContextAware {
 
 }
 
+@JvmName("resolvePageRefWithReceiver")
+public fun PageContext.resolvePageRef(pageName: String, targetSite: SiteContext = site): String =
+    resolvePageRef(pageName.parseAsName())
+
 context(pageContext: PageContext)
 public val pageContext: PageContext get() = pageContext
 

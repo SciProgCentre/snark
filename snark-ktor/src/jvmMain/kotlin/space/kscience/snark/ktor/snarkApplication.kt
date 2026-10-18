@@ -11,10 +11,9 @@ import space.kscience.dataforge.context.ContextBuilder
 import space.kscience.dataforge.context.request
 import space.kscience.dataforge.data.forEach
 import space.kscience.dataforge.workspace.FileDataTree
-import space.kscience.dataforge.workspace.readDirectory
 import space.kscience.snark.html.HtmlSite
 import space.kscience.snark.html.SnarkHtml
-import space.kscience.snark.html.parseDataTree
+import space.kscience.snark.html.parseDirectory
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 
@@ -46,9 +45,7 @@ public fun Route.site(
         error("Data directory at $dataDirectory is not resolved")
     }
 
-    val siteData = with(snark) {
-        parseDataTree(io.readDirectory(dataDirectory, monitor = true, includeExtensions = true))
-    }
+    val siteData = snark.parseDirectory(dataDirectory, true)
 
     siteData.forEach { namedData ->
         application.log.debug("Loading data {} from {}", namedData.name, namedData.meta[FileDataTree.FILE_PATH_KEY])

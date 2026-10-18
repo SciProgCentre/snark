@@ -18,6 +18,7 @@ import space.kscience.snark.SnarkContext
 /**
  * An abstraction, which is used to render sites to the different rendering engines
  */
+@SnarkBuilder
 public interface SiteContext : SnarkContext, ContextAware {
 
     public val parent: SiteContext?
@@ -51,7 +52,6 @@ public interface SiteContext : SnarkContext, ContextAware {
      *
      * @param pageMeta additional page meta. [PageContext] will use both it and [siteMeta]
      */
-    @SnarkBuilder
     public fun page(
         route: Name,
         data: DataTree<*>?,
@@ -62,7 +62,6 @@ public interface SiteContext : SnarkContext, ContextAware {
     /**
      * Create a route block with its own data. Does not change the context path
      */
-    @SnarkBuilder
     public fun route(
         route: Name,
         data: DataTree<*>?,
@@ -74,7 +73,6 @@ public interface SiteContext : SnarkContext, ContextAware {
      * Creates a sub-site and changes context path to match [name]
      * @param route mount site at [rootName]
      */
-    @SnarkBuilder
     public fun site(
         route: Name,
         data: DataTree<*>?,

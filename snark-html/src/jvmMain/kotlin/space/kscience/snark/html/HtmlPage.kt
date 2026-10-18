@@ -8,7 +8,9 @@ import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.writeValue
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.names.Name
+import space.kscience.snark.SnarkBuilder
 
+@SnarkBuilder
 public fun interface HtmlPage {
 
     context(page: PageContextWithData)

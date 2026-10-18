@@ -94,5 +94,5 @@ public fun DataTree<*>.findHtmlByContentType(
     contentType: String,
     baseName: Name = Name.EMPTY,
 ): Map<Name, Data<PageFragment>> = resolveAllHtml { name, meta ->
-    name.startsWith(baseName) && meta["content_type"].string == contentType
+    name.startsWith(baseName) && meta["type"].string == contentType
 }
