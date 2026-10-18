@@ -16,6 +16,12 @@ dependencies {
     implementation("io.ktor:ktor-server-cio")
 }
 
+tasks.compileKotlin {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-parameters")
+    }
+}
+
 gradlePlugin {
     plugins {
         create("snark-gradle") {

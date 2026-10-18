@@ -11,14 +11,13 @@ import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.await
 import space.kscience.dataforge.data.forEach
 import space.kscience.dataforge.data.get
-import space.kscience.dataforge.meta.Meta
+import space.kscience.dataforge.io.Binary
+import space.kscience.dataforge.io.toByteArray
+import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
-import space.kscience.dataforge.names.Name
-import space.kscience.dataforge.names.parseAsName
-import space.kscience.dataforge.names.plus
+import space.kscience.dataforge.names.*
 import space.kscience.snark.Snark
-import space.kscience.snark.html.SnarkHtml.Companion.CONTENT_TYPE_KEY
-import kotlin.reflect.typeOf
+import space.kscience.snark.html.SnarkHtml
 
 /**
  * Initializes the Snark server's metadata and capabilities, and sets up resources and prompts based on the provided data tree.
@@ -31,14 +30,14 @@ import kotlin.reflect.typeOf
  */
 public fun Application.snarkMcp(
     context: Context,
-    dataTree: DataTree<*>
+    dataTree: DataTree<Binary>
 ) {
 
-    val snarkPlugin = context.request(Snark)
+    val snark = context.request(SnarkHtml)
 
     val mcp = Server(
         serverInfo = Implementation(
-            name = "snark-server",
+            name = "snark-mcp",
             version = "1.0.0"
         ),
         options = ServerOptions(
@@ -66,13 +65,13 @@ public fun Application.snarkMcp(
 
         val designHintPrompts = buildList {
             suspend fun addHint(currentPath: Name) {
-                val currentDesignPromptPath = currentPath + Snark.SNARK_NAME_TOKEN + "design"
+                val currentDesignPromptPath = currentPath + Snark.SNARK_HINT_KEY + NameToken("design.md")
                 val designHintData = dataTree[currentDesignPromptPath]?.await()
-                if (designHintData != null && designHintData is String) {
+                if (designHintData != null) {
                     add(
                         PromptMessage(
                             role = Role.User,
-                            content = TextContent(text = designHintData),
+                            content = TextContent(text = designHintData.toByteArray().decodeToString()),
                         )
                     )
                 }
@@ -93,8 +92,38 @@ public fun Application.snarkMcp(
         )
     }
 
-    dataTree.forEach { namedData ->
+    mcp.addResource(
+        uri = "snark://tree",
+        name = "tree",
+        description = "A text tree showing data hierarchy",
+        mimeType = "text/plain"
+    ) { request ->
+        val treeView = buildString {
+            fun renderNode(prefix: String, token: NameToken, node: DataTree<*>) {
+                val suffix = node.data?.let {
+                    " (${it.meta["type"].string ?: snark.getContentType(token.asName(), it.meta)})"
+                } ?: ""
+                appendLine("$prefix- ${token.toStringUnescaped()}$suffix")
+                node.items.forEach { (childToken, childData) ->
+                    renderNode("$prefix  ", childToken, childData)
+                }
+            }
 
+            renderNode("", NameToken("tree"), dataTree)
+        }
+        ReadResourceResult(
+            contents = listOf(
+                TextResourceContents(
+                    text = treeView,
+                    uri = request.uri,
+                    mimeType = "text/plain",
+                )
+            )
+        )
+    }
+
+    dataTree.forEach { namedData ->
+        //serve metadata
         mcp.addResource(
             uri = "snark://metadata/${namedData.name}",
             name = namedData.toString(),
@@ -112,45 +141,30 @@ public fun Application.snarkMcp(
             )
         }
 
-        val contentType = namedData.meta[CONTENT_TYPE_KEY].string
+        //serve text content
+        val contentType = snark.getContentType(namedData.name, namedData.meta)
 
-        when (namedData.type) {
-            typeOf<String>() -> mcp.addResource(
+        if (contentType in listOf("application/json", "application/yaml", "text/markdown", "text/plain")) {
+
+            mcp.addResource(
                 uri = "snark://data/${namedData.name}",
                 name = namedData.toString(),
-                description = "Markdown data content for data tree node with name ${namedData.name}",
-                mimeType = contentType ?: "text/plain",
+                description = "Data content for tree node with name ${namedData.name}",
+                mimeType = contentType,
             ) { request ->
                 ReadResourceResult(
                     contents = listOf(
                         TextResourceContents(
-                            text = namedData.await().toString(),
+                            text = namedData.await().toByteArray().decodeToString(),
                             uri = request.uri,
-                            mimeType = "text/plain",
+                            mimeType = contentType,
                         )
                     )
                 )
             }
 
-            typeOf<Meta>() -> mcp.addResource(
-                uri = "snark://data/${namedData.name}",
-                name = namedData.toString(),
-                description = "Json data content for data tree node with name ${namedData.name}",
-                mimeType = "application/json",
-            ) { request ->
-                ReadResourceResult(
-                    contents = listOf(
-                        TextResourceContents(
-                            text = namedData.await().toString(),
-                            uri = request.uri,
-                            mimeType = "application/json",
-                        )
-                    )
-                )
-            }
+
         }
-
-
     }
 
     mcpStreamableHttp { mcp }

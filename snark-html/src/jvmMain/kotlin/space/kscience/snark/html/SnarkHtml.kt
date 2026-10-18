@@ -56,7 +56,10 @@ public class SnarkHtml : WorkspacePlugin() {
         else -> super.content(target)
     }
 
-    internal fun getContentType(name: Name, meta: Meta): String = meta[CONTENT_TYPE_KEY].string ?: run {
+    /**
+     * Returns the content type of the given name and meta.
+     */
+    public fun getContentType(name: Name, meta: Meta): String = meta[CONTENT_TYPE_KEY].string ?: run {
         val filePath = meta[FileDataTree.FILE_PATH_KEY]?.string ?: name.toString()
         URLConnection.guessContentTypeFromName(filePath) ?: Path(filePath).extension
     }

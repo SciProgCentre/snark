@@ -15,6 +15,13 @@ public annotation class SnarkBuilder
 @SnarkBuilder
 public interface SnarkContext
 
+/**
+ * A context-aware extension function to observe a DataTree within a DataTreeBuilder.
+ *
+ * @param prefix The prefix path for the observed node.
+ * @param contextAware The ContextAware instance providing the context.
+ * @param tree The DataTree to be observed.
+ */
 context(contextAware: ContextAware)
 public fun <T> DataTreeBuilder<T>.observeNode(prefix: Name, tree: DataTree<T>): Unit =
     observeNode(prefix, contextAware.context, tree)

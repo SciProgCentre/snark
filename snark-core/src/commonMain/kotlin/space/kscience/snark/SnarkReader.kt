@@ -8,6 +8,9 @@ import space.kscience.snark.SnarkReader.Companion.DF_TYPE
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
+/**
+ * A reader interface for Snark data, providing methods to read data from a source and handle priority and MIME types.
+ */
 @DfType(DF_TYPE)
 public interface SnarkReader<out T> : IOReader<T> {
     public val outputType: KType
@@ -29,7 +32,6 @@ public interface SnarkReader<out T> : IOReader<T> {
  * @property inputContentTypes The set of supported types that can be read by the SnarkIOReader.
  * @property priority The priority of the SnarkIOReader. Higher priority SnarkIOReader instances will be preferred over lower priority ones.
  */
-
 private class SnarkReaderWrapper<out T>(
     private val reader: IOReader<T>,
     override val outputType: KType,
@@ -40,6 +42,14 @@ private class SnarkReaderWrapper<out T>(
     override fun readFrom(source: String): T = readFrom(source.encodeToByteArray().asBinary())
 }
 
+/**
+ * A factory function to create a SnarkReader wrapping IOReader that adds priority and MIME type handling.
+ *
+ * @param T The type of data to be read by the IOReader.
+ * @param reader The underlying IOReader instance used for reading data.
+ * @param inputContentTypes The set of supported types that can be read by the SnarkIOReader.
+ * @param priority The priority of the SnarkIOReader. Higher priority SnarkIOReader instances will be preferred over lower priority ones.
+ */
 public fun <T : Any> SnarkReader(
     reader: IOReader<T>,
     outputType: KType,
@@ -48,6 +58,14 @@ public fun <T : Any> SnarkReader(
 ): SnarkReader<T> = SnarkReaderWrapper(reader, outputType, inputContentTypes.toSet(), priority)
 
 
+/**
+ * A factory function to create a SnarkReader wrapping IOReader that adds priority and MIME type handling.
+ *
+ * @param T The type of data to be read by the IOReader.
+ * @param reader The underlying IOReader instance used for reading data.
+ * @param inputContentTypes The set of supported types that can be read by the SnarkIOReader.
+ * @param priority The priority of the SnarkIOReader. Higher priority SnarkIOReader instances will be preferred over lower priority ones.
+ */
 public inline fun <reified T : Any> SnarkReader(
     reader: IOReader<T>,
     vararg inputContentTypes: String,

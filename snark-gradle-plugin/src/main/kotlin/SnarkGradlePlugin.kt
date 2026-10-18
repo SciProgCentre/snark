@@ -1,10 +1,19 @@
 package space.kscience.snark.plugin
 
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.distribution.DistributionContainer
 import org.gradle.kotlin.dsl.findByType
 import org.gradle.kotlin.dsl.named
+import space.kscience.dataforge.context.Context
+import space.kscience.dataforge.context.request
+import space.kscience.dataforge.workspace.readDirectory
+import space.kscience.snark.html.SnarkHtml
+import space.kscience.snark.ktor.snarkMcp
 import java.io.File
 import java.time.LocalDateTime
 
@@ -17,8 +26,11 @@ public class SnarkExtension(private val project: Project) {
             _dataDirectory = value
         }
 
+    public var mcpPort: Int = DEFAULT_MCP_PORT
+
     public companion object {
         public const val DEFAULT_DATA_PATH: String = "data"
+        public const val DEFAULT_MCP_PORT: Int = 3000
     }
 }
 
@@ -35,7 +47,7 @@ public class SnarkExtension(private val project: Project) {
  *    - Registers a task named `writeBuildDate` which generates a file containing the current build date and time.
  *    - Configures the `processResources` task to depend on the `writeBuildDate` task, ensuring the build date is written
  *      during the build process.
- *    - Registers tasks `snarkMcpServer` (STDIO transport) and `snarkMcpServerDaemon` (HTTP transport) to run the MCP server.
+ *    - Registers task `snarkMcpServer` to run the MCP server.
  *
  * 3. If the `org.gradle.application` plugin is applied:
  *    - Configures the main application distribution to include the contents of the `dataDirectory` from the `snark` extension
@@ -64,6 +76,45 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
             tasks.getByName("processResources").dependsOn(writeBuildDate)
 
+            tasks.register("snarkMcpServer") {
+                group = "snark"
+                description = "Runs the Snark MCP server."
+                doLast {
+                    val dataDirectory = snarkExtension.dataDirectory.toPath()
+                    logger.info("Reading data for Snark MCP server for data directory: $dataDirectory")
+                    val context = Context {
+                        plugin(SnarkHtml)
+                    }
+                    val snark = context.request(SnarkHtml)
+
+                    val data = snark.io.readDirectory(dataDirectory)
+
+                    val server = embeddedServer(CIO, port = snarkExtension.mcpPort) {
+                        snarkMcp(context, data)
+                    }
+
+                    GlobalScope.launch {
+                        val connector = server.application.engine.resolvedConnectors().first()
+                        println(
+                            "Starting Snark MCP server at http://${connector.host}:${connector.port}"
+                        )
+                    }
+                    val shutdownHook = Thread {
+                        server.stop(1000, 2000)
+                    }
+                    Runtime.getRuntime().addShutdownHook(shutdownHook)
+                    try {
+                        server.start(wait = true)
+                    } finally {
+                        try {
+                            Runtime.getRuntime().removeShutdownHook(shutdownHook)
+                        } catch (_: IllegalStateException) {
+                            // JVM is shutting down
+                        }
+                        server.stop(1000, 2000)
+                    }
+                }
+            }
         }
 
         plugins.withId("org.gradle.application") {
