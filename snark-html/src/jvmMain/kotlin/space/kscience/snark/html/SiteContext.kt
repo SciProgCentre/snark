@@ -97,6 +97,13 @@ public fun static(dataSet: DataTree<Binary>, prefix: Name = Name.EMPTY) {
     }
 }
 
+/**
+ * Copies binary data from the specified data set branch and renders it as static files in the given site context.
+ *
+ * @param dataSet The data tree containing data that could be rendered as static files.
+ * @param branch The branch name of the dataset to filter binary data from.
+ * @param prefix The prefix to prepend to the route for the static files. Defaults to the branch name.
+ */
 context(site: SiteContext)
 public fun static(dataSet: DataTree<*>, branch: String, prefix: String = branch) {
     val branchName = branch.parseAsName()
@@ -106,7 +113,15 @@ public fun static(dataSet: DataTree<*>, branch: String, prefix: String = branch)
     }
 }
 
-
+/**
+ * Provides access to the current `SiteContext` within the specific rendering scope.
+ * Acts as an abstraction used to render sites to different rendering engines.
+ *
+ * The `siteContext` can be used to access various properties and methods for managing
+ * site paths, routes, metadata, and content rendering. It encapsulates the rendering
+ * environment and contextual data necessary for dynamically generating and structuring
+ * web content.
+ */
 context(site: SiteContext)
 public val siteContext: SiteContext get() = site
 

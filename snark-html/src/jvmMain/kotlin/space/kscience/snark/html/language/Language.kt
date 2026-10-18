@@ -101,16 +101,30 @@ private fun <T> DataTree<T>.walk(
     }
 }
 
+/**
+ * Represents an action that transforms a data tree into a structure mapped by specified languages.
+ * This class processes the input data tree and organizes its content according to the provided
+ * set of languages. It ensures that data corresponding to multiple languages is properly distributed
+ * and accessible for subsequent consumption.
+ *
+ * @constructor Creates a new instance of LanguageMapAction.
+ * @param languages The set of languages used to organize the data tree. Each language is defined
+ * with specific properties that determine its data path, key, and route information.
+ */
 private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<Any, Any>(typeOf<Any>()) {
 
     override fun DataBuilderScope<Any>.generate(
         source: DataTree<Any>,
         meta: Meta
     ): Map<Name, Data<Any>> = buildMap {
+        // the key is data path, the value is a representation in different languages
         val languageMapCache = mutableMapOf<Name, MutableMap<Language, DataTree<Any>>>()
 
         source.walk().forEach { (name, node) ->
-            val language = node.data?.language?.let { itemLanguage -> languages.find { it.key == itemLanguage } }
+            //select language by language tag or by first token of the path
+            val language = (node.data?.language ?: name.firstOrNull()?.toString())?.let { itemLanguage ->
+                languages.find { it.key == itemLanguage }
+            }
             if (language == null) {
                 // put data without a language into all buckets
                 languageMapCache[name] = languages.associateWithTo(HashMap()) { node }
@@ -202,7 +216,16 @@ context(page: PageContext)
 public val languageMap: Map<String, Meta>
     get() = page.pageMeta[Language.LANGUAGE_MAP_KEY]?.items?.mapKeys { it.key.toStringUnescaped() } ?: emptyMap()
 
-public fun PageContext.localisedPageRef(pageName: Name): String {
-    val prefix = languageMap[language]?.get(Language::dataPath.name)?.string?.parseAsName() ?: Name.EMPTY
-    return resolvePageRef(prefix + pageName)
-}
+/**
+ * If current site in multi-language mode, return the parent site, otherwise return the current site
+ */
+public val PageContext.assetRoot: SiteContext
+    get() = site.parent?.let {
+        if(it.siteMeta[SITE_LANGUAGE_KEY] == null) it else site
+    } ?: site
+
+
+/**
+ * Resolve a language-independent asset reference
+ */
+public fun PageContext.resolveAssetRef(ref: String): String  = resolveRef(ref, assetRoot)

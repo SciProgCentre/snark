@@ -61,8 +61,10 @@ public class InPlaceLocalizedString(
         values[page.language] ?: values[defaultLanguage] ?: error("Incorrect value for language ${page.language}")
 }
 
-public class PageLocalizedString(public val resourceName: Name, public val defaultValue: String? = null) :
-    LocalizedString {
+public class PageLocalizedString(
+    public val resourceName: Name,
+    public val defaultValue: String? = null
+) : LocalizedString {
 
     context(page: PageContext)
     override fun value(): String =
