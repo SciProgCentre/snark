@@ -77,7 +77,7 @@ internal class KtorSiteContext(
 
     private class KtorPageContext(
         override val site: KtorSiteContext,
-        override val host: Url,
+        override val hostUri: String,
         override val pageRoute: Name,
         override val pageMeta: Meta,
     ) : PageContext {
@@ -118,7 +118,7 @@ internal class KtorSiteContext(
 
             val pageContext = KtorPageContext(
                 site = this@KtorSiteContext,
-                host = hostUrl.build(),
+                hostUri = hostUrl.buildString(),
                 pageRoute = siteRoute + route,
                 pageMeta = Laminate(modifiedPageMeta, siteMeta)
             )

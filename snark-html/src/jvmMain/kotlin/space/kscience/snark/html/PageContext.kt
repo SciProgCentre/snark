@@ -1,8 +1,5 @@
 package space.kscience.snark.html
 
-import io.ktor.http.URLBuilder
-import io.ktor.http.Url
-import io.ktor.http.appendPathSegments
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.DataTree
@@ -35,7 +32,7 @@ public interface PageContext : SnarkContext, ContextAware {
     override val context: Context get() = site.context
 
 
-    public val host: Url
+    public val hostUri: String
 
     /**
      * A metadata for a page. It should include site metadata
@@ -52,11 +49,9 @@ public interface PageContext : SnarkContext, ContextAware {
      *
      */
     public fun resolveRef(ref: String, targetSite: SiteContext = site): String {
-        val pageUrl = URLBuilder(host)
-            .appendPathSegments(targetSite.path, true)
-            .appendPathSegments(ref)
+        val pageUrl = hostUri + (targetSite.path + ref).joinToString(separator = "/", prefix = "/")
 
-        return pageUrl.buildString().removeSuffix("/")
+        return pageUrl.removeSuffix("/")
     }
 
     /**

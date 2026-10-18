@@ -4,9 +4,9 @@ import space.kscience.dataforge.data.DataSink
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.writeValue
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.getIndexed
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.Name
+import space.kscience.dataforge.names.getIndexedList
 import space.kscience.dataforge.names.parseAsName
 
 public fun interface HtmlSite {
@@ -27,7 +27,7 @@ public suspend fun DataSink<Any>.site(
 //}
 
 internal suspend fun DataSink<Any>.assetsFrom(rootMeta: Meta) {
-    rootMeta.getIndexed("file").forEach { (_, meta) ->
+    rootMeta.getIndexedList(Name.of("file")).forEach { meta ->
         val webName: String? by meta.string()
         val name by meta.string { error("File path is not provided") }
         val fileName = name.parseAsName()

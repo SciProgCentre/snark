@@ -1,6 +1,5 @@
 package space.kscience.snark.html.static
 
-import io.ktor.http.Url
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
@@ -31,44 +30,12 @@ import kotlin.reflect.typeOf
 internal class StaticSiteContext(
     override val context: Context,
     override val siteMeta: Meta,
-    private val baseUrl: Url,
+    private val baseUri: String,
     override val path: List<String>,
     override val siteRoute: Name,
     override val parent: SiteContext?,
     private val outputPath: Path,
 ) : SiteContext {
-
-
-//    @OptIn(ExperimentalPathApi::class)
-//    private suspend fun files(item: DataTreeItem<Any>, routeName: Name) {
-//        //try using direct file rendering
-//        item.meta[FileData.FILE_PATH_KEY]?.string?.let {
-//            val file = Path.of(it)
-//            val targetPath = outputPath.resolve(routeName.toWebPath())
-//            targetPath.parent.createDirectories()
-//            file.copyToRecursively(targetPath, followLinks = false)
-//            //success, don't do anything else
-//            return@files
-//        }
-//
-//        when (item) {
-//            is DataTreeItem.Leaf -> {
-//                val datum = item.data
-//                if (datum.type != typeOf<Binary>()) error("Can't directly serve file of type ${item.data.type}")
-//                val targetPath = outputPath.resolve(routeName.toWebPath())
-//                val binary = datum.await() as Binary
-//                targetPath.outputStream().asSink().buffered().use {
-//                    it.writeBinary(binary)
-//                }
-//            }
-//
-//            is DataTreeItem.Node -> {
-//                item.tree.items.forEach { (token, childItem) ->
-//                    files(childItem, routeName + token)
-//                }
-//            }
-//        }
-//    }
 
     @OptIn(ExperimentalPathApi::class)
     override fun static(route: Name, data: Data<Binary>) {
@@ -77,7 +44,7 @@ internal class StaticSiteContext(
             val file = Path.of(it)
             val targetPath = outputPath.resolve(route.toWebPath())
             targetPath.parent.createDirectories()
-            file.copyToRecursively(targetPath, followLinks = false)
+            file.copyToRecursively(targetPath, followLinks = false, overwrite = true)
             //success, don't do anything else
             return
         }
@@ -102,7 +69,7 @@ internal class StaticSiteContext(
 
     class StaticPageContext(
         override val site: StaticSiteContext,
-        override val host: Url,
+        override val hostUri: String,
         override val pageRoute: Name,
         override val pageMeta: Meta,
     ) : PageContext {
@@ -114,8 +81,6 @@ internal class StaticSiteContext(
     }
 
     override fun page(route: Name, data: DataTree<*>?, pageMeta: Meta, content: HtmlPage) {
-
-
         val modifiedPageMeta = pageMeta.toMutableMeta().apply {
             "name" put route.toString()
         }
@@ -128,7 +93,7 @@ internal class StaticSiteContext(
 
         newPath.parent.createDirectories()
 
-        val pageContext = StaticPageContext(this, baseUrl, route, Laminate(modifiedPageMeta, siteMeta))
+        val pageContext = StaticPageContext(this, baseUri, route, Laminate(modifiedPageMeta, siteMeta))
         newPath.writeText(HtmlPage.createHtmlString(pageContext, data, content))
     }
 
@@ -137,7 +102,7 @@ internal class StaticSiteContext(
             StaticSiteContext(
                 context = context,
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
-                baseUrl = baseUrl,
+                baseUri = baseUri,
                 path = emptyList(),
                 siteRoute = route,
                 parent = parent,
@@ -157,7 +122,7 @@ internal class StaticSiteContext(
             StaticSiteContext(
                 context = context,
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
-                baseUrl = baseUrl,
+                baseUri = baseUri,
                 path = emptyList(),
                 siteRoute = route,
                 parent = this,
@@ -176,18 +141,18 @@ internal class StaticSiteContext(
 
 /**
  * Create a static site using given [content] in provided [outputPath].
- * Use [siteUrl] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
+ * Use [siteUri] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
  *
  */
 public suspend fun SnarkHtml.staticSite(
     data: DataTree<*>?,
     outputPath: Path,
-    siteUrl: Url = Url(outputPath.absolutePathString()),
+    siteUri: String = outputPath.absolute().toUri().toString(),
     siteMeta: Meta = data?.meta ?: Meta.EMPTY,
     content: HtmlSite,
 ) {
     val siteContextWithData = SiteContextWithData(
-        StaticSiteContext(context, siteMeta, siteUrl, emptyList(), Name.EMPTY, null, outputPath),
+        StaticSiteContext(context, siteMeta, siteUri, emptyList(), Name.EMPTY, null, outputPath),
         data ?: DataTree.EMPTY
     )
     with(content) {
