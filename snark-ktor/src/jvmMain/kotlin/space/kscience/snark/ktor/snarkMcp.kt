@@ -126,7 +126,7 @@ public fun Application.snarkMcp(
         //serve metadata
         mcp.addResource(
             uri = "snark://metadata/${namedData.name}",
-            name = namedData.toString(),
+            name = "meta: " + namedData.name.toStringUnescaped(),
             description = "Metadata for data tree node with name ${namedData.name}",
             mimeType = "application/json",
         ) { request ->
@@ -148,7 +148,7 @@ public fun Application.snarkMcp(
 
             mcp.addResource(
                 uri = "snark://data/${namedData.name}",
-                name = namedData.toString(),
+                name = "data: " + namedData.name.toStringUnescaped(),
                 description = "Data content for tree node with name ${namedData.name}",
                 mimeType = contentType,
             ) { request ->
