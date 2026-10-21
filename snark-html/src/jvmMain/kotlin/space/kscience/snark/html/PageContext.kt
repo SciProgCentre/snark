@@ -2,6 +2,7 @@ package space.kscience.snark.html
 
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
+import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
@@ -27,11 +28,16 @@ public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
 @SnarkBuilder
 public interface PageContext : SnarkContext, ContextAware {
 
+    /**
+     * A reference to parent site
+     */
     public val site: SiteContext
 
     override val context: Context get() = site.context
 
-
+    /**
+     * A host site URI prefix added to paths when resolving refs on this page
+     */
     public val hostUri: String
 
     /**
@@ -63,6 +69,9 @@ public interface PageContext : SnarkContext, ContextAware {
 
 }
 
+/**
+ * Resolves the absolute URL for a page with the given [pageName].
+ */
 @JvmName("resolvePageRefWithReceiver")
 public fun PageContext.resolvePageRef(pageName: String, targetSite: SiteContext = site): String =
     resolvePageRef(pageName.parseAsName())
@@ -75,6 +84,14 @@ public fun resolveRef(
     ref: String,
     targetSite: SiteContext = pageContext.site
 ): String = pageContext.resolveRef(ref, targetSite)
+
+/**
+ * Resolve page fragment relative to this page route name.
+ */
+context(pageContext: PageContextWithData)
+public fun resolvePageFragment(
+    ref: String
+): Data<PageFragment>? = pageContext.data.resolveHtmlOrNull(ref)
 
 context(pageContext: PageContextWithData)
 public val pageContextWithData: PageContextWithData get() = pageContext

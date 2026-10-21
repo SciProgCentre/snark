@@ -134,6 +134,13 @@ public val siteData: DataTree<*> get() = site.siteData
  */
 public class SiteContextWithData(public val site: SiteContext, public val siteData: DataTree<*>) : SiteContext by site
 
+context(site: SiteContextWithData)
+public fun page(
+    route: Name,
+    data: DataTree<*>?,
+    pageMeta: Meta = Meta.EMPTY,
+    content: HtmlPage,
+): Unit = siteContext.page(route, data, pageMeta, content)
 
 context(site: SiteContextWithData)
 public fun static(
