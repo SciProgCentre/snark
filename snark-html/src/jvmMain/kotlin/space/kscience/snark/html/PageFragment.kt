@@ -1,11 +1,9 @@
 package space.kscience.snark.html
 
-import kotlinx.coroutines.runBlocking
 import kotlinx.html.FlowContent
 import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.asSequence
-import space.kscience.dataforge.data.await
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.int
@@ -19,7 +17,8 @@ import space.kscience.dataforge.workspace.getByType
 import space.kscience.snark.SnarkContext
 
 public fun interface PageFragment {
-    context(page: PageContextWithData) public fun FlowContent.renderFragment()
+    context(page: PageContextWithData)
+    public fun FlowContent.renderFragment()
 }
 
 context(page: PageContextWithData)
@@ -33,17 +32,17 @@ public fun FlowContent.fragment(fragment: PageFragment): Unit {
  * A bridge method to call fragment directly in page scope
  */
 context(page: PageContextWithData, root: FlowContent)
-public operator fun PageFragment.invoke(){
-    with(root){
+public operator fun PageFragment.invoke() {
+    with(root) {
         renderFragment()
     }
 }
 
-
+/**
+ * Synchronously wait for page fragment data to load and render it.
+ */
 context(page: PageContextWithData)
-public fun FlowContent.fragment(data: Data<PageFragment>): Unit = runBlocking {
-    fragment(data.await())
-}
+public fun FlowContent.fragment(data: Data<PageFragment>): Unit = fragment(page.resolveData(data))
 
 
 context(snark: SnarkContext)

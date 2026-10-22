@@ -1,9 +1,12 @@
 package space.kscience.snark.html
 
+import kotlinx.coroutines.runBlocking
 import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextAware
 import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.DataTree
+import space.kscience.dataforge.data.await
+import space.kscience.dataforge.data.get
 import space.kscience.dataforge.meta.Meta
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
@@ -67,6 +70,8 @@ public interface PageContext : SnarkContext, ContextAware {
 
     public fun resolveRelativePageRef(pageName: Name): String = resolvePageRef(pageRoute + pageName)
 
+    public fun <T> resolveData(data: Data<T>): T = runBlocking { data.await() }
+
 }
 
 /**
@@ -119,3 +124,9 @@ public class PageContextWithData(
     private val pageContext: PageContext,
     public val data: DataTree<*>,
 ) : PageContext by pageContext
+
+/**
+ * Resolve and await data by path
+ */
+context(pageContext: PageContextWithData)
+public fun resolveData(path: Name): Any? = pageContext.data[path]?.let { pageContext.resolveData(it)}
