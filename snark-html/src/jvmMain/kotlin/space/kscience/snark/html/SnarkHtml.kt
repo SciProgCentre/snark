@@ -41,7 +41,7 @@ public fun <T : Any, R : Any> DataTree<T>.transform(action: Action<T, R>, meta: 
 public class SnarkHtml : WorkspacePlugin() {
     public val snark: Snark by require(Snark)
     private val yaml by require(YamlPlugin)
-    public val io: IOPlugin get() = snark.io
+    public val io: IOPlugin get() = yaml.io
 
     override val tag: PluginTag get() = Companion.tag
 

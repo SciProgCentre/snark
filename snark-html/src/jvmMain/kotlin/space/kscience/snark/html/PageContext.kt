@@ -91,6 +91,33 @@ public fun resolveRef(
 ): String = pageContext.resolveRef(ref, targetSite)
 
 /**
+ * Resolves a smart reference based on its format and context, returning the appropriate fully resolved URL or reference.
+ * The behavior depends on the format of the provided reference string:
+ * - If the reference starts with "http" or "mailto:", the original reference is returned.
+ * - If the reference starts with "#", it is resolved relative to the current page route.
+ * - For all other cases, the reference is resolved using the page context.
+ *
+ * @param ref The reference string to be resolved. It can be an absolute URL, a fragment identifier, or a relative reference.
+ * @return The fully resolved reference string corresponding to the input.
+ */
+context(pageContext: PageContext)
+public fun resolveSmartRef(
+    ref: String
+): String = when {
+    ref.startsWith("http") || ref.startsWith("mailto:") -> {
+        ref
+    }
+
+    ref.startsWith("#") -> {
+        resolvePageRef(pageContext.pageRoute) + ref
+    }
+
+    else -> {
+        resolveRef(ref)
+    }
+}
+
+/**
  * Resolve page fragment relative to this page route name.
  */
 context(pageContext: PageContextWithData)
@@ -129,4 +156,4 @@ public class PageContextWithData(
  * Resolve and await data by path
  */
 context(pageContext: PageContextWithData)
-public fun resolveData(path: Name): Any? = pageContext.data[path]?.let { pageContext.resolveData(it)}
+public fun resolveData(path: Name): Any? = pageContext.data[path]?.let { pageContext.resolveData(it) }

@@ -10,6 +10,7 @@ import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.ContextBuilder
 import space.kscience.dataforge.context.request
 import space.kscience.dataforge.data.forEach
+import space.kscience.dataforge.names.toStringUnescaped
 import space.kscience.dataforge.workspace.FileDataTree
 import space.kscience.snark.html.HtmlSite
 import space.kscience.snark.html.SnarkHtml
@@ -48,7 +49,7 @@ public fun Route.site(
     val siteData = snark.parseDirectory(dataDirectory, true)
 
     siteData.forEach { namedData ->
-        application.log.debug("Loading data {} from {}", namedData.name, namedData.meta[FileDataTree.FILE_PATH_KEY])
+        application.log.debug("Loading data `{}` from `{}`", namedData.name.toStringUnescaped(), namedData.meta[FileDataTree.FILE_PATH_KEY])
     }
 
 

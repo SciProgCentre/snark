@@ -42,11 +42,11 @@ dependencyResolutionManagement {
 }
 
 include(
-    ":snark-gradle-plugin",
     ":snark-core",
     ":snark-html",
     ":snark-ktor",
     ":snark-pandoc",
     ":snark-documents",
+    ":snark-gradle-plugin",
     ":examples:document"
 )
