@@ -113,7 +113,7 @@ public fun resolveSmartRef(
     }
 
     else -> {
-        resolveRef(ref)
+        resolvePageRef(ref)
     }
 }
 
