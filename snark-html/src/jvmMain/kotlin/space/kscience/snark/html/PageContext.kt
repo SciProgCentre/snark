@@ -70,7 +70,7 @@ public interface PageContext : SnarkContext, ContextAware {
 
     public fun resolveRelativePageRef(pageName: Name): String = resolvePageRef(pageRoute + pageName)
 
-    public fun <T> resolveData(data: Data<T>): T = runBlocking { data.await() }
+    public fun <T> awaitData(data: Data<T>): T = runBlocking { data.await() }
 
 }
 
@@ -153,7 +153,15 @@ public class PageContextWithData(
 ) : PageContext by pageContext
 
 /**
- * Resolve and await data by path
+ * Resolve and await data by path and return it as a specified type if possible
  */
 context(pageContext: PageContextWithData)
-public fun resolveData(path: Name): Any? = pageContext.data[path]?.let { pageContext.resolveData(it) }
+public inline fun <reified R> awaitData(path: Name): R? = pageContext.data[path]?.let { pageContext.awaitData(it) as? R }
+
+/**
+ * Resolve and await data by path and return it as a specified type if possible
+ */
+context(pageContext: PageContextWithData)
+public inline fun <reified R> awaitData(path: String): R? = awaitData(path.parseAsName())
+
+//TODO add implicit type conversions for page content?

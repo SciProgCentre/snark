@@ -42,7 +42,7 @@ public operator fun PageFragment.invoke() {
  * Synchronously wait for page fragment data to load and render it.
  */
 context(page: PageContextWithData)
-public fun FlowContent.fragment(data: Data<PageFragment>): Unit = fragment(page.resolveData(data))
+public fun FlowContent.fragment(data: Data<PageFragment>): Unit = fragment(page.awaitData(data))
 
 
 context(snark: SnarkContext)
