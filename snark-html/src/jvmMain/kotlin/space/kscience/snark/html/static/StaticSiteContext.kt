@@ -56,14 +56,6 @@ internal class StaticSiteContext(
         }
     }
 
-//    private fun resolveRef(baseUrl: String, ref: String) = if (baseUrl.isEmpty()) {
-//        ref
-//    } else if (ref.isEmpty()) {
-//        baseUrl
-//    } else {
-//        "${baseUrl.removeSuffix("/")}/$ref"
-//    }
-
     class StaticPageContext(
         override val site: StaticSiteContext,
         override val hostUri: String,
@@ -72,7 +64,7 @@ internal class StaticSiteContext(
     ) : PageContext {
 
         override fun resolvePageRef(pageName: Name, targetSite: SiteContext): String = resolveRef(
-            pageName.toWebPath() + ".html",
+            if (pageName.isEmpty()) "index.html" else pageName.toWebPath() + ".html",
             targetSite
         )
     }
@@ -120,7 +112,7 @@ internal class StaticSiteContext(
                 context = context,
                 siteMeta = Laminate(siteMeta, this@StaticSiteContext.siteMeta),
                 baseUri = baseUri,
-                path = emptyList(),
+                path = route.tokens.map { it.toString() },
                 siteRoute = route,
                 parent = this,
                 outputPath = outputPath.resolve(route.toWebPath())
@@ -141,10 +133,10 @@ internal class StaticSiteContext(
  * Use [siteUri] as a base for all resolved URLs. By default, use [outputPath] absolute path as a base.
  *
  */
-public suspend fun SnarkHtml.staticSite(
+public fun SnarkHtml.staticSite(
     data: DataTree<*>?,
     outputPath: Path,
-    siteUri: String = outputPath.absolute().toUri().toString(),
+    siteUri: String = outputPath.absolute().toUri().toString().removeSuffix("/"),
     siteMeta: Meta = data?.meta ?: Meta.EMPTY,
     content: HtmlSite,
 ) {

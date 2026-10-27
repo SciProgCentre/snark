@@ -70,7 +70,7 @@ public interface SiteContext : SnarkContext, ContextAware {
     )
 
     /**
-     * Creates a sub-site and changes context path to match [name]
+     * Creates a sub-site and changes context path to match [route]
      * @param route mount site at [rootName]
      */
     public fun site(
