@@ -64,7 +64,7 @@ private class PageBasedDocumentBuilder(
                 val page =
                 figure("snark-figure") {
                     img(classes = "snark-image") {
-                        src = pageContextWithData.resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
+                        src = page.resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
                         alt = fragment.meta["alt"].string ?: ""
                     }
                     fragment.meta["caption"].string?.let { caption ->
@@ -125,7 +125,7 @@ public fun document(
     page(route, descriptor.documentMeta ?: Meta.EMPTY) {
         //TODO think about avoiding blocking
         val documentBuilder = runBlocking {
-            PageBasedDocumentBuilder(pageContextWithData, dataName).apply {
+            PageBasedDocumentBuilder(contextOf<PageContextWithData>(), dataName).apply {
                 descriptor.fragments.forEach {
                     fragment(it)
                 }

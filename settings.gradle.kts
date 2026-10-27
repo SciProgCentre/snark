@@ -47,6 +47,6 @@ include(
     ":snark-ktor",
     ":snark-pandoc",
     ":snark-documents",
-//    ":snark-gradle-plugin",
+    ":snark-gradle-plugin",
     ":examples:document"
 )

@@ -43,3 +43,41 @@ The separation of data tree management and layout is important. It allows separa
 
 ### 4. Page layout
 
+Snark uses kotlinx-html as a template engine for page rendering. The page template is defined by `HtmlPage` functional interface:
+
+```kotlin
+public fun interface HtmlPage {
+    context(page: PageContextWithData)
+    public fun HTML.renderPage()
+}
+```
+
+It uses HTML tag as a root element and has contextual access to page data and page context. Page context allows the following actions:
+* Page metadata with `pageMeta` property.
+* Page route name with `pageRoute` property.
+* Resolve link reference on page site: `resolveRef(ref: String, targetSite: SiteContext = site)`. Could reference other sites on the same server if `targetSite` is provided.
+* Resolve page reference by its name: `resolvePageRef(pageName: Name, targetSite: SiteContext = site)`. Uses absolute page name to resolve a link path for this page.
+* Resolve a relative page reference by its name: `resolveRelativePageRef(pageName: Name)`. Uses relative page name to resolve a link path for this page.
+* Extract actual data from lazy `Data`: **TODO**
+
+Also, there are some utility extensions:
+
+
+
+```kotlin
+HtmlPage {
+    val title = data.meta["title"].string ?: SPC_TITLE
+    val page = contextOf<PageContextWithData>()
+
+    spcThemeHead(title, theme)
+    body {
+        pageData.getByType<Meta>("layout.header")?.let { spcHeader(it, theme) }
+        when (val index = page.awaitData(data)) {
+            is Meta -> renderSpcPageContent(index, theme)
+
+            is PageFragment -> fragment(index)
+        }
+        pageData.getByType<Meta>("layout.footer")?.let { spcFooter(it, theme) }
+    }
+}
+```

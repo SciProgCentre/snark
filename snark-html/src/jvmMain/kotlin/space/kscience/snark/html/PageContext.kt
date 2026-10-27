@@ -8,8 +8,6 @@ import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.await
 import space.kscience.dataforge.data.get
 import space.kscience.dataforge.meta.Meta
-import space.kscience.dataforge.meta.get
-import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.Name
 import space.kscience.dataforge.names.hasIndex
 import space.kscience.dataforge.names.parseAsName
@@ -82,7 +80,10 @@ public fun PageContext.resolvePageRef(pageName: String, targetSite: SiteContext 
     resolvePageRef(pageName.parseAsName())
 
 context(pageContext: PageContext)
-public val pageContext: PageContext get() = pageContext
+public val page: PageContext get() = pageContext
+
+context(pageContext: PageContext)
+public val pageMeta: Meta get() = pageContext.pageMeta
 
 context(pageContext: PageContext)
 public fun resolveRef(
@@ -125,14 +126,11 @@ public fun resolvePageFragment(
     ref: String
 ): Data<PageFragment>? = pageContext.data.resolveHtmlOrNull(ref)
 
+/**
+ * Page data for this page
+ */
 context(pageContext: PageContextWithData)
-public val pageContextWithData: PageContextWithData get() = pageContext
-
-context(pageContext: PageContextWithData)
-public val data: DataTree<*> get() = pageContext.data
-
-context(pageContext: PageContextWithData)
-public val pageMeta: Meta get() = pageContext.pageMeta
+public val pageData: DataTree<*> get() = pageContext.data
 
 context(pageContext: PageContext)
 public fun resolvePageRef(pageName: Name, targetSite: SiteContext = pageContext.site): String =
@@ -142,11 +140,14 @@ context(pageContext: PageContext)
 public fun resolvePageRef(pageName: String, targetSite: SiteContext = pageContext.site): String =
     pageContext.resolvePageRef(pageName.parseAsName(), targetSite)
 
+/**
+ * Page reference for root page of current site
+ */
 public val PageContext.homeRef: String get() = resolvePageRef(Name.EMPTY)
 
-public val PageContext.name: Name? get() = pageMeta["name"].string?.parseAsName()
-
-
+/**
+ * Page context and data for this page
+ */
 public class PageContextWithData(
     private val pageContext: PageContext,
     public val data: DataTree<*>,
@@ -156,12 +157,12 @@ public class PageContextWithData(
  * Resolve and await data by path and return it as a specified type if possible
  */
 context(pageContext: PageContextWithData)
-public inline fun <reified R> awaitData(path: Name): R? = pageContext.data[path]?.let { pageContext.awaitData(it) as? R }
+public inline fun <reified R> awaitDataByType(path: Name): R? = pageContext.data[path]?.let { pageContext.awaitData(it) as? R }
 
 /**
  * Resolve and await data by path and return it as a specified type if possible
  */
 context(pageContext: PageContextWithData)
-public inline fun <reified R> awaitData(path: String): R? = awaitData(path.parseAsName())
+public inline fun <reified R> awaitDataByType(path: String): R? = awaitDataByType(path.parseAsName())
 
 //TODO add implicit type conversions for page content?
