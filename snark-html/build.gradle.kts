@@ -17,7 +17,11 @@ kscience {
 
         api("io.ktor:ktor-http:$ktorVersion")
         api(libs.dataforge.io.yaml)
-        api(libs.markdown)
+//        api(libs.markdown)
+        api(libs.kotmark)
+        api(libs.kotmark.kotlinx)
+        api(libs.kotmark.math)
+        api(libs.kotmark.tables)
         api(libs.freemarker)
 
     }
