@@ -2,8 +2,8 @@ package space.kscience.snark.plugin
 
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.distribution.DistributionContainer
@@ -13,7 +13,8 @@ import space.kscience.dataforge.context.Context
 import space.kscience.dataforge.context.request
 import space.kscience.dataforge.workspace.readDirectory
 import space.kscience.snark.html.SnarkHtml
-import space.kscience.snark.ktor.snarkMcp
+import space.kscience.snark.mcp.mcpStdIo
+import space.kscience.snark.mcp.snarkMcp
 import java.io.File
 import java.time.LocalDateTime
 
@@ -78,7 +79,7 @@ public class SnarkGradlePlugin : Plugin<Project> {
 
             tasks.register("snarkMcpServer") {
                 group = "snark"
-                description = "Runs the Snark MCP server."
+                description = "Runs the Snark MCP server"
                 doLast {
                     val dataDirectory = snarkExtension.dataDirectory.toPath()
                     logger.info("Reading data for Snark MCP server for data directory: $dataDirectory")
@@ -87,13 +88,13 @@ public class SnarkGradlePlugin : Plugin<Project> {
                     }
                     val snark = context.request(SnarkHtml)
 
-                    val data = snark.io.readDirectory(dataDirectory)
+                    val data = snark.io.readDirectory(dataDirectory, true, includeExtensions = true)
 
-                    val server = embeddedServer(CIO, port = snarkExtension.mcpPort) {
-                        snarkMcp(context, data)
+                    val server = context.embeddedServer(CIO, port = snarkExtension.mcpPort) {
+                        snarkMcp(snark, data)
                     }
 
-                    GlobalScope.launch {
+                    context.launch {
                         val connector = server.application.engine.resolvedConnectors().first()
                         println(
                             "Starting Snark MCP server at http://${connector.host}:${connector.port}"
@@ -101,6 +102,7 @@ public class SnarkGradlePlugin : Plugin<Project> {
                     }
                     val shutdownHook = Thread {
                         server.stop(1000, 2000)
+                        context.close()
                     }
                     Runtime.getRuntime().addShutdownHook(shutdownHook)
                     try {
@@ -112,9 +114,32 @@ public class SnarkGradlePlugin : Plugin<Project> {
                             // JVM is shutting down
                         }
                         server.stop(1000, 2000)
+                        context.close()
                     }
                 }
             }
+
+            tasks.register("snarkMcpStd") {
+                group = "snark"
+                description = "Runs the Snark MCP with std io"
+
+                doLast {
+                    val dataDirectory = snarkExtension.dataDirectory.toPath()
+                    logger.info("Reading data for Snark MCP server for data directory: $dataDirectory")
+                    val context = Context {
+                        plugin(SnarkHtml)
+                    }
+                    val snark = context.request(SnarkHtml)
+
+                    val data = snark.io.readDirectory(dataDirectory, true, includeExtensions = true)
+
+                    runBlocking {
+                        snark.mcpStdIo(data).join()
+                    }
+                    context.close()
+                }
+            }
+
         }
 
         plugins.withId("org.gradle.application") {

@@ -1,61 +1,53 @@
-package space.kscience.snark.ktor
+package space.kscience.snark.mcp
 
-import io.ktor.server.application.Application
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
-import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import io.modelcontextprotocol.kotlin.sdk.types.*
-import space.kscience.dataforge.context.Context
-import space.kscience.dataforge.context.request
-import space.kscience.dataforge.data.DataTree
-import space.kscience.dataforge.data.await
-import space.kscience.dataforge.data.forEach
-import space.kscience.dataforge.data.get
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import space.kscience.dataforge.data.*
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.toByteArray
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
-import space.kscience.snark.Snark
 import space.kscience.snark.html.SnarkHtml
 
 /**
- * Initializes the Snark server's metadata and capabilities, and sets up resources and prompts based on the provided data tree.
+ * Creates an MCP server for reading Snark data as prompts and resources.
  *
- * This function configures the server with metadata interpretation, design hints, and resources mapped from the `dataTree`.
- * It processes the tree structure to expose metadata and data as resources, supports design hint prompts, and serves the resources via URI paths.
+ * The returned server exposes a design hint prompt that resolves design metadata from
+ * `design.md` files in the requested node path and its ancestors. It also exposes a
+ * text representation of the data tree, metadata resources for each data node, and
+ * text data resources for supported textual content types.
  *
- * @param context The context used to request dependencies and configurations for building the Snark server.
- * @param dataTree A data tree containing nodes that supply metadata and content, which are published as resources and prompts on the server.
+ * Resource registrations are kept in sync with updates from the provided data tree.
+ *
+ * @param dataTree the binary data tree to expose through the MCP server.
+ * @return a configured MCP server backed by the provided data tree.
  */
-public fun Application.snarkMcp(
-    context: Context,
+public fun SnarkHtml.snarkMcpServer(
     dataTree: DataTree<Binary>
-) {
-
-    val snark = context.request(SnarkHtml)
-
-    val mcp = Server(
-        serverInfo = Implementation(
-            name = "snark-mcp",
-            version = "1.0.0"
+): Server = Server(
+    serverInfo = Implementation(
+        name = "snark-read-mcp",
+        version = "1.0.0"
+    ),
+    options = ServerOptions(
+        capabilities = ServerCapabilities(
+            prompts = ServerCapabilities.Prompts(),
+            resources = ServerCapabilities.Resources(listChanged = true, subscribe = true)
         ),
-        options = ServerOptions(
-            capabilities = ServerCapabilities(
-                prompts = ServerCapabilities.Prompts(),
-                resources = ServerCapabilities.Resources()
-            ),
-        )
     )
+).apply {
 
     val pathArgument = PromptArgument(
         name = "path",
         description = "Path in the tree for which to generate a design hint",
         required = false
     )
-
     // generate design prompt
-    mcp.addPrompt(
+    addPrompt(
         "design-hint",
         description = "Design and metadata interpretation hint for a node with a specific name",
         arguments = listOf(pathArgument),
@@ -65,7 +57,7 @@ public fun Application.snarkMcp(
 
         val designHintPrompts = buildList {
             suspend fun addHint(currentPath: Name) {
-                val currentDesignPromptPath = currentPath + Snark.SNARK_HINT_KEY + NameToken("design.md")
+                val currentDesignPromptPath = currentPath + NameToken("design.md")
                 val designHintData = dataTree[currentDesignPromptPath]?.await()
                 if (designHintData != null) {
                     add(
@@ -92,7 +84,8 @@ public fun Application.snarkMcp(
         )
     }
 
-    mcp.addResource(
+    // full tree of provided data
+    addResource(
         uri = "snark://tree",
         name = "tree",
         description = "A text tree showing data hierarchy",
@@ -101,7 +94,7 @@ public fun Application.snarkMcp(
         val treeView = buildString {
             fun renderNode(prefix: String, token: NameToken, node: DataTree<*>) {
                 val suffix = node.data?.let {
-                    " (${it.meta["type"].string ?: snark.getContentType(token.asName(), it.meta)})"
+                    " (${it.meta["type"].string ?: getContentType(token.asName(), it.meta)})"
                 } ?: ""
                 appendLine("$prefix- ${token.toStringUnescaped()}$suffix")
                 node.items.forEach { (childToken, childData) ->
@@ -122,18 +115,22 @@ public fun Application.snarkMcp(
         )
     }
 
-    dataTree.forEach { namedData ->
+    fun addData(name: Name, data: Data<Binary>) {
+
+        //skip service data
+        if (data.meta["type"].string?.startsWith("snark") == true) return
+
         //serve metadata
-        mcp.addResource(
-            uri = "snark://metadata/${namedData.name}",
-            name = namedData.name.toStringUnescaped() + "/meta",
-            description = "Metadata for data tree node with name ${namedData.name}",
+        addResource(
+            uri = "snark://metadata/${name}",
+            name = name.toStringUnescaped() + "/meta",
+            description = "Metadata for data tree node with name $name",
             mimeType = "application/json",
         ) { request ->
             ReadResourceResult(
                 contents = listOf(
                     TextResourceContents(
-                        text = namedData.meta.toString(),
+                        text = data.meta.toString(),
                         uri = request.uri,
                         mimeType = "application/json",
                     )
@@ -142,30 +139,40 @@ public fun Application.snarkMcp(
         }
 
         //serve text content
-        val contentType = snark.getContentType(namedData.name, namedData.meta)
+        val contentType = getContentType(name, data.meta)
 
         if (contentType in listOf("application/json", "application/yaml", "text/markdown", "text/plain")) {
 
-            mcp.addResource(
-                uri = "snark://data/${namedData.name}",
-                name = namedData.name.toStringUnescaped() + "/data",
-                description = "Data content for tree node with name ${namedData.name}",
+            addResource(
+                uri = "snark://data/${name}",
+                name = name.toStringUnescaped() + "/data",
+                description = "Data content for tree node with name $name",
                 mimeType = contentType,
             ) { request ->
                 ReadResourceResult(
                     contents = listOf(
                         TextResourceContents(
-                            text = namedData.await().toByteArray().decodeToString(),
+                            text = data.await().toByteArray().decodeToString(),
                             uri = request.uri,
                             mimeType = contentType,
                         )
                     )
                 )
             }
-
-
         }
     }
 
-    mcpStreamableHttp { mcp }
+    dataTree.forEach { namedData ->
+        addData(namedData.name, namedData)
+    }
+
+    dataTree.updates.onEach { name ->
+        val data = dataTree[name]
+        if (data == null) {
+            removeResource("snark://data/${name}")
+            removeResource("snark://metadata/${name}")
+        } else {
+            addData(name, data)
+        }
+    }.launchIn(context)
 }
