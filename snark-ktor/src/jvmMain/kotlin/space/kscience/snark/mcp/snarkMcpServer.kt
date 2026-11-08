@@ -5,11 +5,15 @@ import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.*
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import space.kscience.dataforge.data.*
 import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.io.toByteArray
 import space.kscience.dataforge.meta.get
 import space.kscience.dataforge.meta.string
+import space.kscience.dataforge.meta.toJson
 import space.kscience.dataforge.names.*
 import space.kscience.snark.html.SnarkHtml
 
@@ -36,7 +40,8 @@ public fun SnarkHtml.snarkMcpServer(
     options = ServerOptions(
         capabilities = ServerCapabilities(
             prompts = ServerCapabilities.Prompts(),
-            resources = ServerCapabilities.Resources(listChanged = true, subscribe = true)
+            resources = ServerCapabilities.Resources(listChanged = true, subscribe = true),
+            tools = ServerCapabilities.Tools(),
         ),
     )
 ).apply {
@@ -175,4 +180,44 @@ public fun SnarkHtml.snarkMcpServer(
             addData(name, data)
         }
     }.launchIn(context)
+
+    addTool(
+        name = "readData",
+        description = "Read textual or binary data from specific tree node",
+    ) { request ->
+        val name = request.arguments?.get("name")?.jsonPrimitive?.content?.parseAsName()
+            ?: return@addTool CallToolResult(content = listOf(TextContent(text = "No name provided")))
+
+        val data = dataTree[name]
+        if (data == null) {
+            CallToolResult(content = listOf(TextContent(text = "No data found for name $name")))
+        } else {
+            val contentType = getContentType(name, data.meta)
+            if (contentType in listOf("application/json", "application/yaml", "text/markdown", "text/plain")) {
+                CallToolResult(content = listOf(TextContent(text = data.await().toByteArray().decodeToString())))
+            } else {
+                CallToolResult(content = listOf(TextContent(text = "Non-textual content type: $contentType")))
+            }
+        }
+    }
+
+    addTool(
+        name = "readMeta",
+        description = "Read metadata associated with a specific tree node",
+    ) { request ->
+        val name = request.arguments?.get("name")?.jsonPrimitive?.content?.parseAsName()
+            ?: return@addTool CallToolResult(content = listOf(TextContent(text = "No name provided")))
+
+        val data = dataTree[name]
+        if (data == null) {
+            CallToolResult(content = listOf(TextContent(text = "No data found for name $name")))
+        } else {
+            CallToolResult(
+                content = listOf(TextContent(text = data.meta.toString())),
+                structuredContent = data.meta.toJson().let { jsonElement ->
+                    jsonElement as? JsonObject ?: buildJsonObject { put("value", jsonElement) }
+                }
+            )
+        }
+    }
 }
