@@ -220,12 +220,14 @@ public val languageMap: Map<String, Meta>
  * If current site in multi-language mode, return the parent site, otherwise return the current site
  */
 public val PageContext.assetRoot: SiteContext
-    get() = site.parent?.let {
-        if(it.siteMeta[SITE_LANGUAGE_KEY] == null) it else site
-    } ?: site
+    get() = if (site.siteMeta[SITE_LANGUAGE_KEY] != null) {
+        site.parent ?: site
+    } else {
+        site
+    }
 
 
 /**
  * Resolve a language-independent asset reference
  */
-public fun PageContext.resolveAssetRef(ref: String): String  = resolveRef(ref, assetRoot)
+public fun PageContext.resolveAssetRef(ref: String): String = resolveRef(ref, assetRoot)

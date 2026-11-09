@@ -62,12 +62,12 @@ public class WebPageTextProcessor(private val page: PageContext) : TextProcessor
             "siteMeta" -> page.site.siteMeta[uri.path.parseAsName()].string ?: "@null"
             else -> match.value
         }
-        "=\"$snarkUrl\""
+        snarkUrl
     }
 
     public companion object {
         internal val functionRegex = """\$\{(?<target>[\w.]*)(?:\((?:"|&quot;)(?<name>.*)(?:"|&quot;)\))?\}""".toRegex()
-        private val attributeRegex = """="(?<uri>snark://([^"]*))"""".toRegex()
+        private val attributeRegex = """(?<uri>snark://([^"]*))""".toRegex()
     }
 }
 
@@ -81,22 +81,25 @@ public class Postprocessor<out R>(
     private val textProcessor: TextProcessor,
 ) : TagConsumer<R> by consumer {
 
-    override fun onTagAttributeChange(tag: Tag, attribute: String, value: String?) {
-        when (tag) {
-            is A if attribute == "href" && value != null -> consumer.onTagAttributeChange(
-                tag = tag,
-                attribute = attribute,
-                value = textProcessor.process(value)
-            )
-
-            is IMG if attribute == "src" && value != null -> consumer.onTagAttributeChange(
-                tag = tag,
-                attribute = attribute,
-                value = textProcessor.process(value)
-            )
-
-            else -> consumer.onTagAttributeChange(tag, attribute, value)
+    override fun onTagStart(tag: Tag) {
+        val processedTag = when (tag.tagName) {
+            "a" if tag.attributes["href"]?.startsWith("snark") == true -> {
+                A(
+                    initialAttributes = tag.attributes + ("href" to textProcessor.process(tag.attributes["href"]!!)),
+                    consumer = tag.consumer
+                )
+            }
+            "img" if tag.attributes["src"]?.startsWith("snark") == true -> {
+                IMG(
+                    initialAttributes = tag.attributes + ("src" to textProcessor.process(tag.attributes["src"]!!)),
+                    consumer = tag.consumer
+                )
+            }
+            else -> {
+                tag
+            }
         }
+        consumer.onTagStart(processedTag)
     }
 
     override fun onTagContent(content: CharSequence) {
@@ -114,6 +117,8 @@ public class Postprocessor<out R>(
         proxy.block()
     }
 }
+
+//TODO replace postprocessor with markdown render plugin?
 
 context(page: PageContext)
 public fun FlowContent.postprocess(

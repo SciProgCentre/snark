@@ -26,7 +26,7 @@ public fun interface HtmlPage {
             page: HtmlPage,
         ): String = HTML_HEADER + createHTML(true).run {
             html {
-                with(PageContextWithData(pageContext, dataSet ?: DataTree.EMPTY)) {
+                context(PageContextWithData(pageContext, dataSet ?: DataTree.EMPTY)) {
                     with(page) {
                         renderPage()
                     }
