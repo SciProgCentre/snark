@@ -54,12 +54,13 @@ public class WebPageTextProcessor(private val page: PageContext) : TextProcessor
         }
     }.replace(attributeRegex) { match ->
         val uri = URI(match.groups["uri"]!!.value)
+        val path = uri.path.removePrefix("/")
         val snarkUrl = when (uri.authority) {
             "homeRef" -> page.homeRef
-            "ref" -> page.resolveRef(uri.path)
-            "page" -> page.resolvePageRef(uri.path.parseAsName())
-            "pageMeta" -> page.pageMeta[uri.path.parseAsName()].string ?: "@null"
-            "siteMeta" -> page.site.siteMeta[uri.path.parseAsName()].string ?: "@null"
+            "ref" -> page.resolveRef(path)
+            "page" -> page.resolvePageRef(path.parseAsName())
+            "pageMeta" -> page.pageMeta[path.parseAsName()].string ?: "@null"
+            "siteMeta" -> page.site.siteMeta[path.parseAsName()].string ?: "@null"
             else -> match.value
         }
         snarkUrl
