@@ -1,12 +1,18 @@
 ## Site design process
 
-Site design consists of several stages:
+Site design consists of several stages. Data layout and page layout are separated: page layout does not care how data
+is delivered, and the data tree does not know how it will be rendered. So it is possible to change the design without
+changing the data, and change the data (or its source) without changing the design.
 
 ### 1. Site data layout
-Site data is loaded from a directory or other source as `DataTree<Binary>`. Then it is parsed to typed nodes like assets, html pages and other site data.
-The data could be transformed before or after parsing to adjust what is available to site builder. In multi-site setup, data could be adjusted for each site separately.
+
+Site data is loaded from a directory or other source as `DataTree<Binary>`. Then it is parsed to typed nodes like
+assets, HTML fragments and metadata (see [data](data.md)).
+The data could be transformed before or after parsing to adjust what is available to the site builder. In a multi-site
+setup, data could be adjusted for each site separately.
 
 An example of data transformation for a specific site:
+
 ```kotlin
 context(contextAware: ContextAware)
 internal inline fun <reified T> DataTree<T>.contentFor(branchName: String): DataTree<T> = DataTree {
@@ -17,32 +23,90 @@ internal inline fun <reified T> DataTree<T>.contentFor(branchName: String): Data
     observeNode("files", branch(Name.of(branchName, "files")) ?: DataTree.EMPTY)
 }
 ```
-It loads resources from common, assets, images and files branches into corresponding branches of site trees but keeps site content different.
+
+It loads resources from `common`, `assets`, `images` and `files` branches into corresponding branches of the site tree,
+but keeps site content different.
 
 ### 2. Site creation and layout
 
-Site is created by calling `site` method in a corresponding context (Ktor route for dynamic sites or `snark.staticSite` for static).
+A site is created by calling `site` in a corresponding context: `Route.site` for dynamic sites served by
+[Ktor](../../snark-ktor) or `snarkHtml.staticSite` for static ones.
 
-Full sequence of data loading and site creation:
 ```kotlin
-    val snark = context.request(SnarkHtml)
-    val siteData = snark.parseDirectory(dataDirectory, true)
-    site(context, siteData, content = spcSite)
+val snarkHtml = context.request(SnarkHtml)
+val siteData = snarkHtml.parseDirectory(dataDirectory)
+
+// static
+snarkHtml.staticSite(siteData, outputPath, content = mySite)
+
+// dynamic, inside Ktor routing
+site(context, siteData, content = mySite)
 ```
-Specific pages in the site are defined by `content` block. It could contain pages, static resources and sub-sites. See `HtmlSite` builder for reference.
-Sub-sites and pages could inherit the site data tree or modify it.
+
+The pages of the site are defined by the `content` block (`HtmlSite`). It can contain pages, static resources and
+sub-sites. Sub-sites and pages inherit the site data tree or replace it.
 
 ### 3. Page data layout
 
-Page is created by calling `page` function in `HtmlSite` block. It requires three parameters:
-* Page route (affects its reference and link)
-* Page data tree. Defaults to the site content tree, but could be adjusted. The data not included in the tree is not "visible" to page layout.
-* Page content block that defines page layout.
+A page is created by calling `page` in an `HtmlSite` block. It takes:
 
-The separation of data tree management and layout is important. It allows separating responsibility. Page layout does not care how data is delivered, and the data tree does not know how it will be rendered. So it is possible to change design without changing data and change the data (and its source) without changing design.
+* a page route (affects its reference and link);
+* a page data tree. It defaults to the site data tree, but could be adjusted. Data not included in the tree is not
+  visible to the page layout;
+* a page content block that defines the page layout.
 
 ### 4. Page layout
 
+A page layout is a [kotlinx.html](https://github.com/Kotlin/kotlinx.html) builder that has access to the page context:
+data, metadata and link resolution. Common parts of a layout are ordinary Kotlin functions:
+
+```kotlin
+context(page: PageContextWithData)
+fun HTML.defaultLayout(pageTitle: String, content: FlowContent.() -> Unit) {
+    head {
+        title(pageTitle)
+        link(rel = "stylesheet", href = resolveRef("assets/main.css"))
+    }
+    body {
+        nav { a(href = page.homeRef) { +"Home" } }
+        main {
+            postprocess { content() }
+        }
+    }
+}
+```
+
+Pages can be generated from data. For example, a page for each Markdown file in the `posts` branch:
+
+```kotlin
+val mySite = HtmlSite {
+    static("assets")
+
+    page("index") {
+        defaultLayout("Home") { fragment(data.resolveHtml("home")) }
+    }
+
+    siteData.resolveAllHtml { name, _ -> name.startsWith("posts".parseAsName()) }.forEach { (name, post) ->
+        page(name) {
+            defaultLayout(post.meta["title"].string ?: name.toString()) { fragment(post) }
+        }
+    }
+}
+```
+
+Fragments are rendered with `fragment(...)`. Wrapping them in `postprocess` resolves links written in the data
+(see [links](links.md)).
+
+### 5. Rendering targets
+
+The same `HtmlSite` can be rendered in two ways:
+
+| Target  | Function               | Links                                    | Data updates            |
+|---------|------------------------|------------------------------------------|-------------------------|
+| Static  | `SnarkHtml.staticSite` | Based on `siteUri` (output directory URI by default) | Rendered once |
+| Dynamic | `Route.site` in [snark-ktor](../../snark-ktor) | Based on the request host | Rendered on each request |
+
+Static pages are written as `<route>.html`; the page with an empty route or `index` is written as `index.html`.
 Snark uses kotlinx-html as a template engine for page rendering. The page template is defined by `HtmlPage` functional interface:
 
 ```kotlin

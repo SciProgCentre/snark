@@ -31,11 +31,13 @@ kscience {
 
 readme {
     maturity = space.kscience.gradle.Maturity.EXPERIMENTAL
-    feature("data") { "Data-based processing. Instead of traditional layout-based" }
-    feature("layouts") { "Use custom layouts to represent a data tree" }
-    feature("parsers") { "Add custom file formats and parsers using DataForge dependency injection" }
-    feature("preprocessor") { "Preprocessing text files using templates" }
-    feature("metadata") { "Trademark DataForge metadata layering and transformations" }
-    feature("dynamic") { "Generating dynamic site using KTor server" }
-    feature("static") { "Generating static site" }
+    feature("data", "docs/data.md") { "Data-based processing instead of traditional layout-based" }
+    feature("layouts", "docs/site-design.md") { "Use custom layouts to represent a data tree" }
+    feature("parsers", "docs/data.md#custom-formats") { "Add custom file formats and parsers using DataForge dependency injection" }
+    feature("preprocessor", "docs/data.md#preprocessing") { "Preprocessing text files using templates" }
+    feature("metadata", "docs/data.md#metadata") { "DataForge metadata layering and transformations" }
+    feature("links", "docs/links.md") { "Link resolution at render time" }
+    feature("languages", "docs/languages.md") { "Multi-language sites" }
+    feature("dynamic", "../snark-ktor") { "Generating dynamic site using Ktor server" }
+    feature("static", "docs/site-design.md#5-rendering-targets") { "Generating static site" }
 }

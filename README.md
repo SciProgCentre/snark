@@ -1,100 +1,118 @@
 # SNARK
 
-In Lewis Carroll "The hunting of the Snark", the Snark itself is something everybody want to get, but nobody know what it is. It is the same in case of this project, but it also has narrower scope. SNARK could be read as "Scientific Notation And Research works in Kotlin" because it could be used for automatic creation of research papers. But it has other purposes as well.
+In Lewis Carroll's "The Hunting of the Snark", the Snark is something everybody wants to get, but nobody knows what
+it is. The same is true for this project, but it has a narrower scope. SNARK could be read as "Scientific Notation And
+Research works in Kotlin" because it can be used for automatic creation of research papers. But it has other purposes
+as well.
 
-To sum it up, **SNARK is an automated data transformation tool with the main focus on document and web page generation**. It is based on [DataForge framework](https://github.com/SciProgCentre/dataforge-core).
+To sum it up, **SNARK is an automated data transformation tool with the main focus on document and web page
+generation**. It is based on the [DataForge framework](https://github.com/SciProgCentre/dataforge-core).
 
-SNARK **is not a typesetting system** itself, but it could utilize typesetting systems such as Markdown, Latex or Typst to do data transformations.
+SNARK **is not a typesetting system** itself, but it can use typesetting systems such as Markdown, LaTeX or Typst
+to do data transformations.
 
 ## Concepts
 
-The SNARK process it the transformation of a data tree. Initial data could include texts, images, static binary or textual data or even active external data subscriptions. The result is usually a tree of documents or a directly served web-site.
+A SNARK process is a transformation of a data tree. Initial data can include texts, images, static binary or textual
+data, or even active external data subscriptions. The result is usually a tree of documents or a site served directly.
 
-**Data** is any kind of content, generated lazily with additional metadata (DataForge Meta).
+**Data** is any kind of content, computed lazily, with additional metadata (DataForge `Meta`).
 
-## Using DataForge context
+A typical pipeline:
 
-DataForge module management is based on **Contexts** and **Plugins**. Context is used both as dependency injection system, lifecycle object and API discoverability root for all executions. To use some subsystem, one needs to:
+1. **Read** raw data into a `DataTree<Binary>`, for example from a directory.
+2. **Preprocess** (optional): transform raw text or metadata, for example with templates.
+3. **Parse** known formats into page fragments (Markdown, HTML) or metadata (YAML, JSON).
+4. **Render** a site layout that places fragments on pages.
+5. **Postprocess**: resolve links and numbering that are known only during rendering.
 
-* Create a Context with a Plugin like this:
+Data layout and page layout are independent: the same layout works with different data and vice versa.
+
+## Quick start
 
 ```kotlin
-Context("Optional context name"){
-    plugin(SnarkHtml) 
-    // Here SnarkHtml is a Plugin factory declared as a companion object to a Plugin itself
+suspend fun main() {
+    val context = Context { plugin(SnarkHtml) }
+    val snarkHtml = context.request(SnarkHtml)
+
+    val siteData = snarkHtml.parseDirectory(Path("data"))
+
+    snarkHtml.staticSite(siteData, Path("build/site")) {
+        static("assets")
+        page("index") {
+            head { title("My site") }
+            body { fragment(data.resolveHtml("home")) }
+        }
+    }
 }
 ```
 
-* Get the loaded plugin instance via `val snarkHtml = context.request(SnarkHtml)`
+This renders `data/home.md` into `build/site/index.html` and copies `data/assets`.
+To serve the same site with Ktor, see [snark-ktor](snark-ktor).
 
-* Use plugin like
+SNARK subsystems are DataForge plugins. A `Context` is used for dependency injection, lifecycle and discovery of
+readers and processors: load a plugin with `plugin(SnarkHtml)` and get it with `context.request(SnarkHtml)`.
 
-```kotlin
-val siteData = snarkHtml.readSiteData(context) {
-    directory(snark.io, Name.EMPTY, dataDirectory)
-}
+## Guides
 
-```
+* [Site design](snark-html/docs/site-design.md) — data layout, page layout, static and dynamic rendering
+* [Data](snark-html/docs/data.md) — reading and parsing data, metadata, custom formats
+* [Links](snark-html/docs/links.md) — link resolution and postprocessing
+* [Languages](snark-html/docs/languages.md) — multi-language sites
+* [Documents](snark-documents) — scientific documents with automatic numbering
+* [Serving with Ktor](snark-ktor) and the [MCP server](snark-ktor/docs/mcp.md)
+* [Gradle plugin](snark-gradle-plugin) — distribution, MCP task and deployment
 
-## SNARK-html
+## Examples
 
-SNARK-HTML module defines tools to work with HTML output format. The API root for it is `SnarkHtml` plugin. Its primary function (`parse` action) is to parse raw binary DataTree with objects specific for HTML rendering, assets and metadata. It uses `SnarkReader` and more specifically `SnarkHtmlReader` to parse binary data into formats like `Meta` and `PageFragment`. If `parse` could not recognize the format of the input, it leaves it as (lazy) binary.
+* [examples/document](examples/document) — a Ktor server that renders scientific documents from a data directory.
 
-### Preprocessing and postprocessing
+## Modules
 
-Snark uses DataForge data tree transformation ideology so there could be any number of data transformation steps both before parsing and after parsing, but there is a key difference: before parsing we work with binaries that could be transformed directly (yet lazily because this is how DataForge works), after parsing we have not a hard data, but a rendering function that could only be transformed by wrapping it in another function (which could be complicated). The raw data transformation before parsing is called preprocessing. It could include both raw binary transformation and metadata transformation. The postprocessing is usually done inside the rendering function produced by parser or created directly from code.
-
-The interface for `PageFragment` looks like this: 
-
-```kotlin
-public fun interface PageFragment {
-    context(PageContextWithData, FlowContent) public fun renderFragment()
-}
-```
-
-It takes a reference to parsed data tree and rendering context of the page as well as HTML mounting root and provides action to render HTML. The reason for such complication is that some things are not known before the actual page rendering happens. For example, absolute links in HTML could be resolved only when the page is rendered on specific REST request that contain information about host and port. Another example is providing automatic counters for chapters, formulas and images in document rendering. The order is not known until all fragments are placed in correct order.
-
-Postprocessors are functions that transform fragments of HTML wrapped in them according to data tree and page rendering context.
-
-Other details on HTML rendering could be found in [snark-html](./snark-html) module
-
-
-
-### [examples](examples)
+### [snark-core](snark-core)
+> Core SNARK abstractions: readers, text processors and data tree utilities
 >
 > **Maturity**: EXPERIMENTAL
 
-### [snark-core](snark-core)
+### [snark-documents](snark-documents)
+> Scientific documents built from data trees with automatic numbering
 >
 > **Maturity**: EXPERIMENTAL
 
 ### [snark-gradle-plugin](snark-gradle-plugin)
+> Gradle plugin for SNARK-based sites
 >
 > **Maturity**: EXPERIMENTAL
 
 ### [snark-html](snark-html)
+> HTML rendering and static site generation from data trees
 >
 > **Maturity**: EXPERIMENTAL
 >
 > **Features:**
-> - [data](snark-html/#) : Data-based processing. Instead of traditional layout-based
-> - [layouts](snark-html/#) : Use custom layouts to represent a data tree
-> - [parsers](snark-html/#) : Add custom file formats and parsers using DataForge dependency injection
-> - [preprocessor](snark-html/#) : Preprocessing text files using templates
-> - [metadata](snark-html/#) : Trademark DataForge metadata layering and transformations
-> - [dynamic](snark-html/#) : Generating dynamic site using KTor server
-> - [static](snark-html/#) : Generating static site
+> - [data](snark-html/docs/data.md) : Data-based processing instead of traditional layout-based
+> - [layouts](snark-html/docs/site-design.md) : Use custom layouts to represent a data tree
+> - [parsers](snark-html/docs/data.md#custom-formats) : Add custom file formats and parsers using DataForge dependency injection
+> - [preprocessor](snark-html/docs/data.md#preprocessing) : Preprocessing text files using templates
+> - [metadata](snark-html/docs/data.md#metadata) : DataForge metadata layering and transformations
+> - [links](snark-html/docs/links.md) : Link resolution at render time
+> - [languages](snark-html/docs/languages.md) : Multi-language sites
+> - [dynamic](snark-html/../snark-ktor) : Generating dynamic site using Ktor server
+> - [static](snark-html/docs/site-design.md#5-rendering-targets) : Generating static site
 
 
 ### [snark-ktor](snark-ktor)
+> Serving SNARK sites with Ktor and exposing site data via an MCP server
 >
 > **Maturity**: EXPERIMENTAL
 
 ### [snark-pandoc](snark-pandoc)
+> Document conversion with Pandoc
 >
 > **Maturity**: EXPERIMENTAL
 
 ### [examples/document](examples/document)
+> A Ktor application rendering scientific documents from a data directory
 >
 > **Maturity**: EXPERIMENTAL
 
