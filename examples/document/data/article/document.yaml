@@ -1,0 +1,37 @@
+# The document is assembled from data items of this directory, in the order of `fragments`.
+# Directory paths become data names: model/names.md is `model.names`.
+route: article
+title: "SNARK: ленивые деревья контента и слоистые метаданные для воспроизводимых научных публикаций"
+authors:
+  - name: Serhii Terentiev
+# page design, served from this directory
+stylesheets:
+  - assets/style.css
+scripts:
+  - assets/script.js
+# values available to templates as ${documentMeta.<key>}
+documentMeta:
+  journal: 0
+  year: 2026
+  volume: 0
+  doi: 0
+fragments:
+  - type: data
+    name: summary
+  # Section 4. Model
+  - type: data
+    name: model.intro
+  - type: data
+    name: model.names
+  - type: data
+    name: model.lamination
+  - type: data
+    name: model.derivation
+  - type: data
+    name: model.evaluation
+  - type: data
+    name: model.impact
+  - type: data
+    name: model.late-binding
+  - type: data
+    name: references

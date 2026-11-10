@@ -14,6 +14,14 @@ allprojects {
         mavenLocal()
         mavenCentral()
     }
+
+    // dataforge 0.12.0 is compiled for JVM 23; its inline functions can't be inlined into JVM 21 bytecode.
+    // Without this, the target follows the JDK that runs Gradle.
+    listOf("space.kscience.gradle.mpp", "space.kscience.gradle.jvm").forEach { pluginId ->
+        plugins.withId(pluginId) {
+            extensions.getByType<space.kscience.gradle.KScienceExtension>().jdkVersionProperty.set(23)
+        }
+    }
 }
 
 kscienceProject {

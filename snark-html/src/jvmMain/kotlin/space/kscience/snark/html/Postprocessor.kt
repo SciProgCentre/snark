@@ -80,19 +80,21 @@ public class Postprocessor<out R>(
     public val page: PageContext,
     private val consumer: TagConsumer<R>,
     private val textProcessor: TextProcessor,
+    private val linkProcessor: TextProcessor = textProcessor,
 ) : TagConsumer<R> by consumer {
 
     override fun onTagStart(tag: Tag) {
+        if (tag.tagName == "code") codeDepth++
         val processedTag = when (tag.tagName) {
             "a" if tag.attributes["href"]?.startsWith("snark") == true -> {
                 A(
-                    initialAttributes = tag.attributes + ("href" to textProcessor.process(tag.attributes["href"]!!)),
+                    initialAttributes = tag.attributes + ("href" to linkProcessor.process(tag.attributes["href"]!!)),
                     consumer = tag.consumer
                 )
             }
             "img" if tag.attributes["src"]?.startsWith("snark") == true -> {
                 IMG(
-                    initialAttributes = tag.attributes + ("src" to textProcessor.process(tag.attributes["src"]!!)),
+                    initialAttributes = tag.attributes + ("src" to linkProcessor.process(tag.attributes["src"]!!)),
                     consumer = tag.consumer
                 )
             }
@@ -103,8 +105,27 @@ public class Postprocessor<out R>(
         consumer.onTagStart(processedTag)
     }
 
+    // text inside <code> (code blocks and inline code) is left as is
+    private var codeDepth = 0
+
+    override fun onTagEnd(tag: Tag) {
+        if (tag.tagName == "code") codeDepth--
+        consumer.onTagEnd(tag)
+    }
+
+    /**
+     * Text is HTML-escaped before processing, so a processor may insert markup (for example, numbered anchors).
+     * Text without changes, and text inside `<code>`, is passed on unchanged.
+     */
     override fun onTagContent(content: CharSequence) {
-        consumer.onTagContent(textProcessor.process(content))
+        if (codeDepth > 0) return consumer.onTagContent(content)
+        val escaped = content.toString().replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        val processed = textProcessor.process(escaped)
+        if (processed == escaped) {
+            consumer.onTagContent(content)
+        } else {
+            consumer.onTagContentUnsafe { +processed }
+        }
     }
 
     override fun onTagContentUnsafe(block: Unsafe.() -> Unit) {
@@ -121,13 +142,17 @@ public class Postprocessor<out R>(
 
 //TODO replace postprocessor with markdown render plugin?
 
+/**
+ * Applies [processor] to text rendered in [block] and [linkProcessor] to `snark:` links in `href` and `src` attributes.
+ */
 context(page: PageContext)
 public fun FlowContent.postprocess(
     processor: TextProcessor = WebPageTextProcessor(page),
+    linkProcessor: TextProcessor = processor,
     block: context(PageContext) FlowContent.() -> Unit,
 ) {
     val fc = object : FlowContent by this {
-        override val consumer: TagConsumer<*> = Postprocessor(page, this@postprocess.consumer, processor)
+        override val consumer: TagConsumer<*> = Postprocessor(page, this@postprocess.consumer, processor, linkProcessor)
     }
 
     fc.block()

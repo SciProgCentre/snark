@@ -41,8 +41,8 @@ In `href` and `src` attributes, `snark://` URIs are resolved as well:
 | `snark://pageMeta/<key>` | Page meta value |
 | `snark://siteMeta/<key>` | Site meta value |
 
-Markdown links using `${homeRef}`, `${resolveRef("...")}` and `${resolvePageRef("...")}` are converted to `snark://`
-URIs when the file is parsed:
+Markdown links and images using `${homeRef}`, `${resolveRef("...")}`, `${resolvePageRef("...")}` and
+`${pageMeta.get("...")}` are converted to `snark://` URIs when the file is parsed, including reference links:
 
 ```markdown
 See the [first post](${resolvePageRef("posts.first")}) and ![logo](${resolveRef("assets/logo.png")}).
@@ -58,9 +58,14 @@ body {
 
 Fragments rendered outside `postprocess` are left as is.
 
+In Markdown, `${...}` expressions are kept as literal text, so math or emphasis syntax around them does not break
+them.
+
 ### Custom postprocessing
 
-`postprocess` accepts any `TextProcessor`. It is applied to text content and to `href` and `src` attributes:
+`postprocess` accepts any `TextProcessor`. It is applied to text content and to `snark:` links in `href` and `src`
+attributes (a separate `linkProcessor` can be given for links). Text is HTML-escaped before processing, so a
+processor may return HTML. Text inside `<code>` is not processed:
 
 ```kotlin
 postprocess(TextProcessor { text -> text.toString().replace("{{year}}", "2026") }) {

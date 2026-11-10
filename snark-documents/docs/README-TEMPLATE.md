@@ -13,8 +13,12 @@ ${artifact}
 
 A document is a directory in the data tree that contains a descriptor file named `document` (`document.yaml`,
 `document.json` or any other format parsed to `Meta`). The descriptor lists fragments in the order they appear.
-Each document is rendered as a single HTML page. Other binary files in the directory, such as images, are served
-next to it.
+Each document is rendered as a single HTML page. Other binary files in the directory, such as images, stylesheets
+and scripts, are served next to it under the same relative path: `figures/plot.png` is served at
+`<route>/figures/plot.png`.
+
+Subdirectories group fragments: `chapter/intro.md` is the data item `chapter.intro`. A `@meta.yaml` file in a
+subdirectory holds the metadata of that branch.
 
 The API is in the `space.kscience.snark.html.document` package.
 
@@ -26,6 +30,10 @@ title: Lorem Ipsum
 authors:
   - name: Alexander Nozik
     affiliation: SPC
+stylesheets:                # linked in <head>, relative to the document directory
+  - assets/style.css
+scripts:                    # loaded in <head> with defer
+  - assets/script.js
 documentMeta:               # available to templates as documentMeta
   metaValue: Hello world!
 fragments:
@@ -35,6 +43,8 @@ fragments:
       caption: SPC logo
   - type: data
     name: chapter1          # chapter1.md in the same directory
+  - type: data
+    name: part2.methods     # part2/methods.md
 ```
 
 Fragment types:
@@ -76,24 +86,41 @@ See [examples/document](../examples/document) for a complete Ktor application.
 <#noparse>
 Document text is processed with [FreeMarker](https://freemarker.apache.org/) after rendering. Available values:
 
-| Expression                    | Result                                              |
-|-------------------------------|-----------------------------------------------------|
-| `${documentName}`             | Document route                                      |
-| `${section(level)}`           | Next section number of the given level, with anchor |
-| `${label("counter")}`         | Next value of a named counter, with anchor          |
-| `${documentMeta.key}`, `${documentMeta.get('key')}` | Value from `documentMeta`     |
+| Expression                         | Result                                                          |
+|------------------------------------|-----------------------------------------------------------------|
+| `${documentName}`                  | Document route                                                  |
+| `${section(level)}`, `${section(level, "key")}` | Next number of the section level, continuous through the document |
+| `${label("counter")}`, `${label("counter", "key")}` | Next value of a named counter, with anchor     |
+| `${ref("key")}`                    | Link to a labelled section or item, showing its number          |
+| `${documentRef("path")}`           | Link to a file in the document directory                        |
+| `${resolveRef("path")}`, `${resolvePageRef("name")}`, `${homeRef}` | Site links, as in [snark-html](../snark-html/docs/links.md) |
+| `${documentMeta.key}`, `${documentMeta.get('key')}` | Value from `documentMeta`                      |
 
 ```markdown
-## Chapter ${section(1)}
+## ${section(1, "sec-methods")} Methods
 
-See figure ${label("figure")}.
+### ${section(2)} Data
+
+**Definition ${label("definition", "def-tree")}.** A content tree is $D = (\delta, \beta)$.
+
+By definition ${ref("def-tree")}, see section ${ref("sec-methods")} and figure ${ref("fig-plot")}.
+
+<figure>
+<img src="${documentRef("figures/plot.png")}" alt="Plot">
+<figcaption>Figure ${label("figure", "fig-plot")}. A plot.</figcaption>
+</figure>
 ```
 </#noparse>
 
-Counters start from `1`.
+A key becomes the anchor of the item, so `${ref(...)}` can point to items defined later in the document. Numbering is
+continuous through the document: each counter (and each section level) starts from `1` and is never reset. A reference
+is filled in after the document is rendered, so the document is not rendered twice.
+Text inside code blocks and inline code is not processed.
 
-The generated HTML uses `snark-figure`, `snark-image`, `snark-figure-caption`, `snark-label` and `snark-section`
-CSS classes, as well as `title`, `author`, `author-name` and `author-affiliation`.
+In an equation, put the label into `\tag{}`: `\tag{${label("equation", "eq-key")}}`.
+
+The generated HTML uses `snark-figure`, `snark-image`, `snark-figure-caption`, `snark-label`, `snark-section` and
+`snark-ref` CSS classes, as well as `title`, `author`, `author-name` and `author-affiliation`.
 
 ## See also
 

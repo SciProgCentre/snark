@@ -6,8 +6,14 @@ import io.heapy.kotmark.ext.math.math
 import io.heapy.kotmark.extensions
 import io.heapy.kotmark.node.Image
 import io.heapy.kotmark.node.Link
+import io.heapy.kotmark.node.LinkReferenceDefinition
+import io.heapy.kotmark.node.Text
 import io.heapy.kotmark.parser.Parser
+import io.heapy.kotmark.parser.beta.InlineContentParser
+import io.heapy.kotmark.parser.beta.InlineContentParserFactory
+import io.heapy.kotmark.parser.beta.InlineParserState
 import io.heapy.kotmark.parser.beta.LinkResult
+import io.heapy.kotmark.parser.beta.ParsedInline
 import io.heapy.kotmark.parser.parser
 import io.heapy.kotmark.renderer.kotlinxhtml.adapters.mathAdapter
 import io.heapy.kotmark.renderer.kotlinxhtml.adapters.tablesAdapter
@@ -42,17 +48,23 @@ public class SnarkLinkExtension private constructor() : Parser.ParserExtension {
     }
 
     override fun extend(parserConfiguration: Parser.Configuration) {
+        // Follows kotmark's CoreLinkProcessor: the destination is inline or taken from a reference definition,
+        // and `!` marks an image. Links without a template are left to the core processor (null result).
         parserConfiguration.linkProcessor { info, scanner, context ->
-            val raw = info.text(scanner)
-            val title = info.title()
+            val definition = if (info.destination() == null) {
+                context.getDefinition(
+                    LinkReferenceDefinition::class,
+                    info.label()?.takeIf { it.isNotEmpty() } ?: info.text(scanner)
+                ) ?: return@linkProcessor null
+            } else null
+            val raw = definition?.destination ?: info.destination() ?: return@linkProcessor null
+            val title = definition?.title ?: info.title()
             val destination = transformLink(raw)
-            LinkResult.wrapTextIn(Link(destination, title), scanner.position())
-        }
-        parserConfiguration.postProcessor { node ->
-            if (node is Image) {
-                Image(node.destination?.let(::transformLink), node.title)
+            if (destination == raw) return@linkProcessor null
+            if (info.marker()?.literal == "!") {
+                LinkResult.wrapTextIn(Image(destination, title), scanner.position()).includeMarker()
             } else {
-                node
+                LinkResult.wrapTextIn(Link(destination, title), scanner.position())
             }
         }
     }
@@ -64,15 +76,61 @@ public class SnarkLinkExtension private constructor() : Parser.ParserExtension {
 
 }
 
+/**
+ * Keeps `${...}` template expressions as literal text, so that Markdown syntax (math, emphasis) inside or around them
+ * does not break them before a postprocessor evaluates them. It must be registered before the math extension,
+ * because both start with `$`.
+ */
+public class TemplateExpressionExtension private constructor() : Parser.ParserExtension {
+
+    private class ExpressionParser : InlineContentParser {
+        override fun tryParse(inlineParserState: InlineParserState): ParsedInline? {
+            val scanner = inlineParserState.scanner()
+            val start = scanner.position()
+            if (!scanner.next("\${")) return null
+            var depth = 1
+            while (scanner.hasNext() && scanner.peek() != '\n') {
+                when (scanner.peek()) {
+                    '{' -> depth++
+                    '}' -> if (--depth == 0) {
+                        scanner.next()
+                        return ParsedInline.of(Text(scanner.getSource(start, scanner.position()).content), scanner.position())
+                    }
+                }
+                scanner.next()
+            }
+            return null
+        }
+    }
+
+    private class Factory : InlineContentParserFactory {
+        override val triggerCharacters: Set<Char> = setOf('$')
+        override fun create(): InlineContentParser = ExpressionParser()
+    }
+
+    override fun extend(parserConfiguration: Parser.Configuration) {
+        parserConfiguration.customInlineContentParserFactory(Factory())
+    }
+
+    public companion object {
+        @JvmStatic
+        public fun create(): Extension = TemplateExpressionExtension()
+    }
+}
+
 public object MarkdownReader : SnarkHtmlReader {
     override val inputContentTypes: Set<String> = setOf("text/markdown", "md", "markdown")
 
+    // `extensions { }` alone builds a list and drops it; it must be passed to `Configuration.extensions`.
     private val parser = parser {
-        extensions {
-            math()
-            tables()
-            add(SnarkLinkExtension.create())
-        }
+        extensions(
+            extensions {
+                add(TemplateExpressionExtension.create())
+                math()
+                tables()
+                add(SnarkLinkExtension.create())
+            }
+        )
     }
 
     // Each syntax extension needs its matching adapter on the renderer side.
