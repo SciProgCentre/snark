@@ -21,6 +21,12 @@ public class DocumentDescriptor : Scheme() {
 
     public var authors: List<Author> by listOfScheme(Author)
 
+    /** Stylesheets linked in the page head, relative to the document directory. */
+    public var stylesheets: List<String>? by stringList()
+
+    /** Scripts loaded in the page head (deferred), relative to the document directory. */
+    public var scripts: List<String>? by stringList()
+
     @OptIn(DFExperimental::class)
     public var fragments: List<DocumentFragment> by meta.listOfSerializable<DocumentFragment>()
 

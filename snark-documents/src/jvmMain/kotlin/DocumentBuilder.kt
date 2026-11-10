@@ -3,6 +3,7 @@ package space.kscience.snark.html.document
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import space.kscience.dataforge.context.info
 import space.kscience.dataforge.context.logger
 import space.kscience.dataforge.context.request
@@ -15,6 +16,7 @@ import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
 import space.kscience.dataforge.workspace.filterByType
 import space.kscience.snark.SnarkContext
+import space.kscience.snark.TextProcessor
 import space.kscience.snark.html.*
 import kotlin.reflect.typeOf
 
@@ -119,8 +121,9 @@ public fun document(
     headers: MetaDataContent.() -> Unit = {},
     documentBlock: DocumentBuilder.() -> Unit = {},
 ): Unit {
+    // files keep their path inside the document directory: figures/plot.png is served at <route>/figures/plot.png
     siteData.branch(dataName)?.filterByType<Binary>()?.forEach {
-        site.static(route + it.name.last(), it)
+        site.static(route + it.name, it)
     }
     page(route, descriptor.documentMeta ?: Meta.EMPTY) {
         //TODO think about avoiding blocking
@@ -132,9 +135,21 @@ public fun document(
                 documentBlock()
             }
         }
+        val pageContext = contextOf<PageContextWithData>()
+        val documentPath = route.toWebPath()
+
+        val templates = FtlDocumentProcessor(site.context, documentBuilder, page = pageContext)
+        val links = WebPageTextProcessor(pageContext)
+
         head {
             title(descriptor.title ?: "Snark document")
             headers()
+            descriptor.stylesheets?.forEach {
+                link(rel = "stylesheet", href = pageContext.resolveRef("$documentPath/$it"))
+            }
+            descriptor.scripts?.forEach {
+                script(src = pageContext.resolveRef("$documentPath/$it")) { defer = true }
+            }
         }
         body {
             h1("title") { +(descriptor.title ?: dataName.toString()) }
@@ -145,11 +160,16 @@ public fun document(
                 }
             }
 
-            postprocess(FtlDocumentProcessor(site.context, documentBuilder)) {
-                documentBuilder.fragments.forEach {
-                    fragment(it)
+            // text is processed as a template; snark:// links in href and src attributes are resolved as well.
+            // Fragments are rendered once; ${ref(...)} numbers are filled in afterwards, so they can point forward.
+            val content = createHTML(prettyPrint = false).div {
+                postprocess(templates, TextProcessor { text -> links.process(templates.process(text)) }) {
+                    documentBuilder.fragments.forEach {
+                        fragment(it)
+                    }
                 }
-            }
+            }.removePrefix("<div>").removeSuffix("</div>")
+            unsafe { +templates.resolveReferences(content) }
         }
     }
 }
