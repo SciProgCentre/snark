@@ -34,6 +34,22 @@ import kotlin.reflect.typeOf
 //    style = CssBuilder().block().toString()
 //}
 
+/**
+ * Ktor-based implementation of [SiteContext] that maps site declarations to Ktor routes.
+ *
+ * This context is used while rendering a site into a running Ktor routing tree. Pages are
+ * registered as HTTP GET handlers, static binary data is exposed either from a filesystem path
+ * when file metadata is available or directly from in-memory binary data, and nested route or
+ * site blocks create child contexts backed by child Ktor routes.
+ *
+ * Page rendering is performed inside the Ktor call coroutine so that page content can access
+ * request-derived information such as the host URI. Page metadata is combined with site metadata
+ * and augmented with routing information before being passed to the page renderer.
+ *
+ * The context preserves the logical site hierarchy through its parent context, route name, and
+ * path information while delegating actual HTTP endpoint registration to the underlying Ktor
+ * [Route].
+ */
 internal class KtorSiteContext(
     override val context: Context,
     override val siteMeta: Meta,
@@ -167,10 +183,8 @@ internal class KtorSiteContext(
             ),
             data ?: DataTree.EMPTY
         )
-        with(content) {
-            with(siteContext) {
-                renderSite()
-            }
+        context(siteContext) {
+            content.renderSite()
         }
     }
 
@@ -187,10 +201,8 @@ public fun Route.site(
         KtorSiteContext(context, siteMeta, path = path, siteRoute = Name.EMPTY, null, this),
         data ?: DataTree.EMPTY
     )
-    with(content) {
-        with(siteContext) {
-            renderSite()
-        }
+    context(siteContext) {
+        content.renderSite()
     }
 }
 //

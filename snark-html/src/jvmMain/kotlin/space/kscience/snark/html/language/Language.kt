@@ -39,20 +39,6 @@ public class Language : Scheme() {
         writer = { it.toString().asValue() }
     )
 
-//    /**
-//     * An override for data path. By default uses [prefix]
-//     */
-//    public var dataPath: String? by string()
-//
-//    /**
-//     * Target page name with a given language key
-//     */
-//    public var target: Name?
-//        get() = meta["target"].string?.parseAsName(false)
-//        set(value) {
-//            meta["target"] = value?.toString()?.asValue()
-//        }
-
     public companion object : SchemeSpec<Language>(::Language) {
 
         public val LANGUAGE_KEY: Name = Name.of("language")
