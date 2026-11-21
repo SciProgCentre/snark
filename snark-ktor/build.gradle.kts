@@ -19,6 +19,7 @@ kscience{
         api("io.ktor:ktor-server-core")
         api("io.ktor:ktor-server-html-builder")
         api("io.ktor:ktor-server-host-common")
+        api("io.ktor:ktor-server-auth")
     }
     jvmTest{
         api("io.ktor:ktor-server-test-host")

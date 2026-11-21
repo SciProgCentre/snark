@@ -2,6 +2,7 @@ package space.kscience.snark.ktor
 
 import io.ktor.http.*
 import io.ktor.http.content.TextContent
+import io.ktor.server.auth.authenticate
 import io.ktor.server.http.content.staticFiles
 import io.ktor.server.plugins.origin
 import io.ktor.server.response.respond
@@ -27,12 +28,9 @@ import space.kscience.dataforge.names.endsWith
 import space.kscience.dataforge.names.plus
 import space.kscience.dataforge.workspace.FileDataTree
 import space.kscience.snark.html.*
+import space.kscience.snark.html.SiteContext.Companion.AUTHENTICATE_KEY
 import java.nio.file.Path
 import kotlin.reflect.typeOf
-
-//public fun CommonAttributeGroupFacade.css(block: CssBuilder.() -> Unit) {
-//    style = CssBuilder().block().toString()
-//}
 
 /**
  * Ktor-based implementation of [SiteContext] that maps site declarations to Ktor routes.
@@ -165,9 +163,18 @@ internal class KtorSiteContext(
             data ?: DataTree.EMPTY
         )
         with(content) {
-            with(siteContext) {
+            context(siteContext) {
                 renderSite()
             }
+        }
+    }
+
+    private fun Route.withAuthentication(siteMeta: Meta): Route {
+        val auth = siteMeta[AUTHENTICATE_KEY]?.stringList
+        return if (auth.isNullOrEmpty()) {
+            this
+        } else {
+            authenticate(*auth.toTypedArray()) { }
         }
     }
 
@@ -179,7 +186,7 @@ internal class KtorSiteContext(
                 path = path + route.tokens.map { it.toStringUnescaped() },
                 siteRoute = Name.EMPTY,
                 this,
-                ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath())
+                ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath()).withAuthentication(siteMeta)
             ),
             data ?: DataTree.EMPTY
         )

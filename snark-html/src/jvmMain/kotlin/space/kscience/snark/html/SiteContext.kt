@@ -85,6 +85,8 @@ public interface SiteContext : SnarkContext, ContextAware {
         public val SITE_META_KEY: Name = Name.of("site")
         public val INDEX_PAGE_TOKEN: NameToken = NameToken("index")
         public val UP_PAGE_TOKEN: NameToken = NameToken("..")
+
+        public val AUTHENTICATE_KEY: Name = Name.of("authenticate")
     }
 }
 
