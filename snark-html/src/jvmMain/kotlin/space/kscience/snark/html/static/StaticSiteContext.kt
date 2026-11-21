@@ -100,10 +100,14 @@ internal class StaticSiteContext(
             data ?: DataTree.EMPTY
         )
         with(content) {
-            with(siteContextWithData) {
+            context(siteContextWithData) {
                 renderSite()
             }
         }
+    }
+
+    override fun alias(route: Name, target: Name) {
+        // does nothing for static rendering
     }
 
     override fun site(route: Name, data: DataTree<*>?, siteMeta: Meta, content: HtmlSite) {
@@ -120,7 +124,7 @@ internal class StaticSiteContext(
             data ?: DataTree.EMPTY
         )
         with(content) {
-            with(siteContextWithData) {
+            context(siteContextWithData) {
                 renderSite()
             }
         }
@@ -145,7 +149,7 @@ public fun SnarkHtml.staticSite(
         data ?: DataTree.EMPTY
     )
     with(content) {
-        with(siteContextWithData) {
+        context(siteContextWithData) {
             renderSite()
         }
     }

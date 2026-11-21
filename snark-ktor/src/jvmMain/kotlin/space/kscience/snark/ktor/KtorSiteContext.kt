@@ -112,28 +112,22 @@ internal class KtorSiteContext(
     override fun page(route: Name, data: DataTree<*>?, pageMeta: Meta, content: HtmlPage) {
         ktorRoute.get(route.toWebPath()) {
             val request = call.request
-            //substitute host for url for backwards calls
-//            val url = URLBuilder(baseUrl).apply {
-//                protocol = URLProtocol.createOrDefault(request.origin.scheme)
-//                host = request.origin.serverHost
-//                port = request.origin.serverPort
-//            }
 
             val hostUrl = URLBuilder().apply {
                 protocol = URLProtocol.createOrDefault(request.origin.scheme)
                 host = request.origin.serverHost
                 port = request.origin.serverPort
-            }
+            }.buildString()
 
             val modifiedPageMeta = pageMeta.copy {
-                "host" put hostUrl.buildString()
+                "host" put hostUrl
                 "path" put path.map { it.asValue() }.asValue()
                 "route" put (siteRoute + route).toString()
             }
 
             val pageContext = KtorPageContext(
                 site = this@KtorSiteContext,
-                hostUri = hostUrl.buildString(),
+                hostUri = hostUrl,
                 pageRoute = siteRoute + route,
                 pageMeta = Laminate(modifiedPageMeta, siteMeta)
             )
@@ -144,9 +138,15 @@ internal class KtorSiteContext(
         }
     }
 
-    public fun alias(route: Name, target: Name) {
+    override fun alias(route: Name, target: Name) {
         ktorRoute.get(route.toWebPath()) {
-            call.respondRedirect(target.toWebPath())
+            val url = URLBuilder().apply {
+                protocol = URLProtocol.createOrDefault(call.request.origin.scheme)
+                host = call.request.origin.serverHost
+                port = call.request.origin.serverPort
+                pathSegments = path + target.toWebPathSegments()
+            }
+            call.respondRedirect(url.build())
         }
     }
 
@@ -185,7 +185,7 @@ internal class KtorSiteContext(
                 siteMeta = Laminate(siteMeta, this@KtorSiteContext.siteMeta),
                 path = path + route.tokens.map { it.toStringUnescaped() },
                 siteRoute = Name.EMPTY,
-                this,
+                parent = this,
                 ktorRoute = ktorRoute.createRouteFromPath(route.toWebPath()).withAuthentication(siteMeta)
             ),
             data ?: DataTree.EMPTY

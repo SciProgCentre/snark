@@ -70,6 +70,12 @@ public interface SiteContext : SnarkContext, ContextAware {
     )
 
     /**
+     * Create a redirect or alias from [route] to [target].
+     * Aliases should not be used for internal routing. Some rendering engines may not support them.
+     */
+    public fun alias(route: Name, target: Name)
+
+    /**
      * Creates a sub-site and changes context path to match [route]
      * @param route mount site at [rootName]
      */

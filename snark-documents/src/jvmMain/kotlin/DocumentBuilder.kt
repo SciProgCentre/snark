@@ -16,7 +16,6 @@ import space.kscience.dataforge.meta.string
 import space.kscience.dataforge.names.*
 import space.kscience.dataforge.workspace.filterByType
 import space.kscience.snark.SnarkContext
-import space.kscience.snark.TextProcessor
 import space.kscience.snark.html.*
 import kotlin.reflect.typeOf
 
@@ -64,15 +63,15 @@ private class PageBasedDocumentBuilder(
         when (fragment) {
             is ImageDocumentFragment -> fragment {
                 val page =
-                figure("snark-figure") {
-                    img(classes = "snark-image") {
-                        src = page.resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
-                        alt = fragment.meta["alt"].string ?: ""
+                    figure("snark-figure") {
+                        img(classes = "snark-image") {
+                            src = page.resolveRef(this@PageBasedDocumentBuilder.route.toWebPath() + "/" + fragment.ref)
+                            alt = fragment.meta["alt"].string ?: ""
+                        }
+                        fragment.meta["caption"].string?.let { caption ->
+                            figcaption("snark-figure-caption") { +caption }
+                        }
                     }
-                    fragment.meta["caption"].string?.let { caption ->
-                        figcaption("snark-figure-caption") { +caption }
-                    }
-                }
             }
 
             is MarkupDocumentFragment -> {
@@ -163,7 +162,10 @@ public fun document(
             // text is processed as a template; snark:// links in href and src attributes are resolved as well.
             // Fragments are rendered once; ${ref(...)} numbers are filled in afterwards, so they can point forward.
             val content = createHTML(prettyPrint = false).div {
-                postprocess(templates, TextProcessor { text -> links.process(templates.process(text)) }) {
+                postprocess(
+                    processor = templates,
+                    linkProcessor = { text -> links.process(templates.process(text)) }
+                ) {
                     documentBuilder.fragments.forEach {
                         fragment(it)
                     }

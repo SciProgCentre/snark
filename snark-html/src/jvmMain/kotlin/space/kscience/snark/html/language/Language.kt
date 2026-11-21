@@ -6,6 +6,7 @@ import space.kscience.dataforge.data.Data
 import space.kscience.dataforge.data.DataBuilderScope
 import space.kscience.dataforge.data.DataTree
 import space.kscience.dataforge.data.branch
+import space.kscience.dataforge.io.Binary
 import space.kscience.dataforge.meta.*
 import space.kscience.dataforge.names.*
 import space.kscience.dataforge.workspace.filterByType
@@ -45,11 +46,11 @@ public class Language : Scheme() {
 
         public val LANGUAGE_MAP_KEY: Name = Name.of("languageMap")
 
-        public val SITE_LANGUAGE_KEY: Name = SiteContext.Companion.SITE_META_KEY + LANGUAGE_KEY
+        public val SITE_LANGUAGE_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_KEY
 
-        public val SITE_LANGUAGE_MAP_KEY: Name = SiteContext.Companion.SITE_META_KEY + LANGUAGE_MAP_KEY
+        public val SITE_LANGUAGE_MAP_KEY: Name = SiteContext.SITE_META_KEY + LANGUAGE_MAP_KEY
 
-        public const val DEFAULT_LANGUAGE: String = "en"
+        public const val GLOBAL_DEFAULT_LANGUAGE: String = "en"
     }
 }
 
@@ -73,7 +74,8 @@ public val languageMap: Map<String, Language>
     }?.toMap() ?: emptyMap()
 
 public val SiteContext.language: String
-    get() = siteMeta[SITE_LANGUAGE_KEY].string ?: Language.DEFAULT_LANGUAGE
+    get() = siteMeta[SITE_LANGUAGE_KEY].string ?: Language.GLOBAL_DEFAULT_LANGUAGE
+
 
 /**
  * Walk the data tree depth-first
@@ -98,6 +100,10 @@ private fun <T> DataTree<T>.walk(
  * with specific properties that determine its data path, key, and route information.
  */
 private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<Any, Any>(typeOf<Any>()) {
+
+    init {
+        require(languages.isNotEmpty()) { "At least one language must be provided" }
+    }
 
     override fun DataBuilderScope<Any>.generate(
         source: DataTree<Any>,
@@ -133,30 +139,51 @@ private class LanguageMapAction(val languages: Set<Language>) : AbstractAction<A
                 if (nodeData != null) {
                     put(
                         languagePrefix + nodeName,
-                        nodeData.withMeta { set(Language.LANGUAGE_MAP_KEY, languageMapMeta) }
+                        nodeData.withMeta {
+                            set(Language.LANGUAGE_MAP_KEY, languageMapMeta)
+                        }
                     )
                 } else {
                     put(
                         languagePrefix + nodeName,
-                        Data.wrapValue(Unit, Meta { set(Language.LANGUAGE_MAP_KEY, languageMapMeta) })
+                        Data.wrapValue(Unit, Meta {
+                            set(Language.LANGUAGE_MAP_KEY, languageMapMeta)
+                        })
                     )
                 }
             }
         }
+    }
+}
 
+
+private class SiteContextProxy(
+    val target: SiteContext,
+    override val parent: SiteContext,
+    val languageRoute: Name
+) : SiteContext by target {
+    override fun static(route: Name, data: Data<Binary>) {
+        target.static(route, data)
+        parent.alias(route, languageRoute + route)
     }
 
-
+    override fun page(route: Name, data: DataTree<*>?, pageMeta: Meta, content: HtmlPage) {
+        target.page(route, data, pageMeta, content)
+        parent.alias(route, languageRoute + route)
+    }
 }
 
 
 /**
  * Create a multiple sites for different languages. All sites use the same [content], but rely on different data
+ *
+ * @param createAliasesForDefaultLanguage if true, create aliases for default language from parent site routes
  */
 context(site: SiteContextWithData)
 public fun multiLanguageSite(
     defaultLanguage: Language,
     vararg languages: Language,
+    createAliasesForDefaultLanguage: Boolean = true,
     content: HtmlSite,
 ) {
     val languageSet = setOf(defaultLanguage, *languages)
@@ -176,16 +203,24 @@ public fun multiLanguageSite(
         }
 
         val overlayData = DataTreeWithDefault<Any>(
-            languageMappedData.branch(language.dataPath)!!,
-            languageMappedData.branch(defaultLanguage.dataPath)!!
+            tree = languageMappedData.branch(language.dataPath)!!,
+            default = languageMappedData.branch(defaultLanguage.dataPath)!!
         )
 
         site.site(
             language.route,
             overlayData,
             siteMeta = Laminate(languageSiteMeta, site.siteMeta),
-            content
-        )
+        ) {
+            if (createAliasesForDefaultLanguage && language == defaultLanguage && !defaultLanguage.route.isEmpty()) {
+                //use proxy context to add aliases to parent site
+                context(SiteContextWithData(SiteContextProxy(siteContext, site, defaultLanguage.route), siteData)) {
+                    content.renderSite()
+                }
+            } else {
+                content.renderSite()
+            }
+        }
     }
 }
 

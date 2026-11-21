@@ -15,13 +15,16 @@ import space.kscience.dataforge.names.plus
 import space.kscience.snark.SnarkBuilder
 import space.kscience.snark.SnarkContext
 
-public fun Name.toWebPath(): String = tokens.joinToString(separator = "/") {
+
+public fun Name.toWebPathSegments(): List<String> = tokens.map {
     if (it.hasIndex()) {
         "${it.body}[${it.index}]"
     } else {
         it.body
     }
 }
+
+public fun Name.toWebPath(): String = toWebPathSegments().joinToString("/")
 
 /**
  *  A context for building a single page
